@@ -4,6 +4,7 @@ const User = require('../models/userModel.js')
 var crypto = require('crypto');
 var mailer = require('../utils/mailer');
 const validateRegisterInput = require('../validations/validateRegisterInput')
+const validateDemandeInput = require('../validations/DemandeValidation.js')
 const validateFeedbackInput = require('../validations/FeedbackValidation')
 const validateLoginInput = require('../validations/login')
 const bcrypt = require('bcryptjs');
@@ -13,6 +14,7 @@ const { generateOTP, mailTransport, generateEmailTemplate, plainEmailTemplate, g
 const { isValidObjectId } = require('mongoose');
 const { sendError, createRandomBytes } = require("../utils/helper");
 const resetTokenModels = require("../models/resetToken.models");
+const demandeModels = require("../models/Demande.model");
 const imageToBase64 = require("image-to-base64");
 const multer = require('multer')
 const { google } = require('googleapis');
@@ -22,10 +24,133 @@ const profileModels = require("../models/profile.models")
 const FeedbackModel = require('../models/Feedback.Model.js');
 
 
+
+
+const createDemande = async (req, res) => {
+  // const userId = req.body.userId; // Assuming userId is provided in the request body
+  const { errors, isValid } = validateDemandeInput(req.body);
+  try {
+    if (isValid) {
+      const { address, destination, offer,comment, postalAddress, postalDestination, distance } = req.body;
+    // Create a new demand object
+    const newDemande = new demandeModels({
+      user: req.user.id,
+      address,
+      destination,
+      comment,
+      postalAddress,
+      postalDestination,
+      offer,
+      distance
+    });
+
+    // Save the new demand
+    const createdDemande = await newDemande.save();
+
+    res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
+  } else {
+    responseSent = true;
+    return res.status(404).json(errors);
+  }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const deleteDemande = async (req, res) => {
+  const demandId = req.params.demandId; // Assuming demandId is provided as a route parameter
+
+  try {
+    // Check if the demand exists
+    const existingDemande = await demandeModels.findById(demandId);
+
+    if (!existingDemande) {
+      return res.status(404).json({ message: 'Demande not found' });
+    }
+
+    // Check if the user making the request is the owner of the demand
+    if (existingDemande.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized access' });
+    }
+
+    // Delete the demand
+    await existingDemande.remove();
+
+    res.status(200).json({ message: 'Demande deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const findDemandsByUserId = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+
+  try {
+    const demands = await demandeModels.find({ user: userId });
+
+    if (demands.length > 0) {
+      res.status(200).json({ demands });
+    } else {
+      res.status(404).json({ message: 'No demands found for the user.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+const incrementOffer = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+
+  try {
+    // Find the demand by ID and user ID
+    const demand = await demandeModels.findOne({ _id: demandId, user: userId });
+
+    if (!demand) {
+      return res.status(404).json({ message: 'Demand not found for the user.' });
+    }
+
+    // Increment or decrement the offer by 0.5
+    demand.offer = (parseFloat(demand.offer) + 0.5).toString();
+
+    // Save the updated demand
+    const updatedDemand = await demand.save();
+
+    res.status(200).json({ message: 'Offer updated successfully', demand: updatedDemand });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+const decreaseOffer = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+
+  try {
+    // Find the demand by ID and user ID
+    const demand = await demandeModels.findOne({ _id: demandId, user: userId });
+
+    if (!demand) {
+      return res.status(404).json({ message: 'Demand not found for the user.' });
+    }
+
+    // Increment or decrement the offer by 0.5
+    demand.offer = (parseFloat(demand.offer) - 0.5).toString();
+
+    // Save the updated demand
+    const updatedDemand = await demand.save();
+
+    res.status(200).json({ message: 'Offer updated successfully', demand: updatedDemand });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
 let responseSent = false;
+
 // let responseSent = false;
 const authUser = async (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body);
@@ -665,6 +790,10 @@ module.exports = {
   blockUser,
   deblockUser,
 
-  CreateFeedback
-
+  CreateFeedback,
+  createDemande,
+  findDemandsByUserId,
+  incrementOffer,
+  decreaseOffer,
+  deleteDemande
 }
