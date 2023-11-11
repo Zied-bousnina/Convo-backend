@@ -766,6 +766,67 @@ const CreateFeedback = async (req, res)=> {
 }
 
 
+// --------------------------------------Statistiques
+const getUsersCount = async (req, res) => {
+  const currentDate = new Date();
+  const lastDayDate = new Date();
+  lastDayDate.setDate(currentDate.getDate() - 1);
+
+  const currentDayCountsByRole = await User.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: lastDayDate, $lt: currentDate }
+      }
+    },
+    {
+      $group: {
+        _id: '$role',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const totalCountsByRole = await User.aggregate([
+    {
+      $group: {
+        _id: '$role',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const currentDayCountTotal = await User.countDocuments({
+    createdAt: { $gte: lastDayDate, $lt: currentDate }
+  });
+
+  const totalCountTotal = await User.countDocuments({});
+
+  const roles = [...new Set([...currentDayCountsByRole.map(item => item._id), ...totalCountsByRole.map(item => item._id)])];
+
+  const percentageIncreaseByRole = roles.map(role => {
+    const currentDayCount = currentDayCountsByRole.find(item => item._id === role);
+    const totalCount = totalCountsByRole.find(item => item._id === role);
+    const percentageIncrease = totalCount ? ((currentDayCount?.count || 0) - totalCount.count) / totalCount.count * 100 : 0;
+    return {
+      role,
+      currentDayCount: currentDayCount?.count || 0,
+      totalCount: totalCount?.count || 0,
+      percentageIncrease
+    };
+  });
+
+  const percentageIncreaseTotal = totalCountTotal ? ((currentDayCountTotal - totalCountTotal) / totalCountTotal) * 100 : 0;
+
+  res.json({
+    byRole: percentageIncreaseByRole,
+    total: {
+      currentDayCount: currentDayCountTotal,
+      totalCount: totalCountTotal,
+      percentageIncrease: percentageIncreaseTotal
+    }
+  });
+};
+
 
 
 module.exports = {
@@ -795,5 +856,6 @@ module.exports = {
   findDemandsByUserId,
   incrementOffer,
   decreaseOffer,
-  deleteDemande
+  deleteDemande,
+  getUsersCount
 }
