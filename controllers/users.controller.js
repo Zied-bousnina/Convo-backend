@@ -899,15 +899,31 @@ const getUsersCount = async (req, res) => {
 const getTotalDemandesCount = async (req, res) => {
   try {
     // Assuming you have a Demande model
-    const demandeCount = await demandeModels.countDocuments();
-    // Add other criteria if needed
+    const currentDate = new Date();
+    const lastDayDate = new Date();
+    lastDayDate.setDate(currentDate.getDate() - 1);
 
-    res.json({ totalDemandesCount: demandeCount });
+    const currentDayCountTotal = await demandeModels.countDocuments({
+      createdAt: { $gte: lastDayDate, $lt: currentDate }
+    });
+
+    const totalCountTotal = await demandeModels.countDocuments();
+
+    const percentageIncreaseTotal = totalCountTotal ? ((currentDayCountTotal - totalCountTotal) / totalCountTotal) * 100 : 0;
+
+    res.json({
+      total: {
+        currentDayCount: currentDayCountTotal,
+        totalCount: totalCountTotal,
+        percentageIncrease: percentageIncreaseTotal
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 
