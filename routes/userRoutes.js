@@ -30,7 +30,8 @@ const {
   incrementOffer,
   decreaseOffer,
   deleteDemande,
-  getUsersCount
+  getUsersCount,
+  getTotalDemandesCount
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -47,6 +48,7 @@ router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {ses
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
 router.route('/delete/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route("/getUserCounts").get(getUsersCount)
+router.route("/getDemandeCounts").get(getTotalDemandesCount)
 
 
 router.route('/getUsers').get(getUsers)

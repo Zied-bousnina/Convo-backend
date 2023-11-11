@@ -896,6 +896,19 @@ const getUsersCount = async (req, res) => {
   });
 };
 
+const getTotalDemandesCount = async (req, res) => {
+  try {
+    // Assuming you have a Demande model
+    const demandeCount = await demandeModels.countDocuments();
+    // Add other criteria if needed
+
+    res.json({ totalDemandesCount: demandeCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 
 
 module.exports = {
@@ -926,5 +939,6 @@ module.exports = {
   incrementOffer,
   decreaseOffer,
   deleteDemande,
-  getUsersCount
+  getUsersCount,
+  getTotalDemandesCount
 }
