@@ -145,6 +145,26 @@ const decreaseOffer = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+const addAddress = async (req, res) => {
+  try {
+    const {  address } = req.body; // Assuming you send userId and newAddress in the request body
+
+    // Find the user by userId
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Call the addAddress method to update the user's address
+    const u =await user.addAddress(address);
+
+    res.json({ message: 'Address updated successfully.', user:u });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -956,5 +976,6 @@ module.exports = {
   decreaseOffer,
   deleteDemande,
   getUsersCount,
-  getTotalDemandesCount
+  getTotalDemandesCount,
+  addAddress
 }

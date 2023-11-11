@@ -25,6 +25,11 @@ const userSchema = mongoose.Schema(
             type: String,
             default: null
         },
+        address:
+        {
+            latitude: String,
+            longitude: String,
+        },
         avatar: String,
         activeToken: String,
         activeExpires: Date,
@@ -32,14 +37,7 @@ const userSchema = mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        accessListBins : [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'PointBinV2',
-                // unique: true,
 
-            }
-        ],
 
     },{
         timestamps: true
@@ -54,6 +52,10 @@ userSchema.methods.comparePassword = async function(password) {
     const result = await bcrypt.compareSync(password, this.password)
     return result
 }
+userSchema.methods.addAddress = async function (newAddress) {
+    this.address = newAddress;
+    await this.save();
+  };
 module.exports = mongoose.model('User', userSchema)
 // userSchema.methods.getUserByEmail = async function(email) {
 //     const user = await this.findOne({ email: email })
