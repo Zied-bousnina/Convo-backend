@@ -28,6 +28,7 @@ const FeedbackModel = require('../models/Feedback.Model.js');
 
 const createDemande = async (req, res) => {
   // const userId = req.body.userId; // Assuming userId is provided in the request body
+  console.log(req.body)
   const { errors, isValid } = validateDemandeInput(req.body);
   try {
     if (isValid) {

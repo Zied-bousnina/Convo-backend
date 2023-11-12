@@ -7,7 +7,7 @@ module.exports = function validateDemandeInput(data) {
 
 //   data.address = !isEmpty(data.address) ? data.address : ""
 //   data.destination = !isEmpty(data.destination) ? data.destination : ""
-  data.offer = !isEmpty(data.offer) ? data.offer : ""
+  // data.offer = !isEmpty(data.offer) ? data.offer : ""
   data.postalAddress = !isEmpty(data.postalAddress) ? data.postalAddress : ""
   data.postalDestination = !isEmpty(data.postalDestination) ? data.postalDestination : ""
 
@@ -20,9 +20,9 @@ module.exports = function validateDemandeInput(data) {
 //   if (validator.isEmpty(data.address)) {
 //     errors.address = "address On field is required"
 //   }
-  if (validator.isEmpty(data.offer)) {
-    errors.offer = "offer On field is required"
-  }
+  // if (validator.isEmpty(data.offer)) {
+  //   errors.offer = "offer On field is required"
+  // }
   if (validator.isEmpty(data.postalDestination)) {
     errors.postalDestination = "postalDestination On field is required"
   }

@@ -13,11 +13,13 @@ const DeamndeSchema = new Schema({
         {
             latitude: String,
             longitude: String,
+            display_name:String
         },
 
     destination: {
         latitude: String,
         longitude: String,
+        display_name:String
 
         },
         offer:{
