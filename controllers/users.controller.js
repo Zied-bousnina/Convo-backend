@@ -645,7 +645,7 @@ const resetPassword = async (req, res) => {
 const getUsers = async (req, res) => {
   // console.log(req.user.id)
   try {
-      const basicInfo = await User.find({});
+      const basicInfo = await User.find({ onligne: true });
       res.status(200).json({ users:basicInfo})
       // return basicInfo;
   } catch (error) {
