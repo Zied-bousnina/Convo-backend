@@ -598,10 +598,20 @@ const resetPassword = async (req, res) => {
 
 
 
-const getUsers = asyncHandler(async (req, res) => {
-  const users = await profileModels.find({}).populate('user')
-  res.json(users)
-})
+// const getUsers = asyncHandler(async (req, res) => {
+//   const users = await User.find({})
+//   res.json(users)
+// })
+const getUsers = async (req, res) => {
+  // console.log(req.user.id)
+  try {
+      const basicInfo = await User.find({});
+      res.status(200).json({ users:basicInfo})
+      // return basicInfo;
+  } catch (error) {
+      res.status(500).json({message1: "error2", message: error.message})
+  }
+};
 
 //   const usersCount = await User.aggregate([
 //     {
@@ -848,6 +858,7 @@ const CreateFeedback = async (req, res)=> {
 // };
 
 const getUsersCount = async (req, res) => {
+  try {
   const currentDate = new Date();
   const lastDayDate = new Date();
   lastDayDate.setDate(currentDate.getDate() - 1);
@@ -914,7 +925,14 @@ const getUsersCount = async (req, res) => {
       percentageIncrease: percentageIncreaseTotal
     }
   });
-};
+} catch (error) {
+  console.error("Error in getUsersCount:", error);
+  res.status(500).json({ error: "Internal Server Error" });
+  // You might want to handle the error in a way that makes sense for your application.
+  // You can customize the response status code and message accordingly.
+}
+}
+
 
 const getTotalDemandesCount = async (req, res) => {
   try {
