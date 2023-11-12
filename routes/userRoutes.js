@@ -32,7 +32,9 @@ const {
   deleteDemande,
   getUsersCount,
   getTotalDemandesCount,
-  addAddress
+  addAddress,
+  findDemandById,
+  SetUserStatus
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -47,7 +49,9 @@ router.route('/createDemande').post(passport.authenticate('jwt', {session: false
 router.route('/findDemandsByUserId').get(passport.authenticate('jwt', {session: false}),findDemandsByUserId)
 router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {session: false}),incrementOffer)
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
+router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {session: false}),findDemandById)
 router.route('/delete/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
+router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route("/getUserCounts").get(getUsersCount)
 router.route("/getDemandeCounts").get(getTotalDemandesCount)
 router.route('/AddAddress').post(passport.authenticate('jwt', {session: false}),addAddress)

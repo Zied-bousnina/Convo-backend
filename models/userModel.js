@@ -37,6 +37,11 @@ const userSchema = mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        onligne:{
+            type: Boolean,
+            default: false,
+
+        }
 
 
     },{

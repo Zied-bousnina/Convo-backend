@@ -98,6 +98,20 @@ const findDemandsByUserId = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+const findDemandById = async (req, res) => {
+  const demandId = req.params.demandId// Assuming user ID is available in req.user.id
+
+  try {
+    const demande = await demandeModels.findById(demandId);
+
+
+      res.status(200).json({ demande });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
 const incrementOffer = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
@@ -166,6 +180,31 @@ const addAddress = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+const SetUserStatus = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Toggle the online status
+    user.onligne = req.body.onligne;
+
+    // Save the updated user
+    await user.save();
+
+    // Respond with the updated user object or just a success message
+    res.status(200).json({ message: 'User status updated successfully', user: user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -996,5 +1035,7 @@ module.exports = {
   deleteDemande,
   getUsersCount,
   getTotalDemandesCount,
-  addAddress
+  addAddress,
+  findDemandById,
+  SetUserStatus
 }
