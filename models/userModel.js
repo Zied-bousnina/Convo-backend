@@ -11,6 +11,9 @@ const userSchema = mongoose.Schema(
             // required: true,
         },
         password: String,
+        contactName:String,
+        addressPartner:String,
+        phoneNumber:String,
         role: {
             type: String,
             default: 'USER'

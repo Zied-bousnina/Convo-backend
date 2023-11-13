@@ -4,13 +4,14 @@ const User = require('../models/userModel.js')
 var crypto = require('crypto');
 var mailer = require('../utils/mailer');
 const validateRegisterInput = require('../validations/validateRegisterInput')
+const PartnerValidationInput = require('../validations/PartnerInputValidation.js')
 const validateDemandeInput = require('../validations/DemandeValidation.js')
 const validateFeedbackInput = require('../validations/FeedbackValidation')
 const validateLoginInput = require('../validations/login')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const verificationTokenModels = require("../models/verificationToken.models");
-const { generateOTP, mailTransport, generateEmailTemplate, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
+const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplatePartner, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
 const { isValidObjectId } = require('mongoose');
 const { sendError, createRandomBytes } = require("../utils/helper");
 const resetTokenModels = require("../models/resetToken.models");
@@ -363,6 +364,113 @@ const registerUser = asyncHandler(async (req, res, next) => {
   }
 })
 
+const AddPartner = asyncHandler(async (req, res, next) => {
+  const { errors, isValid } = PartnerValidationInput(req.body)
+  try {
+    if (!isValid) {
+      res.status(404).json(errors);
+    } else {
+      User.findOne({ email: req.body.email })
+        .then(async exist => {
+          if (exist) {
+            res.status(404).json({success:false, email: "Email already exist" })
+          } else {
+            // req.body.role = "USER"
+            const GeneratedPassword = generateRandomPassword()
+            const user = new User({
+              name: req.body.name,
+              addressPartner: req.body.addressPartner,
+              contactName: req.body.contactName,
+              email: req.body.email,
+              phoneNumber: req.body.phoneNumber,
+              password: bcrypt.hashSync(GeneratedPassword, 10),
+              role: "PARTNER",
+              verified:true
+            })
+            mailer.send({
+              to: ["zbousnina@yahoo.com",user.email ],
+              subject: "Welcome to Convoyage! Your Account Details Inside",
+              html: generateEmailTemplatePartner(user.contactName, user.name, user.email, GeneratedPassword)
+            }, (err)=>{
+            })
+            user.save()
+              .then(user => {
+                  res.status(200).json({ success: true,user, msg: 'A E-mail has been sent to your registered email address.'} )
+              })
+              .catch(err => {
+                res.status(500).json({ success:false, message: "error" })
+              })
+          }
+        })
+    }
+  } catch (error) {
+    res.status(500).json({ message: error })
+  }
+})
+const updatePartner = asyncHandler(async (req, res, next) => {
+  const { errors, isValid } = PartnerValidationInput(req.body);
+
+  try {
+
+      const partnerId = req.params.id;
+      const newEmail = req.body.email;
+
+      // Check if the new email already exists in another account
+      const emailExistsInOtherAccount = await User.findOne({ email: newEmail, _id: { $ne: partnerId } });
+
+      if (emailExistsInOtherAccount) {
+        res.status(400).json({ success: false, message: "The new email already exists in another account." });
+        return;
+      }
+
+      const existingPartner = await User.findById(partnerId);
+
+      if (!existingPartner) {
+        res.status(404).json({ success: false, message: "Partner not found." });
+      } else {
+        // Generate a new password
+        const newGeneratedPassword = generateRandomPassword();
+
+        // Update partner fields
+        existingPartner.name = req.body.name || existingPartner.name;
+        existingPartner.addressPartner = req.body.addressPartner ||existingPartner.addressPartner ;
+        existingPartner.contactName = req.body.contactName || existingPartner.contactName;
+        existingPartner.email = newEmail || existingPartner.email ; // Update with the new email
+        existingPartner.phoneNumber = req.body.phoneNumber || existingPartner.phoneNumber;
+        existingPartner.password = bcrypt.hashSync(newGeneratedPassword, 10);
+
+        // Save the updated partner if the new email is unique
+        const updatedPartner = await existingPartner.save();
+
+        // Send an email with the new password
+        mailer.send({
+          to: ["zbousnina@yahoo.com", updatedPartner.email],
+          subject: "Convoyage: Your Account Information has been Updated",
+          html: generateEmailTemplatePartner(updatedPartner.contactName, updatedPartner.name, updatedPartner.email, newGeneratedPassword),
+        }, (err) => {
+          if (err) {
+            console.error(err); // Log the error for debugging
+          }
+        });
+
+        res.status(200).json({ success: true, partner: updatedPartner, msg: 'Partner updated successfully. A new email has been sent with your updated account information.' });
+      }
+
+  } catch (error) {
+    res.status(500).json({ message: error });
+  }
+});
+
+
+module.exports = updatePartner;
+
+
+
+
+
+
+
+
 
 // @desc    Register a new user
 // @route   POST /api/users/resendotp
@@ -541,6 +649,42 @@ const DeleteAccount = async (req, res) => {
 
   res.status(200).json({success:true, message: "Account deleted successfully" });
 };
+const DeleteAccountByAdmin = async (req, res) => {
+  const { id } = req.params; // Assuming the user ID is in the URL parameters
+
+  if (!id || !isValidObjectId(id)) {
+    return sendError(res, 'Invalid user id!');
+  }
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return sendError(res, 'User not found!');
+    }
+
+    // You may want to add additional checks or restrictions here if needed
+
+    await user.remove();
+
+    mailer.send({
+      to: ["zbousnina@yahoo.com", user.email],
+      subject: "Account Deleted by Admin",
+      html: generateDeleteAccountEmailTemplate(user.name, user.email)
+     }, (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
+
+    res.status(200).json({ success: true, message: "Account deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return sendError(res, 'Error deleting account');
+  }
+};
+
+
 
 
 // @desc    Forgot password
@@ -637,11 +781,6 @@ const resetPassword = async (req, res) => {
 };
 
 
-
-// const getUsers = asyncHandler(async (req, res) => {
-//   const users = await User.find({})
-//   res.json(users)
-// })
 const getUsers = async (req, res) => {
   // console.log(req.user.id)
   try {
@@ -652,27 +791,26 @@ const getUsers = async (req, res) => {
       res.status(500).json({message1: "error2", message: error.message})
   }
 };
-
-//   const usersCount = await User.aggregate([
-//     {
-//       $group: {
-//         _id: '$role',
-//         count: { $sum: 1 }
-//       }
-//     },
-//     {
-//       $project: {
-//         _id: 0,
-//         role: '$_id',
-//         count: 1
-//       }
-//     }
-//   ]);
-
-//   res.json(usersCount);
-// };
-
-
+const getAllPartner = async (req, res) => {
+  // console.log(req.user.id)
+  try {
+      const partner = await User.find({ role: "PARTNER" });
+      res.status(200).json({ partner})
+      // return basicInfo;
+  } catch (error) {
+      res.status(500).json({message1: "error2", message: error.message})
+  }
+};
+const getPartnerById = async (req, res) => {
+  // console.log(req.user.id)
+  try {
+      const partner = await User.findById(req.params.id);
+      res.status(200).json({ partner})
+      // return basicInfo;
+  } catch (error) {
+      res.status(500).json({message1: "error2", message: error.message})
+  }
+};
 
 
 // @desc    Delete user
@@ -836,67 +974,6 @@ const CreateFeedback = async (req, res)=> {
 }
 
 
-// --------------------------------------Statistiques
-// const getUsersCount = async (req, res) => {
-//   const currentDate = new Date();
-//   const lastDayDate = new Date();
-//   lastDayDate.setDate(currentDate.getDate() - 1);
-
-//   const currentDayCountsByRole = await User.aggregate([
-//     {
-//       $match: {
-//         createdAt: { $gte: lastDayDate, $lt: currentDate }
-//       }
-//     },
-//     {
-//       $group: {
-//         _id: '$role',
-//         count: { $sum: 1 }
-//       }
-//     }
-//   ]);
-
-//   const totalCountsByRole = await User.aggregate([
-//     {
-//       $group: {
-//         _id: '$role',
-//         count: { $sum: 1 }
-//       }
-//     }
-//   ]);
-
-//   const currentDayCountTotal = await User.countDocuments({
-//     createdAt: { $gte: lastDayDate, $lt: currentDate }
-//   });
-
-//   const totalCountTotal = await User.countDocuments({});
-
-//   const roles = [...new Set([...currentDayCountsByRole.map(item => item._id), ...totalCountsByRole.map(item => item._id)])];
-
-//   const percentageIncreaseByRole = roles.map(role => {
-//     const currentDayCount = currentDayCountsByRole.find(item => item._id === role);
-//     const totalCount = totalCountsByRole.find(item => item._id === role);
-//     const percentageIncrease = totalCount ? ((currentDayCount?.count || 0) - totalCount.count) / totalCount.count * 100 : 0;
-//     return {
-//       role,
-//       currentDayCount: currentDayCount?.count || 0,
-//       totalCount: totalCount?.count || 0,
-//       percentageIncrease
-//     };
-//   });
-
-//   const percentageIncreaseTotal = totalCountTotal ? ((currentDayCountTotal - totalCountTotal) / totalCountTotal) * 100 : 0;
-
-//   res.json({
-//     byRole: percentageIncreaseByRole,
-//     total: {
-//       currentDayCount: currentDayCountTotal,
-//       totalCount: totalCountTotal,
-//       percentageIncrease: percentageIncreaseTotal
-//     }
-//   });
-// };
-
 const getUsersCount = async (req, res) => {
   try {
   const currentDate = new Date();
@@ -1037,5 +1114,10 @@ module.exports = {
   getTotalDemandesCount,
   addAddress,
   findDemandById,
-  SetUserStatus
+  SetUserStatus,
+  AddPartner,
+  getAllPartner,
+  getPartnerById,
+  updatePartner,
+  DeleteAccountByAdmin
 }

@@ -7,7 +7,17 @@ exports.generateOTP = () => {
   }
   return otp;
 };
+exports.generateRandomPassword = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_';
+  let randomPassword = '';
 
+  for (let i = 0; i < 12; i++) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    randomPassword += chars.charAt(randomIndex);
+  }
+
+  return randomPassword;
+};
 exports.mailTransport =()=>
     nodemailer.createTransport({
         host: process.env.HOST,
@@ -45,6 +55,36 @@ exports.mailTransport =()=>
 
           </div>
           `;
+          };
+
+          exports.generateEmailTemplatePartner = (name, businessName, email, password) => {
+            return `
+              <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+                <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Welcome to Convoyage, ${name}!</h2>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your account as a partner for ${businessName} has been created.</p>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Here is your generated password:</p>
+                  <div style="background-color: #333; color: #fff; font-size: 20px; font-weight: 500; padding: 10px 20px; border-radius: 5px; display: inline-block;">
+                    ${password}
+                  </div>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Your registered email address: ${email}</p>
+                </div>
+              </div>
+            `;
+          };
+          exports.generateDeleteAccountEmailTemplate = (name, email) => {
+            return `
+              <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+                <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Account Deleted from Convoyage, ${name}!</h2>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your account has been deleted by an admin.</p>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">If you have any questions, please contact support.</p>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Your registered email address: ${email}</p>
+                </div>
+              </div>
+            `;
           };
 
 exports.plainEmailTemplate = (heading, message) => {

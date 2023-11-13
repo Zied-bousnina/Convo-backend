@@ -34,7 +34,12 @@ const {
   getTotalDemandesCount,
   addAddress,
   findDemandById,
-  SetUserStatus
+  SetUserStatus,
+  AddPartner,
+  getAllPartner,
+  getPartnerById,
+  updatePartner,
+  DeleteAccountByAdmin
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -55,6 +60,11 @@ router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false
 router.route("/getUserCounts").get(getUsersCount)
 router.route("/getDemandeCounts").get(getTotalDemandesCount)
 router.route('/AddAddress').post(passport.authenticate('jwt', {session: false}),addAddress)
+router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddPartner)
+router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
+router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
+router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
+router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
 
 
 router.route('/getUsers').get(getUsers)
