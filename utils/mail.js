@@ -73,6 +73,22 @@ exports.mailTransport =()=>
               </div>
             `;
           };
+          exports.generateEmailTemplateDriver = (name, email, password) => {
+            return `
+              <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+                <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Welcome to Convoyage, ${name}!</h2>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your account as a Driver for ${name} has been created.</p>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Here is your generated password:</p>
+                  <div style="background-color: #333; color: #fff; font-size: 20px; font-weight: 500; padding: 10px 20px; border-radius: 5px; display: inline-block;">
+                    ${password}
+                  </div>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Your registered email address: ${email}</p>
+                </div>
+              </div>
+            `;
+          };
           exports.generateDeleteAccountEmailTemplate = (name, email) => {
             return `
               <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">

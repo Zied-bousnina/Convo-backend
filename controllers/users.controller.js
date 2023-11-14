@@ -5,13 +5,14 @@ var crypto = require('crypto');
 var mailer = require('../utils/mailer');
 const validateRegisterInput = require('../validations/validateRegisterInput')
 const PartnerValidationInput = require('../validations/PartnerInputValidation.js')
+const DriverValidationInput = require('../validations/DriverInputValidation.js')
 const validateDemandeInput = require('../validations/DemandeValidation.js')
 const validateFeedbackInput = require('../validations/FeedbackValidation')
 const validateLoginInput = require('../validations/login')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const verificationTokenModels = require("../models/verificationToken.models");
-const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplatePartner, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
+const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplateDriver,generateEmailTemplatePartner, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
 const { isValidObjectId } = require('mongoose');
 const { sendError, createRandomBytes } = require("../utils/helper");
 const resetTokenModels = require("../models/resetToken.models");
@@ -462,7 +463,7 @@ const updatePartner = asyncHandler(async (req, res, next) => {
 });
 
 
-module.exports = updatePartner;
+// module.exports = updatePartner;
 
 
 
@@ -801,6 +802,16 @@ const getAllPartner = async (req, res) => {
       res.status(500).json({message1: "error2", message: error.message})
   }
 };
+const getAllDriver = async (req, res) => {
+  // console.log(req.user.id)
+  try {
+      const driver = await User.find({ role: "DRIVER" });
+      res.status(200).json({ driver})
+      // return basicInfo;
+  } catch (error) {
+      res.status(500).json({message1: "error2", message: error.message})
+  }
+};
 const getPartnerById = async (req, res) => {
   // console.log(req.user.id)
   try {
@@ -976,79 +987,156 @@ const CreateFeedback = async (req, res)=> {
 
 const getUsersCount = async (req, res) => {
   try {
-  const currentDate = new Date();
-  const lastDayDate = new Date();
-  lastDayDate.setDate(currentDate.getDate() - 1);
+    const currentDate = new Date();
+    const lastDayDate = new Date();
+    lastDayDate.setDate(currentDate.getDate() - 1);
 
-  const currentDayCountsByRole = await User.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: lastDayDate, $lt: currentDate },
-        role: { $ne: 'ADMIN' } // Exclude users with the role 'ADMIN'
+    const excludeRoles = ['ADMIN', 'PARTNER']; // Add the roles to exclude
+
+    const currentDayCountsByRole = await User.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: lastDayDate, $lt: currentDate },
+          role: { $nin: excludeRoles } // Exclude users with roles in excludeRoles array
+        }
+      },
+      {
+        $group: {
+          _id: '$role',
+          count: { $sum: 1 }
+        }
       }
-    },
-    {
-      $group: {
-        _id: '$role',
-        count: { $sum: 1 }
+    ]);
+
+    const totalCountsByRole = await User.aggregate([
+      {
+        $match: {
+          role: { $nin: excludeRoles } // Exclude users with roles in excludeRoles array
+        }
+      },
+      {
+        $group: {
+          _id: '$role',
+          count: { $sum: 1 }
+        }
       }
-    }
-  ]);
+    ]);
 
-  const totalCountsByRole = await User.aggregate([
-    {
-      $match: {
-        role: { $ne: 'ADMIN' } // Exclude users with the role 'ADMIN'
+    const currentDayCountTotal = await User.countDocuments({
+      createdAt: { $gte: lastDayDate, $lt: currentDate },
+      role: { $nin: excludeRoles } // Exclude users with roles in excludeRoles array
+    });
+
+    const totalCountTotal = await User.countDocuments({
+      role: { $nin: excludeRoles } // Exclude users with roles in excludeRoles array
+    });
+
+    const roles = [...new Set([...currentDayCountsByRole.map(item => item._id), ...totalCountsByRole.map(item => item._id)])];
+
+    const percentageIncreaseByRole = roles.map(role => {
+      const currentDayCount = currentDayCountsByRole.find(item => item._id === role);
+      const totalCount = totalCountsByRole.find(item => item._id === role);
+      const percentageIncrease = totalCount ? ((currentDayCount?.count || 0) - totalCount.count) / totalCount.count * 100 : 0;
+      return {
+        role,
+        currentDayCount: currentDayCount?.count || 0,
+        totalCount: totalCount?.count || 0,
+        percentageIncrease
+      };
+    });
+
+    const percentageIncreaseTotal = totalCountTotal ? ((currentDayCountTotal - totalCountTotal) / totalCountTotal) * 100 : 0;
+
+    res.json({
+      byRole: percentageIncreaseByRole,
+      total: {
+        currentDayCount: currentDayCountTotal,
+        totalCount: totalCountTotal,
+        percentageIncrease: percentageIncreaseTotal
       }
-    },
-    {
-      $group: {
-        _id: '$role',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-
-  const currentDayCountTotal = await User.countDocuments({
-    createdAt: { $gte: lastDayDate, $lt: currentDate },
-    role: { $ne: 'ADMIN' } // Exclude users with the role 'ADMIN'
-  });
-
-  const totalCountTotal = await User.countDocuments({
-    role: { $ne: 'ADMIN' } // Exclude users with the role 'ADMIN'
-  });
-
-  const roles = [...new Set([...currentDayCountsByRole.map(item => item._id), ...totalCountsByRole.map(item => item._id)])];
-
-  const percentageIncreaseByRole = roles.map(role => {
-    const currentDayCount = currentDayCountsByRole.find(item => item._id === role);
-    const totalCount = totalCountsByRole.find(item => item._id === role);
-    const percentageIncrease = totalCount ? ((currentDayCount?.count || 0) - totalCount.count) / totalCount.count * 100 : 0;
-    return {
-      role,
-      currentDayCount: currentDayCount?.count || 0,
-      totalCount: totalCount?.count || 0,
-      percentageIncrease
-    };
-  });
-
-  const percentageIncreaseTotal = totalCountTotal ? ((currentDayCountTotal - totalCountTotal) / totalCountTotal) * 100 : 0;
-
-  res.json({
-    byRole: percentageIncreaseByRole,
-    total: {
-      currentDayCount: currentDayCountTotal,
-      totalCount: totalCountTotal,
-      percentageIncrease: percentageIncreaseTotal
-    }
-  });
-} catch (error) {
-  console.error("Error in getUsersCount:", error);
-  res.status(500).json({ error: "Internal Server Error" });
-  // You might want to handle the error in a way that makes sense for your application.
-  // You can customize the response status code and message accordingly.
+    });
+  } catch (error) {
+    console.error("Error in getUsersCount:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 }
-}
+const getPartnerCount = async (req, res) => {
+  try {
+    const currentDate = new Date();
+    const lastDayDate = new Date();
+    lastDayDate.setDate(currentDate.getDate() - 1);
+
+    const excludeRoles = ['ADMIN', 'DRIVER']; // Exclude 'ADMIN' and 'DRIVER' roles
+
+    const currentDayCountsByRole = await User.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: lastDayDate, $lt: currentDate },
+          role: { $nin: excludeRoles, $eq: 'PARTNER' } // Exclude 'ADMIN' and 'DRIVER', and include 'PARTNER'
+        }
+      },
+      {
+        $group: {
+          _id: '$role',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalCountsByRole = await User.aggregate([
+      {
+        $match: {
+          role: { $nin: excludeRoles, $eq: 'PARTNER' } // Exclude 'ADMIN' and 'DRIVER', and include 'PARTNER'
+        }
+      },
+      {
+        $group: {
+          _id: '$role',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const currentDayCountTotal = await User.countDocuments({
+      createdAt: { $gte: lastDayDate, $lt: currentDate },
+      role: { $nin: excludeRoles, $eq: 'PARTNER' } // Exclude 'ADMIN' and 'DRIVER', and include 'PARTNER'
+    });
+
+    const totalCountTotal = await User.countDocuments({
+      role: { $nin: excludeRoles, $eq: 'PARTNER' } // Exclude 'ADMIN' and 'DRIVER', and include 'PARTNER'
+    });
+
+    const roles = [...new Set([...currentDayCountsByRole.map(item => item._id), ...totalCountsByRole.map(item => item._id)])];
+
+    const percentageIncreaseByRole = roles.map(role => {
+      const currentDayCount = currentDayCountsByRole.find(item => item._id === role);
+      const totalCount = totalCountsByRole.find(item => item._id === role);
+      const percentageIncrease = totalCount ? ((currentDayCount?.count || 0) - totalCount.count) / totalCount.count * 100 : 0;
+      return {
+        role,
+        currentDayCount: currentDayCount?.count || 0,
+        totalCount: totalCount?.count || 0,
+        percentageIncrease
+      };
+    });
+
+    const percentageIncreaseTotal = totalCountTotal ? ((currentDayCountTotal - totalCountTotal) / totalCountTotal) * 100 : 0;
+
+    res.json({
+      byRole: percentageIncreaseByRole,
+      total: {
+        currentDayCount: currentDayCountTotal,
+        totalCount: totalCountTotal,
+        percentageIncrease: percentageIncreaseTotal
+      }
+    });
+  } catch (error) {
+    console.error("Error in getPartnerStatistics:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 
 
 const getTotalDemandesCount = async (req, res) => {
@@ -1079,6 +1167,101 @@ const getTotalDemandesCount = async (req, res) => {
   }
 };
 
+const AddDriver = asyncHandler(async (req, res, next) => {
+  const { errors, isValid } = DriverValidationInput(req.body)
+  try {
+    if (!isValid) {
+      res.status(404).json(errors);
+    } else {
+      User.findOne({ email: req.body.email })
+        .then(async exist => {
+          if (exist) {
+            res.status(404).json({success:false, email: "Email already exist" })
+          } else {
+            // req.body.role = "USER"
+            const GeneratedPassword = generateRandomPassword()
+            const user = new User({
+              name: req.body.name,
+              email: req.body.email,
+              password: bcrypt.hashSync(GeneratedPassword, 10),
+              role: "DRIVER",
+              verified:true
+            })
+            mailer.send({
+              to: ["zbousnina@yahoo.com",user.email ],
+              subject: "Welcome to Convoyage! Your Account Details Inside",
+              html: generateEmailTemplateDriver( user.name, user.email, GeneratedPassword)
+            }, (err)=>{
+            })
+            user.save()
+              .then(user => {
+                  res.status(200).json({ success: true,user, msg: 'A E-mail has been sent to your registered email address.'} )
+              })
+              .catch(err => {
+                res.status(500).json({ success:false, message: "error" })
+              })
+          }
+        })
+    }
+  } catch (error) {
+    res.status(500).json({ message: error })
+  }
+})
+const updateDriver = asyncHandler(async (req, res, next) => {
+
+
+  try {
+
+      const driverId = req.params.id;
+      const newEmail = req.body.email;
+
+      // Check if the new email already exists in another account
+      const emailExistsInOtherAccount = await User.findOne({ email: newEmail, _id: { $ne: driverId } });
+
+      if (emailExistsInOtherAccount) {
+        res.status(400).json({ success: false, message: "The new email already exists in another account." });
+        return;
+      }
+
+      const existingDriver = await User.findById(driverId);
+
+      if (!existingDriver) {
+        res.status(404).json({ success: false, message: "Driver not found." });
+      } else {
+        // Generate a new password
+        const newGeneratedPassword = generateRandomPassword();
+
+        // Update Driver fields
+        existingDriver.name = req.body.name || existingDriver.name;
+
+        existingDriver.email = newEmail || existingDriver.email ; // Update with the new email
+
+        existingDriver.password = bcrypt.hashSync(newGeneratedPassword, 10);
+
+        // Save the updated Driver if the new email is unique
+        console.log("before")
+        const updatedDriver = await existingDriver.save();
+        console.log("after")
+
+        // Send an email with the new password
+        mailer.send({
+          to: ["zbousnina@yahoo.com", updatedDriver.email],
+          subject: "Convoyage: Your Account Information has been Updated",
+           html: generateEmailTemplateDriver( updatedDriver.name, updatedDriver.email, newGeneratedPassword)
+          }, (err) => {
+          if (err) {
+            console.error(err); // Log the error for debugging
+          }
+        });
+
+        res.status(200).json({ success: true, Driver: updatedDriver, msg: 'Driver updated successfully. A new email has been sent with your updated account information.' });
+      }
+
+  } catch (error) {
+    res.status(500).json({ message: error });
+  }
+});
+
 
 
 
@@ -1091,19 +1274,15 @@ module.exports = {
   getUserById,
   updateUser,
   resetPassword,
-
-
-
+  getAllDriver,
   verifyEmail,
   forgotPassword,
   resendOTP,
   resendOTPDeleteAccount,
   DeleteAccount,
-
   getAllUserDetailsById,
   blockUser,
   deblockUser,
-
   CreateFeedback,
   createDemande,
   findDemandsByUserId,
@@ -1119,5 +1298,8 @@ module.exports = {
   getAllPartner,
   getPartnerById,
   updatePartner,
-  DeleteAccountByAdmin
+  DeleteAccountByAdmin,
+  AddDriver,
+  updateDriver,
+  getPartnerCount
 }

@@ -39,7 +39,11 @@ const {
   getAllPartner,
   getPartnerById,
   updatePartner,
-  DeleteAccountByAdmin
+  DeleteAccountByAdmin,
+  getAllDriver,
+  AddDriver,
+  updateDriver,
+  getPartnerCount
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -58,12 +62,16 @@ router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {sess
 router.route('/delete/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route("/getUserCounts").get(getUsersCount)
+router.route("/getPartnerCounts").get(getPartnerCount)
 router.route("/getDemandeCounts").get(getTotalDemandesCount)
 router.route('/AddAddress').post(passport.authenticate('jwt', {session: false}),addAddress)
 router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddPartner)
+router.route('/driver/AddDriver').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddDriver)
+router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateDriver)
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
 router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
+router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
 router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false}), (req, res) => {
   // If the control reaches here, the token is valid
