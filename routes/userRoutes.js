@@ -65,6 +65,10 @@ router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: f
 router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
+router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false}), (req, res) => {
+  // If the control reaches here, the token is valid
+  res.status(200).json({ message: 'Token is valid' });
+});
 
 
 router.route('/getUsers').get(getUsers)
