@@ -48,6 +48,13 @@ const DeamndeSchema = new Schema({
             type:String,
 
         },
+        dateDepart:String,
+        driverIsAuto:Boolean,
+        driver:{
+            type:Schema.Types.ObjectId,
+            ref:'User',
+            // required:true
+        }
 
 }, {timestamps:true})
 

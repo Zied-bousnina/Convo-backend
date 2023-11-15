@@ -34,7 +34,7 @@ const createDemande = async (req, res) => {
   const { errors, isValid } = validateDemandeInput(req.body);
   try {
     if (isValid) {
-      const { address, destination, offer,comment, postalAddress, postalDestination, distance } = req.body;
+      const { address, destination, offer,comment, postalAddress, postalDestination, distance,dateDepart,driverIsAuto,driver } = req.body;
     // Create a new demand object
     const newDemande = new demandeModels({
       user: req.user.id,
@@ -44,7 +44,10 @@ const createDemande = async (req, res) => {
       postalAddress,
       postalDestination,
       offer,
-      distance
+      distance,
+      dateDepart,
+      driverIsAuto,
+      driver
     });
 
     // Save the new demand
