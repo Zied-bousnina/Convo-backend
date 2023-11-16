@@ -54,7 +54,23 @@ const DeamndeSchema = new Schema({
             type:Schema.Types.ObjectId,
             ref:'User',
             // required:true
-        }
+        },
+        // isAccepted:Boolean,
+        // isRefused:Boolean,
+        // isPending:Boolean,
+        // isFinished:Boolean,
+        // isCanceled:Boolean,
+        // isPaid:Boolean,
+        // isRated:Boolean,
+        // rating:Number,
+        // price:Number,
+        // isPaid:Boolean,
+
+        status: {
+            type:String,
+            default: 'in progress',
+          }
+
 
 }, {timestamps:true})
 

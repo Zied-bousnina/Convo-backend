@@ -44,6 +44,20 @@ const userSchema = mongoose.Schema(
             type: Boolean,
             default: false,
 
+        },
+        siret:{
+            type:String,
+            // required:true
+        },
+        kbis:{
+            type:String,
+            // required:true
+
+        },
+        firstLogin:{
+            type:Boolean,
+            default:true
+
         }
 
 

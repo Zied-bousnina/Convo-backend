@@ -24,6 +24,7 @@ const { OAuth2 } = google.auth;
 const { OAuth2Client } = require('google-auth-library');
 const profileModels = require("../models/profile.models")
 const FeedbackModel = require('../models/Feedback.Model.js');
+const cloudinary = require('../utils/uploadImage')
 
 
 
@@ -369,48 +370,91 @@ const registerUser = asyncHandler(async (req, res, next) => {
 })
 
 const AddPartner = asyncHandler(async (req, res, next) => {
-  const { errors, isValid } = PartnerValidationInput(req.body)
+  const { errors, isValid } = PartnerValidationInput(req.body);
+  const { kbis } = req.files;
+  console.log(kbis);
+
   try {
     if (!isValid) {
-      res.status(404).json(errors);
-    } else {
-      User.findOne({ email: req.body.email })
-        .then(async exist => {
-          if (exist) {
-            res.status(404).json({success:false, email: "Email already exist" })
-          } else {
-            // req.body.role = "USER"
-            const GeneratedPassword = generateRandomPassword()
-            const user = new User({
-              name: req.body.name,
-              addressPartner: req.body.addressPartner,
-              contactName: req.body.contactName,
-              email: req.body.email,
-              phoneNumber: req.body.phoneNumber,
-              password: bcrypt.hashSync(GeneratedPassword, 10),
-              role: "PARTNER",
-              verified:true
-            })
-            mailer.send({
-              to: ["zbousnina@yahoo.com",user.email ],
-              subject: "Welcome to Convoyage! Your Account Details Inside",
-              html: generateEmailTemplatePartner(user.contactName, user.name, user.email, GeneratedPassword)
-            }, (err)=>{
-            })
-            user.save()
-              .then(user => {
-                  res.status(200).json({ success: true,user, msg: 'A E-mail has been sent to your registered email address.'} )
-              })
-              .catch(err => {
-                res.status(500).json({ success:false, message: "error" })
-              })
-          }
+      return res.status(404).json(errors);
+    }
+
+    let responseSent = false;
+
+    // Check if email already exists
+    const existingEmailUser = await User.findOne({ email: req.body.email });
+    if (existingEmailUser) {
+      errors.email = "Email already exists";
+      responseSent = true;
+      return res.status(404).json(errors);
+    }
+
+    // Check if siret number already exists
+    const existingSiretUser = await User.findOne({ siret: req.body.siret });
+    if (existingSiretUser) {
+      errors.siret = 'This SIREN/SIRET already exists';
+      responseSent = true;
+      return res.status(404).json(errors);
+    }
+
+    // Check if phone number already exists
+    const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber });
+    if (existingPhoneNumberUser) {
+      errors.phoneNumber = 'Phone number already exists';
+      responseSent = true;
+      return res.status(404).json(errors);
+    }
+
+    if (!responseSent) {
+      if (kbis) {
+        const result = await cloudinary.uploader.upload(kbis.path, {
+          resource_type: 'auto',
+          folder: 'pdf_uploads',
+          public_id: `kbis_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        req.body.kbis = result.secure_url;
+      }
+
+      const GeneratedPassword = generateRandomPassword();
+      const user = new User({
+        name: req.body.name,
+        addressPartner: req.body.addressPartner,
+        contactName: req.body.contactName,
+        email: req.body.email,
+        phoneNumber: req.body.phoneNumber,
+        password: bcrypt.hashSync(GeneratedPassword, 10),
+        role: "PARTNER",
+        verified: true,
+        siret: req.body.siret,
+        kbis: req.body.kbis,
+        firstLogin:true
+      });
+
+      mailer.send({
+        to: ["zbousnina@yahoo.com", user.email],
+        subject: "Welcome to Convoyage! Your Account Details Inside",
+        html: generateEmailTemplatePartner(user.contactName, user.name, user.email, GeneratedPassword),
+      }, (err) => {});
+
+      user.save()
+        .then(savedUser => {
+          res.status(200).json({ success: true, user: savedUser, msg: 'An email has been sent to your registered email address.' });
         })
+        .catch(err => {
+          console.error(err);
+          res.status(500).json({ success: false, message: "Error" });
+        });
     }
   } catch (error) {
-    res.status(500).json({ message: error })
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
-})
+});
+
+
+
 const updatePartner = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = PartnerValidationInput(req.body);
 
