@@ -43,7 +43,8 @@ const {
   getAllDriver,
   AddDriver,
   updateDriver,
-  getPartnerCount
+  getPartnerCount,
+  updatePassword
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -61,6 +62,7 @@ router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {sess
 router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {session: false}),findDemandById)
 router.route('/delete/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
+router.route('/updatePassword').post(passport.authenticate('jwt', {session: false}),updatePassword)
 router.route("/getUserCounts").get(getUsersCount)
 router.route("/getPartnerCounts").get(getPartnerCount)
 router.route("/getDemandeCounts").get(getTotalDemandesCount)

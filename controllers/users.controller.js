@@ -9,6 +9,7 @@ const DriverValidationInput = require('../validations/DriverInputValidation.js')
 const validateDemandeInput = require('../validations/DemandeValidation.js')
 const validateFeedbackInput = require('../validations/FeedbackValidation')
 const validateLoginInput = require('../validations/login')
+const changePasswordValidation = require('../validations/ChangePasswordValidation.js')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const verificationTokenModels = require("../models/verificationToken.models");
@@ -17,6 +18,7 @@ const { isValidObjectId } = require('mongoose');
 const { sendError, createRandomBytes } = require("../utils/helper");
 const resetTokenModels = require("../models/resetToken.models");
 const demandeModels = require("../models/Demande.model");
+const DriverDocuments = require("../models/driverDocuments.model.js");
 const imageToBase64 = require("image-to-base64");
 const multer = require('multer')
 const { google } = require('googleapis');
@@ -246,7 +248,10 @@ const authUser = async (req, res) => {
             role: user.role,
             verified:user.verified,
             profile: user.profile,
-            isBlocked:user.isBlocked
+            isBlocked:user.isBlocked,
+            onligne:user.onligne,
+            firstLogin:user.firstLogin,
+
           },
           process.env.SECRET_KEY,
           { expiresIn: Number.MAX_SAFE_INTEGER }
@@ -272,6 +277,52 @@ const authUser = async (req, res) => {
   }
 
 }
+const updatePassword = async (req, res) => {
+  let responseSent = false;
+  const { errors, isValid } = changePasswordValidation(req.body);
+
+  try {
+    // Check validation
+    if (!isValid) {
+      responseSent = true;
+      return res.status(404).json(errors);
+    }
+
+    // Find user by req.user.id
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      errors.email = "User not found";
+      responseSent = true;
+      return res.status(404).json(errors);
+    }
+
+    // Check if new password and confirm match
+    if (req.body.newPassword !== req.body.confirm) {
+      errors.confirm = "Password and confirm password do not match";
+      responseSent = true;
+      return res.status(400).json(errors);
+    }
+
+    // Update password and set firstLogin to false
+    const newPassword = bcrypt.hashSync((req.body.newPassword).trim(), 10);
+    user.password = newPassword;
+    user.firstLogin = false;
+
+    await user.save();
+    responseSent = true;
+    return res.status(200).json({ success: true, message: "Password updated successfully" });
+
+  } catch (error) {
+    if (!responseSent) {
+      responseSent = true;
+      console.log(error);
+      return res.status(500).json({ success: false, message: "error" });
+    }
+  }
+};
+
+
 
 
 
@@ -1214,46 +1265,126 @@ const getTotalDemandesCount = async (req, res) => {
   }
 };
 
+// const AddDriver = asyncHandler(async (req, res, next) => {
+//   const { errors, isValid } = DriverValidationInput(req.body)
+//   try {
+//     if (!isValid) {
+//       res.status(404).json(errors);
+//     } else {
+//       User.findOne({ email: req.body.email })
+//         .then(async exist => {
+//           if (exist) {
+//             res.status(404).json({success:false, email: "Email already exist" })
+//           } else {
+//             // req.body.role = "USER"
+//             const GeneratedPassword = generateRandomPassword()
+//             const user = new User({
+//               name: req.body.name,
+//               email: req.body.email,
+//               password: bcrypt.hashSync(GeneratedPassword, 10),
+//               role: "DRIVER",
+//               verified:true
+//             })
+//             mailer.send({
+//               to: ["zbousnina@yahoo.com",user.email ],
+//               subject: "Welcome to Convoyage! Your Account Details Inside",
+//               html: generateEmailTemplateDriver( user.name, user.email, GeneratedPassword)
+//             }, (err)=>{
+//             })
+//             user.save()
+//               .then(user => {
+//                   res.status(200).json({ success: true,user, msg: 'A E-mail has been sent to your registered email address.'} )
+//               })
+//               .catch(err => {
+//                 res.status(500).json({ success:false, message: "error" })
+//               })
+//           }
+//         })
+//     }
+//   } catch (error) {
+//     res.status(500).json({ message: error })
+//   }
+// })
 const AddDriver = asyncHandler(async (req, res, next) => {
-  const { errors, isValid } = DriverValidationInput(req.body)
+  const { errors, isValid } = DriverValidationInput(req.body);
+  console.log(req.body)
+  const {
+    assurance,
+    CinfrontCard,
+    CinbackCard,
+    permisConduirefrontCard,
+    permisConduirebackCard,
+    proofOfAddress,
+    avatar
+
+   } = req.files;
+
   try {
     if (!isValid) {
-      res.status(404).json(errors);
-    } else {
-      User.findOne({ email: req.body.email })
-        .then(async exist => {
-          if (exist) {
-            res.status(404).json({success:false, email: "Email already exist" })
-          } else {
-            // req.body.role = "USER"
-            const GeneratedPassword = generateRandomPassword()
-            const user = new User({
-              name: req.body.name,
-              email: req.body.email,
-              password: bcrypt.hashSync(GeneratedPassword, 10),
-              role: "DRIVER",
-              verified:true
-            })
-            mailer.send({
-              to: ["zbousnina@yahoo.com",user.email ],
-              subject: "Welcome to Convoyage! Your Account Details Inside",
-              html: generateEmailTemplateDriver( user.name, user.email, GeneratedPassword)
-            }, (err)=>{
-            })
-            user.save()
-              .then(user => {
-                  res.status(200).json({ success: true,user, msg: 'A E-mail has been sent to your registered email address.'} )
-              })
-              .catch(err => {
-                res.status(500).json({ success:false, message: "error" })
-              })
-          }
-        })
+      return res.status(404).json(errors);
     }
+
+    const existingUser = await User.findOne({ email: req.body.email });
+
+    if (existingUser) {
+      return res.status(404).json({ success: false, email: 'Email already exists' });
+    }
+
+    const generatedPassword = generateRandomPassword();
+    const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      password: bcrypt.hashSync(generatedPassword, 10),
+      role: 'DRIVER',
+      verified: true,
+    });
+
+    const user = await newUser.save();
+    const uploadFileToCloudinary = async (file, folderName) => {
+      if (file) {
+        const result = await cloudinary.uploader.upload(file.path, {
+          resource_type: 'auto',
+          folder: folderName,
+          public_id: `${folderName}_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        return result.secure_url;
+      }
+      return null;
+    };
+
+    const driverDocuments = new DriverDocuments({
+      user: user._id,
+      assurance: await uploadFileToCloudinary(assurance, 'assurance_uploads'),
+      CinfrontCard: await uploadFileToCloudinary(CinfrontCard, 'cin_uploads'),
+      CinbackCard: await uploadFileToCloudinary(CinbackCard, 'cin_uploads'),
+      permisConduirefrontCard: await uploadFileToCloudinary(permisConduirefrontCard, 'permis_uploads'),
+      permisConduirebackCard: await uploadFileToCloudinary(permisConduirebackCard, 'permis_uploads'),
+      proofOfAddress: await uploadFileToCloudinary(proofOfAddress, 'address_uploads'),
+      avatar: await uploadFileToCloudinary(avatar, 'avatar_uploads'),
+    });
+
+    await driverDocuments.save();
+
+    // You can send an email or response here if needed
+    mailer.send({
+      to: ["zbousnina@yahoo.com",user.email ],
+      subject: "Welcome to Convoyage! Your Account Details Inside",
+      html: generateEmailTemplateDriver( user.name, user.email, generatedPassword)
+    }, (err)=>{
+    })
+
+    return res.status(200).json({
+      success: true,
+      user,
+      msg: 'A E-mail has been sent to your registered email address.',
+    });
   } catch (error) {
-    res.status(500).json({ message: error })
+    return res.status(500).json({ message: error.message });
   }
-})
+});
+
 const updateDriver = asyncHandler(async (req, res, next) => {
 
 
@@ -1348,5 +1479,6 @@ module.exports = {
   DeleteAccountByAdmin,
   AddDriver,
   updateDriver,
-  getPartnerCount
+  getPartnerCount,
+  updatePassword
 }
