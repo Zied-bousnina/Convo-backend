@@ -58,6 +58,12 @@ const userSchema = mongoose.Schema(
             type:Boolean,
             default:true
 
+        },
+        driverIsVerified :{
+            type:Boolean,
+            default:false
+
+
         }
 
 
