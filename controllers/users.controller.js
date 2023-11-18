@@ -891,6 +891,16 @@ const getUsers = async (req, res) => {
       res.status(500).json({message1: "error2", message: error.message})
   }
 };
+const getUsersById = async (req, res) => {
+  // console.log(req.user.id)
+  try {
+      const basicInfo = await User.findById(req.user.id);
+      res.status(200).json({ user:basicInfo})
+      // return basicInfo;
+  } catch (error) {
+      res.status(500).json({message1: "error2", message: error.message})
+  }
+};
 const getAllPartner = async (req, res) => {
   // console.log(req.user.id)
   try {
@@ -1481,5 +1491,6 @@ module.exports = {
   AddDriver,
   updateDriver,
   getPartnerCount,
-  updatePassword
+  updatePassword,
+  getUsersById
 }
