@@ -251,6 +251,7 @@ const authUser = async (req, res) => {
             isBlocked:user.isBlocked,
             onligne:user.onligne,
             firstLogin:user.firstLogin,
+            driverIsVerified:user.driverIsVerified
 
           },
           process.env.SECRET_KEY,
