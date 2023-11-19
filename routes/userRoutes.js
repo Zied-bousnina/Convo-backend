@@ -45,7 +45,8 @@ const {
   updateDriver,
   getPartnerCount,
   updatePassword,
-  getUsersById
+  getUsersById,
+  findMissionsByUser
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -76,6 +77,7 @@ router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {s
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
 router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)
 router.route('/getUsersById').get(passport.authenticate('jwt', {session: false}),getUsersById)
+router.route('/findMissionsByUser').get(passport.authenticate('jwt', {session: false}),findMissionsByUser)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
 router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false}), (req, res) => {
   // If the control reaches here, the token is valid

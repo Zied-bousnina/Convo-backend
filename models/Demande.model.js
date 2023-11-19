@@ -69,7 +69,8 @@ const DeamndeSchema = new Schema({
         status: {
             type:String,
             default: 'in progress',
-          }
+          },
+
 
 
 }, {timestamps:true})

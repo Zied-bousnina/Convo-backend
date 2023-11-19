@@ -26,7 +26,8 @@ const { OAuth2 } = google.auth;
 const { OAuth2Client } = require('google-auth-library');
 const profileModels = require("../models/profile.models")
 const FeedbackModel = require('../models/Feedback.Model.js');
-const cloudinary = require('../utils/uploadImage')
+const cloudinary = require('../utils/uploadImage');
+const DemandeModel = require('../models/Demande.model');
 
 
 
@@ -1451,6 +1452,25 @@ const updateDriver = asyncHandler(async (req, res, next) => {
   }
 });
 
+const findMissionsByUser = async (req, res) => {
+  const { id } = req.user;
+  try {
+    // Find demands without a driver or with the current driver's id
+    const missions = await DemandeModel.find({
+      $or: [
+        { driver: null }, // demands without a driver
+        { driver: id }    // demands with the current driver's id
+      ],
+      status: 'in progress'
+    });
+
+    res.status(200).json(missions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 
 
 
@@ -1492,5 +1512,6 @@ module.exports = {
   updateDriver,
   getPartnerCount,
   updatePassword,
-  getUsersById
+  getUsersById,
+  findMissionsByUser
 }
