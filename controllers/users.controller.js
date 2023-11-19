@@ -1455,14 +1455,15 @@ const updateDriver = asyncHandler(async (req, res, next) => {
 const findMissionsByUser = async (req, res) => {
   const { id } = req.user;
   try {
-    // Find demands without a driver or with the current driver's id
+    // Find demands without a driver, with the current driver's id, and in progress
     const missions = await DemandeModel.find({
       $or: [
-        { driver: null }, // demands without a driver
-        { driver: id }    // demands with the current driver's id
+        { driver: null },           // demands without a driver
+        { driver: id },             // demands with the current driver's id
       ],
-      status: 'in progress'
-    });
+      status: 'in progress'        // demands in progress
+    })
+    .sort({ date: 1 }); // Sort by date in ascending order (FIFO)
 
     res.status(200).json(missions);
   } catch (error) {
