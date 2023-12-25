@@ -107,11 +107,27 @@ const findDemandsByUserId = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+const findDemandsCreatedByPartner = async (req, res) => {
+  try {
+    // Fetch all demands
+    const allDemands = await demandeModels.find({})
+      .populate('user') // Populate the 'user' field to get user details
+      .exec();
+
+    // Filter demands created by users with the role 'partner'
+    const partnerDemands = allDemands.filter(demand => demand.user.role === 'PARTNER');
+
+    res.status(200).json({ demands: partnerDemands });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
 const findDemandById = async (req, res) => {
   const demandId = req.params.demandId// Assuming user ID is available in req.user.id
 
   try {
-    const demande = await demandeModels.findById(demandId);
+    const demande = await demandeModels.findById(demandId).populate('driver');
 
 
       res.status(200).json({ demande });
@@ -561,6 +577,43 @@ const updatePartner = asyncHandler(async (req, res, next) => {
     res.status(500).json({ message: error });
   }
 });
+
+const updateMission = asyncHandler(async (req, res, next) => {
+  try {
+    const missionId = req.params.id;
+    const existingMission = await DemandeModel.findById(missionId);
+
+    if (!existingMission) {
+      return res.status(404).json({ success: false, message: "Mission not found." });
+    }
+
+    // Update Mission fields with values from the request body
+    Object.keys(req.body).forEach((key) => {
+      if (key !== 'dateDepart') { // exclude 'dateDepart' for special handling
+        // Update the field only if the value is not empty
+        if (req.body[key] !== undefined && req.body[key] !== null && req.body[key] !== '') {
+          existingMission[key] = req.body[key];
+        }
+      } else {
+        // Handle 'dateDepart' separately
+        existingMission.dateDepart = req.body.dateDepart ? new Date(req.body.dateDepart) : existingMission.dateDepart;
+      }
+    });
+
+    // Save the updated Mission
+    const updatedMission = await existingMission.save();
+
+    res.status(200).json({
+      success: true,
+      mission: updatedMission,
+      msg: 'Mission updated successfully.'
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error." });
+  }
+});
+
 
 
 // module.exports = updatePartner;
@@ -1452,24 +1505,70 @@ const updateDriver = asyncHandler(async (req, res, next) => {
   }
 });
 
+// const findMissionsByUser = async (req, res) => {
+//   const { id } = req.user;
+//   try {
+//     // Find demands without a driver, with the current driver's id, and in progress
+//     const missions = await DemandeModel.find({
+//       $or: [
+//         { driver: null },           // demands without a driver
+//         { driver: id },             // demands with the current driver's id
+//       ],
+//       status: 'in progress'        // demands in progress
+//     })
+//     .sort({ date: 1 }); // Sort by date in ascending order (FIFO)
+
+//     res.status(200).json(missions);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 const findMissionsByUser = async (req, res) => {
   const { id } = req.user;
+  const { limit = 10, skip = 0 } = req.query;
+
   try {
+    // Count the number of missions that match the criteria
+    const missionCount = await DemandeModel.countDocuments({
+      $or: [
+        { driver: null },
+        { driver: id },
+      ],
+      status: 'in progress',
+    });
+
     // Find demands without a driver, with the current driver's id, and in progress
     const missions = await DemandeModel.find({
       $or: [
-        { driver: null },           // demands without a driver
-        { driver: id },             // demands with the current driver's id
+        { driver: null },
+        { driver: id },
       ],
-      status: 'in progress'        // demands in progress
+      status: 'in progress',
     })
-    .sort({ date: 1 }); // Sort by date in ascending order (FIFO)
+    .sort({ createdAt: -1 })
+    .limit(parseInt(limit))
+    .skip(parseInt(skip));
 
-    res.status(200).json(missions);
+    res.status(200).json({ missions, count:missionCount });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+const findMissionById = async (req, res) => {
+  const demandId = req.params.demandId// Assuming user ID is available in req.user.id
+
+  try {
+    const demande = await demandeModels.findById(demandId);
+
+
+      res.status(200).json({ demande });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 
 
 
@@ -1508,11 +1607,13 @@ module.exports = {
   getAllPartner,
   getPartnerById,
   updatePartner,
+  updateMission,
   DeleteAccountByAdmin,
   AddDriver,
   updateDriver,
   getPartnerCount,
   updatePassword,
   getUsersById,
-  findMissionsByUser
+  findMissionsByUser,
+  findDemandsCreatedByPartner
 }

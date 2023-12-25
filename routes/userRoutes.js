@@ -46,7 +46,9 @@ const {
   getPartnerCount,
   updatePassword,
   getUsersById,
-  findMissionsByUser
+  findMissionsByUser,
+  updateMission,
+  findDemandsCreatedByPartner
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -62,6 +64,7 @@ router.route('/findDemandsByUserId').get(passport.authenticate('jwt', {session: 
 router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {session: false}),incrementOffer)
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
 router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {session: false}),findDemandById)
+router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)
 router.route('/delete/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route('/updatePassword').post(passport.authenticate('jwt', {session: false}),updatePassword)
@@ -73,6 +76,7 @@ router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),
 router.route('/driver/AddDriver').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddDriver)
 router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateDriver)
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
+router.route('/mission/updateMission/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateMission)
 router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
 router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)
