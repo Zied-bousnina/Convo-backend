@@ -1314,6 +1314,19 @@ const getPartnerCount = async (req, res) => {
   }
 };
 
+const getMissionsCountByUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Check if there are any documents in the 'Deamnde' collection with the given user ID
+    const missionCount = await demandeModels.countDocuments({ user: userId });
+
+    res.status(200).json({ missionCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 
 
@@ -1630,5 +1643,6 @@ module.exports = {
   updatePassword,
   getUsersById,
   findMissionsByUser,
-  findDemandsCreatedByPartner
+  findDemandsCreatedByPartner,
+  getMissionsCountByUser
 }
