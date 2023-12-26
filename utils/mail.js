@@ -73,6 +73,25 @@ exports.mailTransport =()=>
               </div>
             `;
           };
+          exports.generateEmailTemplateAffectation = (driverName, missionDetails) => {
+            const { postalAddress, postalDestination, dateDepart } = missionDetails;
+            return `
+              <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+                <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Mission Affectation for ${driverName}!</h2>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">You have been assigned a new mission:</p>
+                  <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Postal Address: ${postalAddress}</li>
+                    <li style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Postal Destination: ${postalDestination}</li>
+                    <li style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Date Departure: ${dateDepart}</li>
+                  </ul>
+                  <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Thank you for being part of Convoyage!</p>
+                </div>
+              </div>
+            `;
+          };
+
           exports.generateEmailTemplateDriver = (name, email, password) => {
             return `
               <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">

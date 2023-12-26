@@ -13,7 +13,7 @@ const changePasswordValidation = require('../validations/ChangePasswordValidatio
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const verificationTokenModels = require("../models/verificationToken.models");
-const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplateDriver,generateEmailTemplatePartner, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
+const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplateDriver,generateEmailTemplatePartner,generateEmailTemplateAffectation, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
 const { isValidObjectId } = require('mongoose');
 const { sendError, createRandomBytes } = require("../utils/helper");
 const resetTokenModels = require("../models/resetToken.models");
@@ -56,6 +56,21 @@ const createDemande = async (req, res) => {
 
     // Save the new demand
     const createdDemande = await newDemande.save();
+     // Check if driver attribute is not null
+     if (driver) {
+      // Find the user with the specified driver ID
+      const driverUser = await User.findById(driver);
+
+      // Send an email to the driverUser (you need to implement this function)
+      // For example, you can use a hypothetical sendEmail function
+      mailer.send({
+        to: ["zbousnina@yahoo.com", driverUser.email],
+        subject: "Convoyage Mission Affectation Notification",
+        html: generateEmailTemplateAffectation(driverUser.name, newDemande),
+      }, (err) => {});
+
+      // You may also want to handle errors or log the result of sending the email
+    }
 
     res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
   } else {
