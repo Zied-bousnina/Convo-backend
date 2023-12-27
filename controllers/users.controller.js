@@ -106,6 +106,27 @@ const deleteDemande = async (req, res) => {
   }
 };
 
+
+const findAllPartnersAndTheirDemands = async (req, res) => {
+  try {
+    // Find all partners
+    const partners = await User.find({ role: 'PARTNER' });
+
+    // Find demands for each partner
+    const partnerDemands = await Promise.all(
+      partners.map(async (partner) => {
+        const demands = await demandeModels.find({ user: partner._id });
+        return { partner, demands };
+      })
+    );
+
+    return res.status(200).json(partnerDemands);
+  } catch (error) {
+    console.error('Error finding partners and their demands:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 const findDemandsByUserId = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
 
@@ -1645,5 +1666,6 @@ module.exports = {
   getUsersById,
   findMissionsByUser,
   findDemandsCreatedByPartner,
-  getMissionsCountByUser
+  getMissionsCountByUser,
+  findAllPartnersAndTheirDemands
 }

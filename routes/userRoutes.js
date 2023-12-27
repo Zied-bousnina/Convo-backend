@@ -49,7 +49,8 @@ const {
   findMissionsByUser,
   updateMission,
   findDemandsCreatedByPartner,
-  getMissionsCountByUser
+  getMissionsCountByUser,
+  findAllPartnersAndTheirDemands
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -66,6 +67,7 @@ router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {ses
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
 router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {session: false}),findDemandById)
 router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)
+router.route('/findAllPartnersAndTheirDemands').get(findAllPartnersAndTheirDemands )
 router.route('/mission/deleteMission/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route('/updatePassword').post(passport.authenticate('jwt', {session: false}),updatePassword)
