@@ -130,7 +130,7 @@ const findDemandsCreatedByPartner = async (req, res) => {
       .exec();
 
     // Filter demands created by users with the role 'partner'
-    const partnerDemands = allDemands.filter(demand => demand.user.role === 'PARTNER');
+    const partnerDemands = allDemands.filter(demand => demand.user && demand.user.role === 'PARTNER');
 
     res.status(200).json({ demands: partnerDemands });
   } catch (error) {
@@ -138,6 +138,7 @@ const findDemandsCreatedByPartner = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 const findDemandById = async (req, res) => {
   const demandId = req.params.demandId// Assuming user ID is available in req.user.id
 
