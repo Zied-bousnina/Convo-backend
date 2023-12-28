@@ -79,7 +79,7 @@ router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),
 router.route('/driver/AddDriver').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddDriver)
 router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateDriver)
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
-router.route('/mission/updateMission/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateMission)
+router.route('/mission/updateMission/:id').post(passport.authenticate('jwt', {session: false}),updateMission)
 router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
 router.route('/getMissionsCountByUser').get(passport.authenticate('jwt', {session: false}),getMissionsCountByUser)
