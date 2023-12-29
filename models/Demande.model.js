@@ -70,6 +70,16 @@ const DeamndeSchema = new Schema({
             type:String,
             default: 'in progress',
           },
+          missionType: {
+            type:String,
+            default: 'normal',
+          },
+          vehicleType: {
+            type:String,
+            default: 'normal',
+
+
+          }
 
 
 
