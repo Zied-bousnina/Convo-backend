@@ -50,7 +50,10 @@ const {
   updateMission,
   findDemandsCreatedByPartner,
   getMissionsCountByUser,
-  findAllPartnersAndTheirDemands
+  findAllPartnersAndTheirDemands,
+  AccepteMission,
+  RefuseMission,
+  CompleteMission
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -64,6 +67,9 @@ router.route('/createFeedback').post(passport.authenticate('jwt', {session: fals
 router.route('/createDemande').post(passport.authenticate('jwt', {session: false}),createDemande)
 router.route('/findDemandsByUserId').get(passport.authenticate('jwt', {session: false}),findDemandsByUserId)
 router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {session: false}),incrementOffer)
+router.route('/AccepteMission/:demandId').post(passport.authenticate('jwt', {session: false}),AccepteMission)
+router.route('/RefuseMission/:demandId').post(passport.authenticate('jwt', {session: false}),RefuseMission)
+router.route('/CompleteMission/:demandId').post(passport.authenticate('jwt', {session: false}),CompleteMission)
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
 router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {session: false}),findDemandById)
 router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)

@@ -198,6 +198,84 @@ const incrementOffer = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+const AccepteMission = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+
+  try {
+    // Find the demand by ID and user ID
+    const demand = await demandeModels.findOne({ _id: demandId});
+
+    if (!demand) {
+      return res.status(404).json({ message: 'Demand not found for the user.' });
+    }
+
+    // Check if the demand has a driver attribute, if not, set it to the user ID
+    if (!demand?.driver) {
+      demand.driver = userId;
+    }
+
+    // Increment or decrement the offer by 0.5
+    demand.status = "Accepted";
+
+    // Save the updated demand
+    const updatedDemand = await demand.save();
+
+    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+const RefuseMission = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+
+  try {
+    // Find the demand by ID and user ID
+    const demand = await demandeModels.findOne({ _id: demandId });
+
+    if (!demand) {
+      return res.status(404).json({ message: 'Demand not found for the user.' });
+    }
+
+    // Increment or decrement the offer by 0.5
+    demand.status ="rejected" ;
+
+    // Save the updated demand
+    const updatedDemand = await demand.save();
+
+    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+const CompleteMission = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+
+  try {
+    // Find the demand by ID and user ID
+    const demand = await demandeModels.findOne({ _id: demandId });
+
+    if (!demand) {
+      return res.status(404).json({ message: 'Demand not found for the user.' });
+    }
+
+    // Increment or decrement the offer by 0.5
+    demand.status ="Completed" ;
+
+    // Save the updated demand
+    const updatedDemand = await demand.save();
+
+    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
 const decreaseOffer = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
@@ -1430,7 +1508,8 @@ const AddDriver = asyncHandler(async (req, res, next) => {
     permisConduirefrontCard,
     permisConduirebackCard,
     proofOfAddress,
-    avatar
+    avatar,
+    kbis
 
    } = req.files;
 
@@ -1477,6 +1556,7 @@ const AddDriver = asyncHandler(async (req, res, next) => {
       permisConduirefrontCard: await uploadFileToCloudinary(permisConduirefrontCard, 'permis_uploads'),
       permisConduirebackCard: await uploadFileToCloudinary(permisConduirebackCard, 'permis_uploads'),
       proofOfAddress: await uploadFileToCloudinary(proofOfAddress, 'address_uploads'),
+      kbis: await uploadFileToCloudinary(kbis, 'address_uploads'),
       avatar: await uploadFileToCloudinary(avatar, 'avatar_uploads'),
     });
 
@@ -1596,8 +1676,8 @@ const findMissionsByUser = async (req, res) => {
       status: 'in progress',
     })
     .sort({ createdAt: -1 })
-    .limit(parseInt(limit))
-    .skip(parseInt(skip));
+    // .limit(parseInt(limit))
+    // .skip(parseInt(skip));
 
     res.status(200).json({ missions, count:missionCount });
   } catch (error) {
@@ -1667,5 +1747,10 @@ module.exports = {
   findMissionsByUser,
   findDemandsCreatedByPartner,
   getMissionsCountByUser,
-  findAllPartnersAndTheirDemands
+  findAllPartnersAndTheirDemands,
+
+  AccepteMission,
+  RefuseMission,
+  CompleteMission
+
 }

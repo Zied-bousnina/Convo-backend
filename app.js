@@ -13,6 +13,15 @@ const connectDB = require('./config/db.js');
 const formData = require('express-form-data');
 const morgan = require('morgan');
 var app = express();
+const { Server } = require('socket.io');
+const io = new Server({
+
+  cors:{
+    origin:'*',
+    methods:['GET', 'POST']
+  }
+}
+);
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
     res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
@@ -24,6 +33,14 @@ app.use((req, res, next) => {
   connectDB();
 
   app.use(formData.parse());
+
+  io.on('connection', (socket) => {
+    io.emit(
+      'connected',
+      'A user has joined the chat'
+
+    )
+  });
 
   if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));

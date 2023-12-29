@@ -26,6 +26,11 @@ const DriverDocumentsSchema = new Schema({
         type:String
 
     },
+    kbis:{
+        type:String,
+        // required:true
+
+    },
     permisConduirebackCard: {
         type:String
 
