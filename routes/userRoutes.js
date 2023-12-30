@@ -131,15 +131,17 @@ router
 
   // Categorie
   /* ---------------------------- */
-  const { createCategorie, getAllCategorie } = require('../controllers/Categorie.controller')
+  const { createCategorie, getAllCategorie, FindCategorieByid, deleteCategorie, UpdateCategorie } = require('../controllers/Categorie.controller')
   router.route('/categorie/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createCategorie)
   router.route('/categorie/getAllCategorie').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getAllCategorie)
-
+  router.route('/categorie/:id').get(FindCategorieByid)
+  router.route('/categorie/deleteCategorie/:id').delete(passport.authenticate('jwt', {session: false}),deleteCategorie)
+  router.route('/categorie/updateCategorie/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateCategorie)
   // Devis
   /* ---------------------------- */
-  const { createDevis, UpdateDevis } = require('../controllers/Devis.controller')
+  const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller')
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
-
+  router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
 
 module.exports = router

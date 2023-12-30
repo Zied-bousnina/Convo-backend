@@ -28,6 +28,7 @@ const profileModels = require("../models/profile.models")
 const FeedbackModel = require('../models/Feedback.Model.js');
 const cloudinary = require('../utils/uploadImage');
 const DemandeModel = require('../models/Demande.model');
+const validateUpdateCategorie = require('../validations/validateUpdateCategorie.js');
 
 
 const createCategorie = async (req, res) => {
@@ -73,8 +74,93 @@ const createCategorie = async (req, res) => {
     }
   };
 
+  const FindCategorieByid = async (req, res)=> {
+    console.log(req.params.id)
+    try {
+      const categorie = await categorieModel.findById(req.params.id);
+      if (!categorie) {
+        return res.status(404).json({ message: 'Categorie not found' });
+      }
+      res.status(200).json({ categorie });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+  const deleteCategorie = async (req, res) => {
+  const demandId = req.params.id; // Assuming demandId is provided as a route parameter
+
+  try {
+    // Check if the demand exists
+    const existingDemande = await categorieModel.findById(demandId);
+
+    if (!existingDemande) {
+      return res.status(404).json({ message: 'categorie not found' });
+    }
+
+    // Check if the user making the request is the owner of the demand
+
+
+    // Delete the demand
+    await existingDemande.remove();
+
+    res.status(200).json({ message: 'categorie deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const UpdateCategorie = async (req, res) => {
+  const { errors, isValid } = validateUpdateCategorie(req.body);
+
+  try {
+    if (isValid) {
+      const categoryId = req.params.id
+      const {  description, unitPrice } = req.body;
+
+      // Find the existing category by description excluding the current category
+      const existingCategorie = await categorieModel.findOne({
+        description,
+        _id: { $ne: categoryId } // Exclude the current category ID
+      });
+
+      if (existingCategorie) {
+        // If the category with the same description exists for a different category, return an error
+        errors.description = "Categorie with this description already exists";
+        return res.status(400).json({ message: 'Categorie with this description already exists' });
+      }
+
+      // Find the current category by ID
+      const currentCategorie = await categorieModel.findById(categoryId);
+
+      if (!currentCategorie) {
+        // If the current category does not exist, return an error
+        return res.status(404).json({ message: 'Categorie not found' });
+      }
+
+      // Update the current category
+      currentCategorie.description = description ?
+        description : currentCategorie.description
+      ;
+      currentCategorie.unitPrice =
+        unitPrice ? unitPrice : currentCategorie.unitPrice;
+
+      // Save the updated category
+      const updatedCategorie = await currentCategorie.save();
+
+      res.status(200).json({ message: 'Categorie updated successfully', categorie: updatedCategorie });
+    } else {
+      return res.status(400).json(errors);
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
   module.exports = {
     createCategorie,
-    getAllCategorie
+    getAllCategorie,
+    FindCategorieByid,
+    deleteCategorie,
+    UpdateCategorie
   }

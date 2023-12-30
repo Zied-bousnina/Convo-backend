@@ -93,9 +93,15 @@ if (!existingMission) {
             rectification,
             status: !partner ? "Accepted" : "in progress",
             // status:"in progress"
-        });
+          });
 
-        // check if the partner not vide   and partner exist
+          // check if the partner not vide   and partner exist
+          const createdCategorie = await newDevis.save();
+          if (!partner) {
+                // Update mission status in DemandeModel to "Accepted"
+                await DemandeModel.findByIdAndUpdate(mission, { status: "Accepted" });
+            }
+
         if(partner){
             const partnerExist = await User.findById(partner)
             if(!partnerExist){
@@ -117,7 +123,6 @@ if (!existingMission) {
         }
 
         // Save Devis to database
-        const createdCategorie = await newDevis.save();
         return res.status(201).json({message:"Created Successfully", data :createdCategorie});
 
 
@@ -156,6 +161,7 @@ if (!existingMission) {
       return res.status(400).json({ errors });
     }
 
+
     // Check if the mission exists in DemandeModel
     const existingMission = await DemandeModel.findById(mission);
     if (!existingMission) {
@@ -181,6 +187,10 @@ if (!existingMission) {
       updatedDevis,
       { new: true }
     );
+    if (!partner) {
+                // Update mission status in DemandeModel to "Accepted"
+                await DemandeModel.findByIdAndUpdate(mission, { status: "Accepted" });
+            }
 
     return res.status(200).json({
       message: 'Devis updated successfully',
@@ -205,10 +215,22 @@ if (!existingMission) {
         res.status(500).json({message1: "error2", message: error.message})
     }
   };
+  const getAllDevisByPartner= async (req, res) => {
+    // console.log(req.user.id)
+    try {
+        const Devis = await devisModel.find({partner:req.params.id});
+        // const categorie = await categorieModel.findById({req.parms.id});
+        res.status(200).json({ Devis})
+        // return basicInfo;
+    } catch (error) {
+        res.status(500).json({message1: "error2", message: error.message})
+    }
+  };
 
 
   module.exports = {
     createDevis,
     getAllCategorie,
-    UpdateDevis
+    UpdateDevis,
+    getAllDevisByPartner
   }
