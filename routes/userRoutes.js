@@ -128,4 +128,12 @@ router
   .get(getAllUserDetailsById)
 
 
+
+  // Categorie
+  /* ---------------------------- */
+  const { createCategorie, getAllCategorie } = require('../controllers/Categorie.controller')
+  router.route('/categorie/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createCategorie)
+  router.route('/categorie/getAllCategorie').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getAllCategorie)
+
+
 module.exports = router

@@ -166,7 +166,7 @@ const findDemandById = async (req, res) => {
   const demandId = req.params.demandId// Assuming user ID is available in req.user.id
 
   try {
-    const demande = await demandeModels.findById(demandId).populate('driver');
+    const demande = await demandeModels.findById(demandId).populate('driver').populate('user');
 
 
       res.status(200).json({ demande });
