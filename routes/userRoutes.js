@@ -135,5 +135,9 @@ router
   router.route('/categorie/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createCategorie)
   router.route('/categorie/getAllCategorie').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getAllCategorie)
 
+  // Devis
+  /* ---------------------------- */
+  const { createDevis } = require('../controllers/Devis.controller')
+  router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
 
 module.exports = router

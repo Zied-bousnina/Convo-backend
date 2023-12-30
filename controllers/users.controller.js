@@ -28,6 +28,7 @@ const profileModels = require("../models/profile.models")
 const FeedbackModel = require('../models/Feedback.Model.js');
 const cloudinary = require('../utils/uploadImage');
 const DemandeModel = require('../models/Demande.model');
+const devisModel = require('../models/devis.model.js');
 
 
 
@@ -163,19 +164,29 @@ const findDemandsCreatedByPartner = async (req, res) => {
 };
 
 const findDemandById = async (req, res) => {
-  const demandId = req.params.demandId// Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId;
 
   try {
-    const demande = await demandeModels.findById(demandId).populate('driver').populate('user');
+    const demande = await demandeModels
+      .findById(demandId)
+      .populate('driver')
+      .populate('user')
 
+    if (demande.user && demande.user.contactName) {
+      // Fetch all Devis where partner is equal to demande.user._id
+      const devisList = await devisModel.find({ partner: demande.user._id }).populate("partner").populate("mission");
 
-      res.status(200).json({ demande });
-
+      res.status(200).json({ demande, devisList });
+    } else {
+      // If demande.user is null or contactName is null, still return demande
+      res.status(200).json({ demande,devisList:[]  });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 const incrementOffer = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters

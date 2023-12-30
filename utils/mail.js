@@ -73,6 +73,25 @@ exports.mailTransport =()=>
               </div>
             `;
           };
+          // Template for notifying the partner about the approval
+  exports.generateEmailTemplatePartnerApproval = (partnerName,companyName, montant, startingPoint, destination) => {
+  return `
+    <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+      <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+        <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Mission Approved!</h2>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Dear ${partnerName},</p>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your mission for<strong> ${companyName} </strong>has been approved. Please log in to your account to review the details.</p>
+        <ul>
+          <li><strong>Montant:</strong> ${Number(montant).toLocaleString('fr-FR', {style:'currency', currency: 'EUR'})}  </li>
+          <li><strong>Starting Point:</strong> ${startingPoint}</li>
+          <li><strong>Destination:</strong> ${destination}</li>
+        </ul>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Thank you for using our system!</p>
+      </div>
+    </div>
+  `;
+};
           exports.generateEmailTemplateAffectation = (driverName, missionDetails) => {
             const { postalAddress, postalDestination, dateDepart } = missionDetails;
             return `
