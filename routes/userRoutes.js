@@ -137,7 +137,9 @@ router
 
   // Devis
   /* ---------------------------- */
-  const { createDevis } = require('../controllers/Devis.controller')
+  const { createDevis, UpdateDevis } = require('../controllers/Devis.controller')
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
+  router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
+
 
 module.exports = router

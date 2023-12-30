@@ -42,7 +42,8 @@ const createDevis = async (req, res) => {
             partner,
             montant,
             status,
-            distance
+            distance,
+            rectification
 
          } = req.body;
 
@@ -88,7 +89,10 @@ if (!existingMission) {
             partner,
             montant,
             status,
-            distance
+            distance,
+            rectification,
+            status: !partner ? "Accepted" : "in progress",
+            // status:"in progress"
         });
 
         // check if the partner not vide   and partner exist
@@ -125,6 +129,72 @@ if (!existingMission) {
       res.status(500).json({ message: error.message });
     }
   };
+
+
+  const UpdateDevis = async (req, res) => {
+  const { errors, isValid } = validateDevisInput(req.body);
+
+  try {
+    if (!isValid) {
+      return res.status(400).json({ errors });
+    }
+
+    const {
+      categorie,
+      mission,
+      partner,
+      montant,
+      status,
+      distance,
+      rectification
+    } = req.body;
+
+    // Check if the mission already exists in DevisModel
+    const existingDevis = await devisModel.findById(req.params.id);
+    if (!existingDevis) {
+      errors.mission = "There is no Devis with this ID";
+      return res.status(400).json({ errors });
+    }
+
+    // Check if the mission exists in DemandeModel
+    const existingMission = await DemandeModel.findById(mission);
+    if (!existingMission) {
+      errors.mission = "There is no mission with this ID";
+      return res.status(400).json({ errors });
+    }
+
+    // Create an updated object for the model
+    const updatedDevis = {
+      categorie,
+      mission,
+      partner,
+      montant,
+      status,
+      distance,
+      rectification,
+      // status:"in progress"
+    };
+
+    // Save the new data to the database
+    const updatedDevisData = await devisModel.findByIdAndUpdate(
+      req.params.id,
+      updatedDevis,
+      { new: true }
+    );
+
+    return res.status(200).json({
+      message: 'Devis updated successfully',
+      data: updatedDevisData
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+
+
+
   const getAllCategorie= async (req, res) => {
     // console.log(req.user.id)
     try {
@@ -139,5 +209,6 @@ if (!existingMission) {
 
   module.exports = {
     createDevis,
-    getAllCategorie
+    getAllCategorie,
+    UpdateDevis
   }

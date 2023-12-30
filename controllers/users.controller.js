@@ -172,14 +172,16 @@ const findDemandById = async (req, res) => {
       .populate('driver')
       .populate('user')
 
+      const devis = await devisModel.find({ mission: demandId }).populate("categorie")
+
     if (demande.user && demande.user.contactName) {
       // Fetch all Devis where partner is equal to demande.user._id
       const devisList = await devisModel.find({ partner: demande.user._id }).populate("partner").populate("mission");
 
-      res.status(200).json({ demande, devisList });
+      res.status(200).json({ demande, devisList, devis });
     } else {
       // If demande.user is null or contactName is null, still return demande
-      res.status(200).json({ demande,devisList:[]  });
+      res.status(200).json({ demande,devisList:[], devis  });
     }
   } catch (error) {
     console.error(error);

@@ -13,6 +13,9 @@ module.exports = function validateDevisInput(data) {
   data.montant = !isEmpty(data.montant) ? data.montant : "";
 
 
+  data.rectification = !isEmpty(data.rectification) ? data.rectification : "";
+
+
 
   if (validator.isEmpty(data.categorie)) {
     errors.categorie = "Categorie field is required";
@@ -24,6 +27,10 @@ module.exports = function validateDevisInput(data) {
   if (validator.isEmpty(data.distance)) {
     errors.distance = "distance field is required";
   }
+  if (validator.isEmpty(data.rectification)) {
+    errors.rectification = "rectification field is required";
+  }
+
   if (validator.isEmpty(data.montant)) {
     errors.montant = "Montant field is required";
   } else if (!validator.isNumeric(data.montant)) {

@@ -25,6 +25,9 @@ const DevisSchema = new Schema({
     montant: {
             type: Number, // Assuming unitPrice is a numeric value (number réel)
           },
+          rectification: {
+            type: Number, // Assuming unitPrice is a numeric value (number réel)
+          },
 
           status: {
             type:String,
