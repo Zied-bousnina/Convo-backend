@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
     socket.leave(userData._id);
   });
 });
-io.listen(5000)
+// io.listen(5000)
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
