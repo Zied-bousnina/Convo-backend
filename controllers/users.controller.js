@@ -29,10 +29,23 @@ const FeedbackModel = require('../models/Feedback.Model.js');
 const cloudinary = require('../utils/uploadImage');
 const DemandeModel = require('../models/Demande.model');
 const devisModel = require('../models/devis.model.js');
+const userModel = require('../models/userModel.js');
 
 
 
-
+const fetchCurrentUser = async(req, res)=> {
+  const userId = req.user.id;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
 const createDemande = async (req, res) => {
   // const userId = req.body.userId; // Assuming userId is provided in the request body
   console.log(req.body)
@@ -110,6 +123,67 @@ const deleteDemande = async (req, res) => {
 };
 
 
+const EmptySocket = async(req, res)=> {
+  try {
+    const userId = req.user.id;
+
+    // Assuming you have a User model defined using the userSchema
+    // const User = require('./path-to-your-user-model'); // Replace with the actual path
+
+    // Find the user by ID
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      // If user is not found, send an appropriate response
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Clear the Newsocket array for the user
+    user.Newsocket = [];
+
+    // Save the updated user
+    await user.save();
+
+    // Send a success response
+    res.status(200).json({ message: 'Socket cleared successfully' });
+  } catch (error) {
+    // Handle any errors that may occur during the process
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+const RemoveSocketById = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const socketIdToRemove = req.params.id;
+
+    // Assuming you have a User model defined using the userSchema
+    // const User = require('./path-to-your-user-model'); // Replace with the actual path
+
+    // Find the user by ID
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      // If user is not found, send an appropriate response
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove the specified socket from the Newsocket array
+    user.Newsocket = user.Newsocket.filter((socket) => socket._id.toString() !== socketIdToRemove);
+
+    // Save the updated user
+    await user.save();
+
+    // Send a success response
+    res.status(200).json({ message: 'Socket removed successfully' });
+  } catch (error) {
+    // Handle any errors that may occur during the process
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
 const findAllPartnersAndTheirDemands = async (req, res) => {
   try {
     // Find all partners
@@ -163,6 +237,77 @@ const findDemandsCreatedByPartner = async (req, res) => {
   }
 };
 
+
+const findDevisByPartner = async (req, res)=> {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+
+  try {
+    const devis = await devisModel.find({ partner: userId }).populate("mission").populate("categorie");
+
+    if (devis.length > 0) {
+      res.status(200).json({ devis });
+    } else {
+      res.status(404).json({ message: 'No devis found for the user.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+const findDevisById = async (req, res)=> {
+  const devisId = req.params.id;
+
+  try {
+    const devis = await devisModel.findById(devisId).populate("mission").populate("categorie");
+
+    if (devis) {
+      res.status(200).json({ devis });
+    } else {
+      res.status(404).json({ message: 'No devis found for the user.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+const AccepteDevis = async (req, res)=> {
+  const devisId = req.params.id;
+
+  try {
+    const devis = await devisModel.findById(devisId);
+
+    if (devis) {
+      devis.status = "Accepted";
+      await devis.save();
+      res.status(200).json({ message: 'Devis accepted successfully', devis });
+    } else {
+      res.status(404).json({ message: 'No devis found for the user.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
+const RejeteDevis = async(req, res) => {
+  const devisId = req.params.id;
+
+  try {
+    const devis = await devisModel.findById(devisId);
+
+    if (devis) {
+      devis.status = "rejected";
+      await devis.save();
+      res.status(200).json({ message: 'Devis rejected successfully', devis });
+    } else {
+      res.status(404).json({ message: 'No devis found for the user.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
 const findDemandById = async (req, res) => {
   const demandId = req.params.demandId;
 
@@ -398,7 +543,10 @@ const authUser = async (req, res) => {
             isBlocked:user.isBlocked,
             onligne:user.onligne,
             firstLogin:user.firstLogin,
-            driverIsVerified:user.driverIsVerified
+            driverIsVerified:user.driverIsVerified,
+            // siret:user.siret,
+            // newsocket:user.Newsocket ? user.Newsocket : [],
+
 
           },
           process.env.SECRET_KEY,
@@ -1766,6 +1914,13 @@ module.exports = {
 
   AccepteMission,
   RefuseMission,
-  CompleteMission
+  CompleteMission,
+  fetchCurrentUser,
+  EmptySocket,
+  RemoveSocketById,
+  findDevisByPartner,
+  findDevisById,
+  RejeteDevis,
+  AccepteDevis
 
 }

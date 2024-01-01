@@ -15,7 +15,11 @@ const morgan = require('morgan');
 var app = express();
 
 const http = require('http');
-const socket = require('socket.io')
+const socket = require('socket.io');
+const userModel = require('./models/userModel.js');
+const CategorieModel = require('./models/Categorie.model.js');
+const DemandeModel = require('./models/Demande.model.js');
+const devisModel = require('./models/devis.model.js');
 
 const server = http.createServer(app)
 const io = socket(server,{
@@ -25,32 +29,133 @@ const io = socket(server,{
     }
 }) //in case server and client run on different urls
 
-// io.on("connection", (socket) => {
-//   console.log(`a user connected ${socket.id}`);
 
-//   socket.on("send_message", (data) => {
-//     socket.broadcast.emit("receive_message", data);
-//   });
-// });
+global.onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket}`);
+  global.chatSocket = socket;
+  socket.on("add-user", (userId) => {
+    onlineUsers.set(userId, socket.id);
+  });
+  console.log(global.onlineUsers)
 
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
   });
-  socket.on("new message", (devis) => {
-    console.log("devis",devis)
-    var data = devis.data;
 
-      // if (data?.sender == devis.partner) return;
-      socket.in(devis.partner).emit("message recieved", data)
-      socket.broadcast.emit("message recieved", data);
-
-      ;
-
+  socket.on("new message", async (devis) => {
+    try {
+        console.log("devis", devis);
+        var data = devis.data;
+        let cat ;
+        if(data?.categorie) {
+           cat = await CategorieModel.findById(data?.categorie);
+        }
+        let missio
+        if(data?.mission) {
+           missio = await DemandeModel.findById(data?.mission);
+        }
+        const devis1 = await devisModel.findById(data?._id).populate("categorie").populate("mission").populate("partner")
+        console.log(devis1)
+        if (!data.partner) {
+            if(missio?.driverIsAuto) {
+              const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
+            usersToBroadcast.forEach((user) => {
+                user.Newsocket.push({
+                 ...devis1?._doc
+                });
+                user.save();
+            });
+            socket.broadcast.emit("message recieved", devis1);
+            return;
+          }else{
+        const user = await userModel.findById(missio?.driver);
+        if (!user) {
+            console.error("User not found");
+            return;
+        }
+        user.Newsocket.push({
+          ...devis1?._doc
+        });
+        await user.save();
+        socket.in(devis.partner).emit("message recieved", data);
+        socket.broadcast.emit("message recieved", data);
+          }
+        }
+        const user = await userModel.findById(data.partner);
+        if (!user) {
+            console.error("User not found");
+            return;
+        }
+        user.Newsocket.push({
+         ...devis1?._doc
+        });
+        await user.save();
+        socket.broadcast.emit("message recieved", devis1);
+        console.log(socket)
+      } catch (error) {
+        console.error("Error handling new message:", error);
+      }
   });
+  // when the partner accept the devis
+  socket.on("accept devis", async (devis) => {
+    console.log(devis)
+    try {
+        var data = devis;
+        let cat ;
+        if(data?.categorie) {
+           cat = await CategorieModel.findById(data?.categorie);
+        }
+        let missio
+        if(data?.mission) {
+           missio = await DemandeModel.findById(data?.mission);
+        }
+        const devis1 = await devisModel.findById(data?._id).populate("categorie").populate("mission").populate("partner")
+        console.log(devis1)
+        devis1.status = "Accepted";
+        await devis1.save();
+        console.log(devis1)
 
+            if(missio?.driverIsAuto) {
+              const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER"] } });
+            usersToBroadcast.forEach((user) => {
+                user.Newsocket.push({
+                 ...devis1?._doc
+                });
+                user.save();
+            });
+            socket.broadcast.emit("message recieved", devis1);
+            return;
+          }else{
+        const user = await userModel.findById(missio?.driver);
+        if (!user) {
+            console.error("User not found");
+            return;
+        }
+        user.Newsocket.push({
+          ...devis1?._doc
+        });
+        await user.save();
+        socket.in(devis.partner).emit("message recieved", data);
+        socket.broadcast.emit("message recieved", data);
+          }
+
+        const user = await userModel.findById(data.partner);
+        if (!user) {
+            console.error("User not found");
+            return;
+        }
+        user.Newsocket.push({
+         ...devis1?._doc
+        });
+        await user.save();
+        socket.broadcast.emit("message recieved", devis1);
+        console.log(socket)
+      } catch (error) {
+        console.error("Error handling new message:", error);
+      }
+  });
   socket.on("join chat", (room) => {
     socket.join(room);
   });
@@ -61,7 +166,8 @@ io.on("connection", (socket) => {
     socket.leave(userData._id);
   });
 });
-// io.listen(5000)
+
+// io.listen(  "https://convoyage.onrender.com")
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin

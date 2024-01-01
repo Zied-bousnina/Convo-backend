@@ -64,7 +64,13 @@ const userSchema = mongoose.Schema(
             default:false
 
 
-        }
+        },
+        Newsocket: [
+            {
+                type:Object
+            }
+
+        ]
 
 
     },{

@@ -53,7 +53,13 @@ const {
   findAllPartnersAndTheirDemands,
   AccepteMission,
   RefuseMission,
-  CompleteMission
+  CompleteMission,
+  fetchCurrentUser,
+  EmptySocket,
+  RemoveSocketById,
+  findDevisByPartner,
+  findDevisById,
+  RejeteDevis
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -137,11 +143,17 @@ router
   router.route('/categorie/:id').get(FindCategorieByid)
   router.route('/categorie/deleteCategorie/:id').delete(passport.authenticate('jwt', {session: false}),deleteCategorie)
   router.route('/categorie/updateCategorie/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateCategorie)
+  router.route('/users/currentUser').get(passport.authenticate('jwt', {session: false}),fetchCurrentUser )
+  router.route('/users/EmptySocket').post(passport.authenticate('jwt', {session: false}),EmptySocket )
+  router.route('/users/RemoveSocketById/:id').post(passport.authenticate('jwt', {session: false}),RemoveSocketById )
   // Devis
   /* ---------------------------- */
   const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller')
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
+  router.route('/devis/findDevisByPartner').get(passport.authenticate('jwt', {session: false}),findDevisByPartner )
+  router.route('/devis/findDevisById/:id').get(passport.authenticate('jwt', {session: false}),findDevisById )
+  router.route('/devis/rejectDevis/:id').post(passport.authenticate('jwt', {session: false}),RejeteDevis )
 
 module.exports = router
