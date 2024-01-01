@@ -21,14 +21,23 @@ const CategorieModel = require('./models/Categorie.model.js');
 const DemandeModel = require('./models/Demande.model.js');
 const devisModel = require('./models/devis.model.js');
 
-const server = http.createServer(app)
-const io = socket(server,{
+const PORT = process.env.PORT || 5001;
+let server = app.listen(PORT, async (req, res) => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.log(err.message);
+  }
+  console.log(`Listening on ${PORT}`);
+});
+const io = socket(server, {
   pingTimeout: 6000,
-    cors: {
-      origin: '*'
-    }
-}) //in case server and client run on different urls
-
+  cors: {
+    "Access-Control-Allow-Origin": "*",
+    origin: "*",
+    // credentials: true,
+  },
+});
 
 global.onlineUsers = new Map();
 io.on("connection", (socket) => {
@@ -167,7 +176,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// io.listen(  5001)
+// io.listen(  "https://convoyage.onrender.com")
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
@@ -177,7 +186,7 @@ app.use((req, res, next) => {
   });
   app.use(passport.initialize())
   require('./security/passport')(passport)
-  connectDB();
+  // connectDB();
 
   app.use(formData.parse());
 
