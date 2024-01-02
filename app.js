@@ -40,11 +40,96 @@ const io = socket(server, {
 });
 
 global.onlineUsers = new Map();
+const onlineUsers2 = new Map();
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket}`);
   global.chatSocket = socket;
+
   socket.on("add-user", (userId) => {
-    onlineUsers.set(userId, socket.id);
+    // onlineUsers.set(userId, socket.id);
+    onlineUsers2.set(userId, {  location: null });
+  });
+  socket.on("offline_client", (userIDD) => {
+    // console.log("user disconnected ID",userIDD);
+    socket.broadcast.emit('offline', userIDD);
+  }
+  );
+  socket.on('locationUpdate', (location) => {
+    // console.log('Received location update:', location);
+
+    // Update the location in the onlineUsers2 Map
+    const user = onlineUsers2.get(location.userId);
+    if (user) {
+      user.location = location;
+      onlineUsers2.set(location.userId, user);
+    }
+    // console.log("Map :: ::   :  : : : : : : ", location)
+
+    // Broadcast the location to all connected clients
+    socket.broadcast.emit('newLocation', location);
+  });
+  let userid;
+  socket.on("clientData",async (userId) => {
+    console.log("data",userId)
+    userid=userId;
+    userid = userId?.user;
+    try {
+      // Find the user by ID
+      const user = await userModel.findById(userid);
+
+      if (!user) {
+        // return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Toggle the online status
+      user.onligne = true;
+
+      // Save the updated user
+      await user.save();
+
+      // Respond with the updated user object or just a success message
+      // res.status(200).json({ message: 'User status updated successfully', user: user });
+    } catch (error) {
+      console.error(error);
+      // res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
+  socket.on("clientData2", (userId) => {
+    console.log("data2",userId)
+  });
+  socket.on('disconnect', async() => {
+    console.log('User disconnected');
+    console.log("userConnected_id", userid)
+    socket.broadcast.emit('offline', userid);
+    if(!userid){return;}
+    try {
+      // Find the user by ID
+      const user = await userModel.findById(userid);
+
+      if (!user) {
+        // return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Toggle the online status
+      user.onligne = false;
+
+      // Save the updated user
+      await user.save();
+
+      // Respond with the updated user object or just a success message
+      // res.status(200).json({ message: 'User status updated successfully', user: user });
+    } catch (error) {
+      console.error(error);
+      // res.status(500).json({ message: 'Internal Server Error' });
+    }
+    // Remove the user from the onlineUsers Map when they disconnect
+    onlineUsers.forEach((userData, userId) => {
+      if (userData.socketId === socket.id) {
+        onlineUsers.delete(userId);
+        console.log(`User ${userId} disconnected`);
+      }
+    });
+    // console.log("data disconnected",userId)
   });
   console.log(global.onlineUsers)
 
@@ -107,6 +192,10 @@ io.on("connection", (socket) => {
         console.error("Error handling new message:", error);
       }
   });
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+});
+
   // when the partner accept the devis
   socket.on("accept devis", async (devis) => {
     console.log(devis)
