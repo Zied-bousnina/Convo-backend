@@ -54,6 +54,18 @@ io.on("connection", (socket) => {
     socket.broadcast.emit('offline', userIDD);
   }
   );
+  socket.on("enRoute", (userId)=> {
+    console.log("enRoute_on",userId)
+    const user = onlineUsers2.get(userId.userId);
+    // if (user) {
+    //   user.enRoute = true; // Assuming you have an enRoute property in the user object
+    //   onlineUsers2.set(userId.userId, user);
+    // }
+
+    console.log(userId)
+    // Broadcast the enRoute status to all connected clients
+    socket.broadcast.emit('userEnRoute', { userId: userId.userId, enRoute: userId.enRoute });
+  })
   socket.on('locationUpdate', (location) => {
     // console.log('Received location update:', location);
 

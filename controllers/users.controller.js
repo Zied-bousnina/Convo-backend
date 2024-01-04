@@ -1847,6 +1847,33 @@ const findMissionsByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const findMissionsAcceptedByUser = async (req, res) => {
+  const { id } = req.user;
+  // const { limit = 10, skip = 0 } = req.query;
+
+  try {
+    // Count the number of missions that match the criteria
+    const missionCount = await DemandeModel.countDocuments({
+
+      status: 'Accepted',
+      driver: id
+    });
+
+    // Find demands without a driver, with the current driver's id, and in progress
+    const missions = await DemandeModel.find({
+
+      status: 'Accepted',
+      driver: id
+    })
+    .sort({ createdAt: -1 })
+    // .limit(parseInt(limit))
+    // .skip(parseInt(skip));
+
+    res.status(200).json({ missions, count: missionCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 const findMissionById = async (req, res) => {
   const demandId = req.params.demandId// Assuming user ID is available in req.user.id
 
@@ -1911,7 +1938,7 @@ module.exports = {
   findDemandsCreatedByPartner,
   getMissionsCountByUser,
   findAllPartnersAndTheirDemands,
-
+  findMissionsAcceptedByUser,
   AccepteMission,
   RefuseMission,
   CompleteMission,
