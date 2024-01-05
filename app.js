@@ -75,30 +75,30 @@ io.on("connection", (socket) => {
       user.location = location;
       onlineUsers2.set(location.userId, user);
     }
-    try {
-      // const {  address } = req.body; // Assuming you send userId and newAddress in the request body
+    // try {
+    //   // const {  address } = req.body; // Assuming you send userId and newAddress in the request body
 
-      // Find the user by userId
-      const user = await userModel.findById(location?.userId);
+    //   // Find the user by userId
+    //   const user = await userModel.findById(location?.userId);
 
-      if (!user) {
-        return
-      }
+    //   if (!user) {
+    //     return
+    //   }
 
-      // Call the addAddress method to update the user's address
-      const u =await user.addAddress({
-        latitude: location.location.latitude,
-      longitude: location.location.longitude
+    //   // Call the addAddress method to update the user's address
+    //   const u =await user.addAddress({
+    //     latitude: location.location.latitude,
+    //   longitude: location.location.longitude
 
-      });
-      // console.log(u)
+    //   });
+    //   // console.log(u)
 
-      // res.json({ message: 'Address updated successfully.', user:u });
-    } catch (error) {
-      console.error(error);
-      console.log(error)
-      // res.status(500).json({ error: 'Internal Server Error' });
-    }
+    //   // res.json({ message: 'Address updated successfully.', user:u });
+    // } catch (error) {
+    //   console.error(error);
+    //   console.log(error)
+    //   // res.status(500).json({ error: 'Internal Server Error' });
+    // }
     // console.log("Map :: ::   :  : : : : : : ", location)
 
     // Broadcast the location to all connected clients
