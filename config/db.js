@@ -6,6 +6,11 @@ const connectDB = async () => {
     useCreateIndex: true,
     useFindAndModify: false,
     useUnifiedTopology: true,
+    writeConcern: {
+      w: 'majority',
+      wtimeout: 10000,
+      j: true,
+    },
   });
 
   console.log(`MongoDB Connected: ${conn.connection.host}`.cyan.underline.bold);
