@@ -473,6 +473,8 @@ const addAddress = async (req, res) => {
 
     // Call the addAddress method to update the user's address
     const u =await user.addAddress(address);
+    // console.log(u)
+    // console.log("address--------",address)
 
     res.json({ message: 'Address updated successfully.', user:u });
   } catch (error) {

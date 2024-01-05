@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
     // Broadcast the enRoute status to all connected clients
     socket.broadcast.emit('userEnRoute', { userId: userId.userId, enRoute: userId.enRoute });
   })
-  socket.on('locationUpdate', (location) => {
+  socket.on('locationUpdate', async(location) => {
     // console.log('Received location update:', location);
 
     // Update the location in the onlineUsers2 Map
@@ -74,6 +74,30 @@ io.on("connection", (socket) => {
     if (user) {
       user.location = location;
       onlineUsers2.set(location.userId, user);
+    }
+    try {
+      // const {  address } = req.body; // Assuming you send userId and newAddress in the request body
+
+      // Find the user by userId
+      const user = await userModel.findById(location?.userId);
+
+      if (!user) {
+        return
+      }
+
+      // Call the addAddress method to update the user's address
+      const u =await user.addAddress({
+        latitude: location.location.latitude,
+      longitude: location.location.longitude
+
+      });
+      // console.log(u)
+
+      // res.json({ message: 'Address updated successfully.', user:u });
+    } catch (error) {
+      console.error(error);
+      console.log(error)
+      // res.status(500).json({ error: 'Internal Server Error' });
     }
     // console.log("Map :: ::   :  : : : : : : ", location)
 
@@ -185,8 +209,8 @@ io.on("connection", (socket) => {
           ...devis1?._doc
         });
         await user.save();
-        socket.in(devis.partner).emit("message recieved", data);
-        socket.broadcast.emit("message recieved", data);
+        socket.in(devis.partner).emit("message recieved", devis1);
+        socket.broadcast.emit("message recieved", devis1);
           }
         }
         const user = await userModel.findById(data.partner);
@@ -235,6 +259,7 @@ io.on("connection", (socket) => {
                 });
                 user.save();
             });
+
             socket.broadcast.emit("message recieved", devis1);
             return;
           }else{
@@ -246,9 +271,10 @@ io.on("connection", (socket) => {
         user.Newsocket.push({
           ...devis1?._doc
         });
+        socket.broadcast.emit("message recieved", devis1);
+        console.log("driver", devis1)
         await user.save();
-        socket.in(devis.partner).emit("message recieved", data);
-        socket.broadcast.emit("message recieved", data);
+        socket.in(devis.partner).emit("message recieved", devis1);
           }
 
         const user = await userModel.findById(data.partner);
