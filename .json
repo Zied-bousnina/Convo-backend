@@ -1,0 +1,66 @@
+{
+    status: 'Accepted',
+    _id: 659a71998aa5ee3764c964dc,
+    categorie: {
+      _id: 659867c2d47032004e64e126,
+      description: 'distance minimale',
+      unitPrice: 20,
+      createdAt: 2024-01-05T20: 34: 10.512Z,
+      updatedAt: 2024-01-05T20: 34: 10.512Z,
+      __v: 0
+    },
+    mission: {
+      address: {
+        display_name: '75, Acme Road, North Watford, Watford, Hertfordshire, England, WD24 5AH, United Kingdom',
+        latitude: '51.67107308087401',
+        longitude: '-0.4044906926852932'
+        },
+      destination: {
+        display_name: "Quai de l'Oise, Rieux, Clermont, Oise, Hauts-de-France, Metropolitan France, 60870, France",
+        latitude: '49.29453121507309',
+        longitude: '2.521843887536659'
+        },
+      status: 'Accepted',
+      missionType: 'delivery',
+      vehicleType: 'car',
+      _id: 658d981eb9976167743cbf46,
+      user: 658b4532b697da6224bf6978,
+      postalAddress: '75, Acme Road, North Watford, Watford, Hertfordshire, England, WD24 5AH, United Kingdom',
+      postalDestination: "Quai de l'Oise, Rieux, Clermont, Oise, Hauts-de-France, Metropolitan France, 60870, France",
+      distance: '335.6551733870821',
+      driverIsAuto: true,
+      createdAt: 2023-12-28T15: 45: 34.334Z,
+      updatedAt: 2024-01-01T00: 11: 04.084Z,
+      __v: 0,
+      dateDepart: 'Fri Dec 29 2023 16: 00: 44 GMT+0100 (Central European Standard Time)'
+    },
+    partner: {
+      role: 'PARTNER',
+      verified: true,
+      googleId: null,
+      isBlocked: false,
+      onligne: false,
+      firstLogin: false,
+      driverIsVerified: false,
+      Newsocket: [],
+      _id: 658b4532b697da6224bf6978,
+      name: 'partner',
+      addressPartner: 'MT',
+      contactName: 'partner',
+      email: 'partner@test.tn',
+      phoneNumber: '56 981 501',
+      password: '$2a$10$CnS1SudHV1Pa2VhL08A8c.WNpofBZ3lzkkTQr3QfuChUJHqrL5s5.',
+      siret: '585 855 555 55554',
+      kbis: 'https: //res.cloudinary.com/dcuafrhwc/image/upload/v1703626032/pdf_uploads/kbis_1703626032914.png',
+      createdAt: 2023-12-26T21: 27: 14.140Z,
+      updatedAt: 2024-01-07T09: 42: 15.841Z,
+      __v: 68
+    },
+    montant: 6713.103467741641,
+    distance: '335.6551733870821',
+    rectification: 0,
+    createdAt: 2024-01-07T09: 40: 41.992Z,
+    updatedAt: 2024-01-07T10: 16: 26.647Z,
+    __v: 0,
+    PartnerAccepted: 'Accepted'
+}

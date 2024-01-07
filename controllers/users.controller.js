@@ -121,6 +121,29 @@ const deleteDemande = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const deleteSocket = async (req, res) => {
+
+  const userId = req.params.id;
+  console.log(userId)
+
+  try {
+      // Find the user by ID
+      const user = await User.findById(userId);
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Delete the NewSocket array
+      user.Newsocket = [];
+      await user.save();
+
+      return res.status(200).json({ message: 'NewSocket deleted successfully' });
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
 
 
 const EmptySocket = async(req, res)=> {
@@ -1920,6 +1943,7 @@ module.exports = {
   incrementOffer,
   decreaseOffer,
   deleteDemande,
+  deleteSocket,
   getUsersCount,
   getTotalDemandesCount,
   addAddress,

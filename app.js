@@ -41,6 +41,7 @@ const io = socket(server, {
 
 global.onlineUsers = new Map();
 const onlineUsers2 = new Map();
+
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket}`);
   global.chatSocket = socket;
@@ -174,124 +175,239 @@ io.on("connection", (socket) => {
     socket.emit("connected");
   });
 
-  socket.on("new message", async (devis) => {
-    try {
-        console.log("devis", devis);
-        var data = devis.data;
-        let cat ;
-        if(data?.categorie) {
-           cat = await CategorieModel.findById(data?.categorie);
-        }
-        let missio
-        if(data?.mission) {
-           missio = await DemandeModel.findById(data?.mission);
-        }
-        const devis1 = await devisModel.findById(data?._id).populate("categorie").populate("mission").populate("partner")
-        console.log(devis1)
-        if (!data.partner) {
-            if(missio?.driverIsAuto) {
-              const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
-            usersToBroadcast.forEach((user) => {
-                user.Newsocket.push({
-                 ...devis1?._doc
-                });
-                user.save();
-            });
-            socket.broadcast.emit("message recieved", devis1);
-            return;
-          }else{
-        const user = await userModel.findById(missio?.driver);
-        if (!user) {
-            console.error("User not found");
-            return;
-        }
-        user.Newsocket.push({
-          ...devis1?._doc
-        });
-        await user.save();
-        socket.in(devis.partner).emit("message recieved", devis1);
-        socket.broadcast.emit("message recieved", devis1);
-          }
-        }
-        const user = await userModel.findById(data.partner);
-        if (!user) {
-            console.error("User not found");
-            return;
-        }
-        user.Newsocket.push({
-         ...devis1?._doc
-        });
-        await user.save();
-        socket.broadcast.emit("message recieved", devis1);
-        console.log(socket)
-      } catch (error) {
-        console.error("Error handling new message:", error);
-      }
-  });
+
   socket.on('error', (error) => {
     console.error('Socket error:', error);
 });
-
-  // when the partner accept the devis
-  socket.on("accept devis", async (devis) => {
-    console.log(devis)
-    try {
-        var data = devis;
-        let cat ;
-        if(data?.categorie) {
-           cat = await CategorieModel.findById(data?.categorie);
-        }
-        let missio
-        if(data?.mission) {
-           missio = await DemandeModel.findById(data?.mission);
-        }
-        const devis1 = await devisModel.findById(data?._id).populate("categorie").populate("mission").populate("partner")
-        console.log(devis1)
-        devis1.status = "Accepted";
-        await devis1.save();
-        console.log(devis1)
-
-            if(missio?.driverIsAuto) {
-              const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER"] } });
-            usersToBroadcast.forEach((user) => {
-                user.Newsocket.push({
-                 ...devis1?._doc
-                });
-                user.save();
-            });
-
-            socket.broadcast.emit("message recieved", devis1);
-            return;
-          }else{
-        const user = await userModel.findById(missio?.driver);
-        if (!user) {
-            console.error("User not found");
-            return;
-        }
-        user.Newsocket.push({
-          ...devis1?._doc
-        });
-        socket.broadcast.emit("message recieved", devis1);
-        console.log("driver", devis1)
-        await user.save();
-        socket.in(devis.partner).emit("message recieved", devis1);
-          }
-
-        const user = await userModel.findById(data.partner);
-        if (!user) {
-            console.error("User not found");
-            return;
-        }
-        user.Newsocket.push({
-         ...devis1?._doc
-        });
-        await user.save();
-        socket.broadcast.emit("message recieved", devis1);
-        console.log(socket)
-      } catch (error) {
-        console.error("Error handling new message:", error);
+socket.on("new message", async (devis) => {
+  try {
+      console.log("devis", devis);
+      var data = devis.data;
+      let cat ;
+      if(data?.categorie) {
+         cat = await CategorieModel.findById(data?.categorie);
       }
+      let missio
+      if(data?.mission) {
+         missio = await DemandeModel.findById(data?.mission);
+      }
+      const devis1 = await devisModel.findById(data?._id).populate("categorie").populate("mission").populate("partner")
+      const devis2 = await devisModel.findById(data?._id)
+  .populate({
+    path: 'mission',
+    select: '_id postalAddress postalDestination distance driverIsAuto driver'
+  })
+  .populate({
+    path: 'partner',
+    select: '_id contactName email phoneNumber'
+  })
+  .populate({
+    path: 'categorie',
+    select: '_id description unitPrice'
   });
+
+      // console.log(devis1)
+      if (!data.partner) {
+          if(missio?.driverIsAuto) {
+            const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
+          usersToBroadcast.forEach((user) => {
+              user.Newsocket.push({
+               ...devis2?._doc
+              });
+              user.save();
+          });
+          socket.broadcast.emit("message recieved", devis1);
+          return;
+        }else{
+      const user = await userModel.findById(missio?.driver);
+      if (!user) {
+          console.error("User not found");
+          return;
+      }
+      user.Newsocket.push({
+        ...devis2?._doc
+      });
+      await user.save();
+      socket.in(devis.partner).emit("message recieved", devis1);
+      socket.broadcast.emit("message recieved", devis1);
+        }
+      }
+      const user = await userModel.findById(data.partner);
+      if (!user) {
+          console.error("User not found");
+          return;
+      }
+      user.Newsocket.push({
+       ...devis2?._doc
+      });
+      await user.save();
+      socket.broadcast.emit("message recieved", devis1);
+      console.log(socket)
+    } catch (error) {
+      console.error("Error handling new message:", error);
+    }
+});
+
+socket.on("refuse devis", async (devis) => {
+    // await handleDevisStatusChange(devis, "rejected");
+    try {
+      const data = devis;
+      let cat;
+      if (data?.categorie) {
+          cat = await CategorieModel.findById(data?.categorie);
+      }
+
+      let missio;
+      if (data?.mission) {
+          missio = await DemandeModel.findById(data?.mission);
+      }
+
+      const devis1 = await devisModel.findById(data?._id)
+          .populate("categorie")
+          .populate("mission")
+          .populate("partner");
+          const devis2 = await devisModel.findById(data?._id)
+  .populate({
+    path: 'mission',
+    select: '_id postalAddress postalDestination distance driverIsAuto driver'
+  })
+  .populate({
+    path: 'partner',
+    select: '_id contactName email phoneNumber'
+  })
+  .populate({
+    path: 'categorie',
+    select: '_id description unitPrice'
+  });
+
+
+      devis1.status = 'rejected';
+      await devis1.save();
+
+      const doc = { ...devis2?._doc, PartnerAccepted: 'rejected' };
+
+      // Broadcast to users who are not PARTNER
+      // const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER"] } });
+      // usersToBroadcast.forEach((user) => {
+      //     console.log("devis_doc", doc);
+      //     user.Newsocket.push({ ...doc });
+      //     user.save();
+      // });
+
+      // Broadcast to the driver or ADMIN
+      const user = await userModel.findOne({
+          $or: [
+              { _id: missio?.driver },
+              { role: "ADMIN" }
+          ]
+      });
+      console.log(user)
+
+      if (!user) {
+          console.error("User not found");
+          return;
+      }
+
+      // console.log("devis_doc", doc);
+      user.Newsocket.push({ ...doc });
+      await user.save();
+      socket.broadcast.emit("message received", devis1);
+
+      // Broadcast to the partner
+      const partnerUser = await userModel.findById(data.partner);
+      if (partnerUser) {
+          console.log("devis_doc", doc);
+          partnerUser.Newsocket.push({ ...doc });
+          await partnerUser.save();
+          socket.in(data.partner).emit("message received", devis1);
+      }
+      socket.broadcast.emit("Admin notification", {...doc});
+  } catch (error) {
+      console.error("Error handling new message:", error);
+  }
+});
+
+socket.on("accept devis", async (devis) => {
+    // await handleDevisStatusChange(devis, "Accepted");
+    try {
+      const data = devis;
+      let cat;
+      if (data?.categorie) {
+          cat = await CategorieModel.findById(data?.categorie);
+      }
+
+      let missio;
+      if (data?.mission) {
+          missio = await DemandeModel.findById(data?.mission);
+      }
+
+      const devis1 = await devisModel.findById(data?._id)
+          .populate("categorie")
+          .populate("mission")
+          .populate("partner");
+          const devis2 = await devisModel.findById(data?._id)
+  .populate({
+    path: 'mission',
+    select: '_id postalAddress postalDestination distance driverIsAuto driver'
+  })
+  .populate({
+    path: 'partner',
+    select: '_id contactName email phoneNumber'
+  })
+  .populate({
+    path: 'categorie',
+    select: '_id description unitPrice'
+  });
+
+
+      devis1.status = 'Accepted';
+      await devis1.save();
+
+      const doc = { ...devis2?._doc, PartnerAccepted: 'Accepted' };
+
+      if(missio?.driverIsAuto) {
+
+
+      // Broadcast to users who are not PARTNER
+      const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
+      usersToBroadcast.forEach((user) => {
+          console.log("devis_doc", doc);
+          user.Newsocket.push({ ...doc });
+          user.save();
+      });
+    }
+      // Broadcast to the driver or ADMIN
+      const user = await userModel.findOne({
+          $or: [
+              { _id: missio?.driver },
+              { role: "ADMIN" }
+          ]
+      });
+
+      if (!user) {
+          console.error("User not found");
+          return;
+      }
+
+      console.log("devis_doc", doc);
+      user.Newsocket.push({ ...doc });
+      await user.save();
+      socket.broadcast.emit("message received", devis1);
+
+      // Broadcast to the partner
+      const partnerUser = await userModel.findById(data.partner);
+      if (partnerUser) {
+          console.log("devis_doc", doc);
+          partnerUser.Newsocket.push({ ...doc });
+          await partnerUser.save();
+          socket.in(data.partner).emit("message received", devis1);
+      }
+      socket.broadcast.emit("Admin notification", {...doc});
+  } catch (error) {
+      console.error("Error handling new message:", error);
+  }
+});
+
   socket.on("join chat", (room) => {
     socket.join(room);
   });

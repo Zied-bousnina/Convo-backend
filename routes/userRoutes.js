@@ -60,7 +60,8 @@ const {
   findDevisByPartner,
   findDevisById,
   RejeteDevis,
-  findMissionsAcceptedByUser
+  findMissionsAcceptedByUser,
+  deleteSocket
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -139,8 +140,10 @@ router
 
   // Categorie
   /* ---------------------------- */
+
   const { createCategorie, getAllCategorie, FindCategorieByid, deleteCategorie, UpdateCategorie } = require('../controllers/Categorie.controller')
   router.route('/categorie/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createCategorie)
+  router.route('/deleteSocket/:id').post(deleteSocket)
   router.route('/categorie/getAllCategorie').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getAllCategorie)
   router.route('/categorie/:id').get(FindCategorieByid)
   router.route('/categorie/deleteCategorie/:id').delete(passport.authenticate('jwt', {session: false}),deleteCategorie)
@@ -149,6 +152,7 @@ router
   router.route('/users/EmptySocket').post(passport.authenticate('jwt', {session: false}),EmptySocket )
   router.route('/users/RemoveSocketById/:id').post(passport.authenticate('jwt', {session: false}),RemoveSocketById )
   // Devis
+
   /* ---------------------------- */
   const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller')
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
