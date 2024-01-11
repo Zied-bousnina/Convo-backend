@@ -43,7 +43,9 @@ const createDevis = async (req, res) => {
             montant,
             status,
             distance,
-            rectification
+            rectification,
+            remunerationAmount
+            // status
 
          } = req.body;
 
@@ -65,6 +67,7 @@ if (!existingMission) {
 
       // Check if the description already exists in CategorieModel
       const existingCategorie = await categorieModel.findById( categorie );
+      await DemandeModel.findByIdAndUpdate(mission, { status: "Devis" });
 
       if (!existingCategorie) {
         errors.categorie = "There is no categorie with this ID";
@@ -91,7 +94,8 @@ if (!existingMission) {
             status,
             distance,
             rectification,
-            status: !partner ? "Accepted" : "in progress",
+            remunerationAmount,
+            status: !partner ? "Confirmée" : "Devis",
             // status:"in progress"
           });
 
@@ -99,7 +103,7 @@ if (!existingMission) {
           const createdCategorie = await newDevis.save();
           if (!partner) {
                 // Update mission status in DemandeModel to "Accepted"
-                await DemandeModel.findByIdAndUpdate(mission, { status: "Accepted" });
+                await DemandeModel.findByIdAndUpdate(mission, { status: "Confirmée" });
             }
 
         if(partner){
@@ -126,7 +130,7 @@ if (!existingMission) {
         return res.status(201).json({message:"Created Successfully", data :createdCategorie});
 
 
-        res.status(201).json({ message: 'Categorie created successfully', categorie: createdCategorie });
+        // res.status(201).json({ message: 'Categorie created successfully', categorie: createdCategorie });
       } else {
         return res.status(400).json(errors);
       }

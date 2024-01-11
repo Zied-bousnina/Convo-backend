@@ -38,7 +38,11 @@ const DevisSchema = new Schema({
             type:String,
 
         },
+        remunerationAmount:
+        {
+          type: Number,
 
+        },
 
 
 

@@ -20,8 +20,10 @@ const userModel = require('./models/userModel.js');
 const CategorieModel = require('./models/Categorie.model.js');
 const DemandeModel = require('./models/Demande.model.js');
 const devisModel = require('./models/devis.model.js');
-
+const cron = require('node-cron');
 const PORT = process.env.PORT || 5001;
+var mailer = require('./utils/mailer');
+const { generateEmailTemplatePartnerApproval, generateEmailTemplateMissionDelayed } = require('./utils/mail.js');
 let server = app.listen(PORT, async (req, res) => {
   try {
     await connectDB();
@@ -29,6 +31,69 @@ let server = app.listen(PORT, async (req, res) => {
     console.log(err.message);
   }
   console.log(`Listening on ${PORT}`);
+});
+cron.schedule('*/1 * * * *', async () => {
+  // Check and update status for all 'confirmée' missions
+  const confirmeeMissions = await devisModel.find({ status: 'Confirmée' });
+  const confirmeedevis = await DemandeModel.find({ status: 'Confirmée' });
+  const Affectéeemission = await DemandeModel.find({ status: 'Affectée' }) .populate("driver")
+  const AffectéeDevis = await devisModel.find({ status: 'Affectée' }).populate({
+    path: 'mission',
+    populate: {
+      path: 'driver',
+    }
+  });;
+
+  confirmeeMissions.forEach(async (mission) => {
+      const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+      const currentTime = new Date();
+      const timeDifference = currentTime - mission.createdAt;
+
+      // If more than 2 hours have passed, update the status to 'En retard'
+      if (timeDifference >= twoHoursInMillis) {
+          mission.status = 'En retard';
+          await mission.save();
+      }
+  });
+  AffectéeDevis.forEach(async (mission) => {
+    const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
+    const currentTime = new Date();
+    const timeDifference = currentTime - mission.createdAt;
+
+    // If more than 2 hours have passed, update the status to 'En retard'
+    if (timeDifference >= twoHoursInMillis) {
+      mailer.send({
+        to: ["zbousnina@yahoo.com", mission?.mission?.driver.email],
+        subject: "Important: Mission Delayed Notification",
+        html: generateEmailTemplateMissionDelayed(mission?.mission?.driver?.name,mission?.mission?.postalAddress, mission?.mission?.postalDestination),
+      }, (err) => {});
+    }
+});
+Affectéeemission.forEach(async (mission) => {
+  const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
+  const currentTime = new Date();
+  const timeDifference = currentTime - mission.createdAt;
+
+  // If more than 2 hours have passed, update the status to 'En retard'
+  if (timeDifference >= twoHoursInMillis) {
+    mailer.send({
+      to: ["zbousnina@yahoo.com", mission?.driver.email],
+      subject: "Important: Mission Delayed Notification",
+      html: generateEmailTemplateMissionDelayed(mission?.driver?.name,mission?.postalAddress, mission?.postalDestination),
+    }, (err) => {});
+  }
+});
+confirmeedevis.forEach(async (mission) => {
+  const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+  const currentTime = new Date();
+  const timeDifference = currentTime - mission.createdAt;
+
+  // If more than 2 hours have passed, update the status to 'En retard'
+  if (timeDifference >= twoHoursInMillis) {
+      mission.status = 'En retard';
+      await mission.save();
+  }
+});
 });
 const io = socket(server, {
   pingTimeout: 6000,
@@ -248,6 +313,71 @@ socket.on("new message", async (devis) => {
     }
 });
 
+socket.on("new mission", async (mission) => {
+console.log("New mission ",  mission)
+  try {
+      const data = mission;
+      console.log(data?.demande)
+      // const doc = { ...data, newMissionPartner: true };
+      const missio = await DemandeModel.findById(data?.demande?._id)
+          .populate("categorie")
+          .populate("mission")
+          .populate("user");
+      const missio2 = await DemandeModel.findById(data?.demande?._id)
+  .populate({
+    path: 'mission',
+    select: '_id postalAddress postalDestination distance driverIsAuto driver'
+  })
+  .populate({
+    path: 'user',
+    select: '_id contactName email phoneNumber'
+  })
+  .populate({
+    path: 'categorie',
+    select: '_id description unitPrice'
+  });
+  const doc = { ...missio2?._doc, newMissionPartner: true };
+      // Broadcast to users who are not PARTNER
+      // const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER"] } });
+      // usersToBroadcast.forEach((user) => {
+      //     console.log("mission_doc", doc);
+      //     user.Newsocket.push({ ...doc });
+      //     user.save();
+      // });
+
+      // Broadcast to the driver or ADMIN
+      const user = await userModel.findOne({
+          $or: [
+              // { _id: missio?.driver },
+              { role: "ADMIN" }
+          ]
+      });
+
+      if (!user) {
+          console.error("User not found");
+          return;
+      }
+
+      console.log("mission_doc", doc);
+      user.Newsocket.push({ ...doc });
+      await user.save();
+      socket.broadcast.emit("message received", missio?._doc);
+
+      // Broadcast to the partner
+      const partnerUser = await userModel.findById(data.partner);
+      if (partnerUser) {
+          console.log("mission_doc", doc);
+          partnerUser.Newsocket.push({ ...doc });
+          await partnerUser.save();
+          socket.in(data.partner).emit("message received", missio);
+      }
+      socket.broadcast.emit("Admin notification", {...doc});
+  }
+  catch (error) {
+    console.error(`Error in sending message : ${error}`);
+  }
+});
+
 socket.on("refuse devis", async (devis) => {
     // await handleDevisStatusChange(devis, "rejected");
     try {
@@ -260,6 +390,7 @@ socket.on("refuse devis", async (devis) => {
       let missio;
       if (data?.mission) {
           missio = await DemandeModel.findById(data?.mission);
+          await DemandeModel.findByIdAndUpdate(data?.mission?._id, { status: "refusée" });
       }
 
       const devis1 = await devisModel.findById(data?._id)
@@ -281,7 +412,7 @@ socket.on("refuse devis", async (devis) => {
   });
 
 
-      devis1.status = 'rejected';
+      devis1.status = 'refusée';
       await devis1.save();
 
       const doc = { ...devis2?._doc, PartnerAccepted: 'rejected' };
@@ -339,6 +470,7 @@ socket.on("accept devis", async (devis) => {
       let missio;
       if (data?.mission) {
           missio = await DemandeModel.findById(data?.mission);
+          await DemandeModel.findByIdAndUpdate(data?.mission?._id, { status: "Confirmée" });
       }
 
       const devis1 = await devisModel.findById(data?._id)
@@ -360,7 +492,7 @@ socket.on("accept devis", async (devis) => {
   });
 
 
-      devis1.status = 'Accepted';
+      devis1.status = 'Confirmée';
       await devis1.save();
 
       const doc = { ...devis2?._doc, PartnerAccepted: 'Accepted' };
@@ -369,17 +501,17 @@ socket.on("accept devis", async (devis) => {
 
 
       // Broadcast to users who are not PARTNER
-      const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
-      usersToBroadcast.forEach((user) => {
-          console.log("devis_doc", doc);
-          user.Newsocket.push({ ...doc });
-          user.save();
-      });
+      // const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
+      // usersToBroadcast.forEach((user) => {
+      //     console.log("devis_doc", doc);
+      //     user.Newsocket.push({ ...doc });
+      //     user.save();
+      // });
     }
       // Broadcast to the driver or ADMIN
       const user = await userModel.findOne({
           $or: [
-              { _id: missio?.driver },
+              // { _id: missio?.driver },
               { role: "ADMIN" }
           ]
       });

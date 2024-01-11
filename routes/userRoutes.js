@@ -61,7 +61,8 @@ const {
   findDevisById,
   RejeteDevis,
   findMissionsAcceptedByUser,
-  deleteSocket
+  deleteSocket,
+  findDevisByPartnerId
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -159,6 +160,7 @@ router
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
   router.route('/devis/findDevisByPartner').get(passport.authenticate('jwt', {session: false}),findDevisByPartner )
+  router.route('/devis/findDevisByPartnerId/:id').post(findDevisByPartnerId )
   router.route('/devis/findDevisById/:id').get(passport.authenticate('jwt', {session: false}),findDevisById )
   router.route('/devis/rejectDevis/:id').post(passport.authenticate('jwt', {session: false}),RejeteDevis )
 

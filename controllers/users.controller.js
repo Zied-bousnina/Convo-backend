@@ -192,7 +192,7 @@ const RemoveSocketById = async (req, res) => {
     }
 
     // Remove the specified socket from the Newsocket array
-    user.Newsocket = user.Newsocket.filter((socket) => socket._id.toString() !== socketIdToRemove);
+    user.Newsocket = user.Newsocket.filter((socket) => socket?._id?.toString() !== socketIdToRemove);
 
     // Save the updated user
     await user.save();
@@ -265,7 +265,14 @@ const findDevisByPartner = async (req, res)=> {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
 
   try {
-    const devis = await devisModel.find({ partner: userId }).populate("mission").populate("categorie");
+    const devis = await devisModel.find({ partner: userId })
+  .populate({
+    path: 'mission',
+    populate: {
+      path: 'driver',
+    }
+  })
+  .populate('categorie');
 
     if (devis.length > 0) {
       res.status(200).json({ devis });
@@ -277,6 +284,49 @@ const findDevisByPartner = async (req, res)=> {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 }
+const findDevisByPartnerId = async (req, res) => {
+  const userId = req.params.id; // Assuming user ID is available in req.user.id
+  const { fromDate, toDate } = req.body; // Extracting fromDate and toDate from query parameters
+
+  try {
+    let query = { partner: userId };
+
+    // If fromDate and toDate are provided, add date filter to the query
+    if (fromDate && toDate && fromDate !== 'Invalid Date' && toDate !== 'Invalid Date') {
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+
+      if (!isNaN(from.valueOf()) && !isNaN(to.valueOf())) {
+        // Assuming 'createdAt' is the field in the schema where the date is stored
+        query.createdAt = { $gte: from, $lte: to };
+      } else {
+        res.status(400).json({ message: 'Invalid date format in request parameters.' });
+        return;
+      }
+    }
+
+    const devis = await devisModel
+      .find(query)
+      .populate({
+        path: 'mission',
+        populate: {
+          path: 'driver',
+        },
+      })
+      .populate('categorie');
+
+    if (devis.length > 0) {
+      res.status(200).json({ devis });
+    } else {
+      res.status(404).json({ message: 'No devis found for the user within the specified date range.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+
 const findDevisById = async (req, res)=> {
   const devisId = req.params.id;
 
@@ -320,7 +370,7 @@ const RejeteDevis = async(req, res) => {
     const devis = await devisModel.findById(devisId);
 
     if (devis) {
-      devis.status = "rejected";
+      devis.status = "refusée";
       await devis.save();
       res.status(200).json({ message: 'Devis rejected successfully', devis });
     } else {
@@ -1972,6 +2022,7 @@ module.exports = {
   EmptySocket,
   RemoveSocketById,
   findDevisByPartner,
+  findDevisByPartnerId,
   findDevisById,
   RejeteDevis,
   AccepteDevis

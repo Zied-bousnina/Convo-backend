@@ -85,4 +85,21 @@ const DeamndeSchema = new Schema({
 
 }, {timestamps:true})
 
+// Middleware to check and update status after 2 hours
+DeamndeSchema.pre('save', function (next) {
+    // Only perform this check if the status is 'confirmée'
+    if (this.status === 'Confirmée') {
+        const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+        const currentTime = new Date();
+        const timeDifference = currentTime - this.createdAt;
+
+        // If more than 2 hours have passed, update the status to 'En retard'
+        if (timeDifference >= twoHoursInMillis) {
+            this.status = 'En retard';
+        }
+    }
+
+    next();
+});
+
 module.exports = mongoose.model('Deamnde', DeamndeSchema)

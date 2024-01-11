@@ -92,6 +92,26 @@ exports.mailTransport =()=>
     </div>
   `;
 };
+exports.generateEmailTemplateMissionDelayed = (driverName, startingPoint, destination) => {
+  return `
+    <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+      <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+        <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Mission Delayed Notification</h2>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Dear ${driverName},</p>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">This is a notification to inform you that the mission has been delayed.</p>
+        <ul>
+          <li><strong>Starting Point:</strong> ${startingPoint}</li>
+          <li><strong>Destination:</strong> ${destination}</li>
+        </ul>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Please be aware that this notification is sent 24 hours after you accepted the mission.</p>
+        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Thank you for your understanding!</p>
+      </div>
+    </div>
+  `;
+};
+
+
           exports.generateEmailTemplateAffectation = (driverName, missionDetails) => {
             const { postalAddress, postalDestination, dateDepart } = missionDetails;
             return `
