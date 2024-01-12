@@ -32,7 +32,7 @@ let server = app.listen(PORT, async (req, res) => {
   }
   console.log(`Listening on ${PORT}`);
 });
-cron.schedule('*/1 * * * *', async () => {
+cron.schedule('0 * * * *', async () => {
   // Check and update status for all 'confirmée' missions
   const confirmeeMissions = await devisModel.find({ status: 'Confirmée' });
   const confirmeedevis = await DemandeModel.find({ status: 'Confirmée' });
@@ -47,7 +47,8 @@ cron.schedule('*/1 * * * *', async () => {
   confirmeeMissions.forEach(async (mission) => {
       const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
       const currentTime = new Date();
-      const timeDifference = currentTime - mission.createdAt;
+      const timeDifference = currentTime - mission.updatedAt;
+      // console.log("timeDifference",timeDifference)
 
       // If more than 2 hours have passed, update the status to 'En retard'
       if (timeDifference >= twoHoursInMillis) {
@@ -58,7 +59,7 @@ cron.schedule('*/1 * * * *', async () => {
   AffectéeDevis.forEach(async (mission) => {
     const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
     const currentTime = new Date();
-    const timeDifference = currentTime - mission.createdAt;
+    const timeDifference = currentTime - mission.updatedAt;
 
     // If more than 2 hours have passed, update the status to 'En retard'
     if (timeDifference >= twoHoursInMillis) {
@@ -72,7 +73,7 @@ cron.schedule('*/1 * * * *', async () => {
 Affectéeemission.forEach(async (mission) => {
   const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
   const currentTime = new Date();
-  const timeDifference = currentTime - mission.createdAt;
+  const timeDifference = currentTime - mission.updatedAt;
 
   // If more than 2 hours have passed, update the status to 'En retard'
   if (timeDifference >= twoHoursInMillis) {
@@ -86,7 +87,7 @@ Affectéeemission.forEach(async (mission) => {
 confirmeedevis.forEach(async (mission) => {
   const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
   const currentTime = new Date();
-  const timeDifference = currentTime - mission.createdAt;
+  const timeDifference = currentTime - mission.updatedAt;
 
   // If more than 2 hours have passed, update the status to 'En retard'
   if (timeDifference >= twoHoursInMillis) {

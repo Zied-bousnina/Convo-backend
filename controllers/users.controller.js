@@ -289,7 +289,8 @@ const findDevisByPartnerId = async (req, res) => {
   const { fromDate, toDate } = req.body; // Extracting fromDate and toDate from query parameters
 
   try {
-    let query = { partner: userId };
+    let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée'];
+    let query = { partner: userId, status: { $in: statusValues } };
 
     // If fromDate and toDate are provided, add date filter to the query
     if (fromDate && toDate && fromDate !== 'Invalid Date' && toDate !== 'Invalid Date') {
@@ -314,6 +315,7 @@ const findDevisByPartnerId = async (req, res) => {
         },
       })
       .populate('categorie');
+      console.log(devis)
 
     if (devis.length > 0) {
       res.status(200).json({ devis });
@@ -331,6 +333,7 @@ const findDevisById = async (req, res)=> {
   const devisId = req.params.id;
 
   try {
+
     const devis = await devisModel.findById(devisId).populate("mission").populate("categorie");
 
     if (devis) {

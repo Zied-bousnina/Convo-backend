@@ -155,7 +155,8 @@ router
   // Devis
 
   /* ---------------------------- */
-  const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller')
+  const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller');
+const { createFacture, fetchFactureByPartner, fetchFactureById } = require('../controllers/facture.controller.js');
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
@@ -163,5 +164,10 @@ router
   router.route('/devis/findDevisByPartnerId/:id').post(findDevisByPartnerId )
   router.route('/devis/findDevisById/:id').get(passport.authenticate('jwt', {session: false}),findDevisById )
   router.route('/devis/rejectDevis/:id').post(passport.authenticate('jwt', {session: false}),RejeteDevis )
+
+  //  Facture---------------------
+  router.route("/facture/create").post(createFacture)
+  router.route('/facture/fetchFactureByPartner').get(passport.authenticate('jwt', {session: false}),fetchFactureByPartner )
+  router.route('/facture/findFactureById/:id').get(passport.authenticate('jwt', {session: false}),fetchFactureById )
 
 module.exports = router
