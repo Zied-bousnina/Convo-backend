@@ -1905,33 +1905,36 @@ const findMissionsByUser = async (req, res) => {
         { 'mission.driver': null },
         { 'mission.driver': id },
       ],
-       $or: [
-    { status: 'Confirmée' },
-    { status: 'en retard' },
-  ],
+      $or: [
+        { status: 'Confirmée' },
+        { status: 'en retard' },
+      ],
     });
 
     // Find demands without a driver, with the current driver's id, and in progress
-    const missions = await devisModel.find({
-      $or: [
-        { 'mission.driver': null },
-        { 'mission.driver': id },
-      ],
-       $or: [
-    { status: 'Confirmée' },
-    { status: 'en retard' },
-  ],
-    }).populate("mission")
-    .populate("partner")
-    .sort({ createdAt: -1 })
-    // .limit(parseInt(limit))
-    // .skip(parseInt(skip));
+    const missions = await devisModel
+      .find({
+        $or: [
+          { 'mission.driver': null },
+          { 'mission.driver': id },
+        ],
+        $or: [
+          { status: 'Confirmée' },
+          { status: 'en retard' },
+        ],
+      })
+      .populate('mission')
+      .populate('partner')
+      .sort({ 'mission.dateDepart': -1 }) // Sort by the datedepart property in descending order
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
 
-    res.status(200).json({ missions, count:missionCount });
+    res.status(200).json({ missions, count: missionCount });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 const findMissionsAcceptedByUser = async (req, res) => {
   const { id } = req.user;
   // const { limit = 10, skip = 0 } = req.query;
