@@ -30,6 +30,7 @@ const cloudinary = require('../utils/uploadImage');
 const DemandeModel = require('../models/Demande.model');
 const devisModel = require('../models/devis.model.js');
 const userModel = require('../models/userModel.js');
+const factureModel = require('../models/facture.model.js');
 
 
 
@@ -440,22 +441,70 @@ const AccepteMission = async (req, res) => {
 
   try {
     // Find the demand by ID and user ID
-    const demand = await demandeModels.findOne({ _id: demandId});
+    const demand = await devisModel.findOne({ _id: demandId});
+    const mission = await demandeModels.findOne({ _id: demand.mission._id })
 
     if (!demand) {
       return res.status(404).json({ message: 'Demand not found for the user.' });
     }
 
     // Check if the demand has a driver attribute, if not, set it to the user ID
-    if (!demand?.driver) {
-      demand.driver = userId;
+    if (!mission?.driver) {
+      mission.driver = userId;
+
     }
 
     // Increment or decrement the offer by 0.5
-    demand.status = "Accepted";
+    demand.status = "Démarrée";
+    mission.status="Démarrée"
 
     // Save the updated demand
     const updatedDemand = await demand.save();
+    const updatedMission = await mission.save();
+
+    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+const TermineeMission = async (req, res) => {
+  const userId = req.user.id; // Assuming user ID is available in req.user.id
+  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+
+  try {
+    // Find the demand by ID and user ID
+    const demand = await devisModel.findOne({ _id: demandId});
+    const mission = await demandeModels.findOne({ _id: demand.mission._id })
+
+    if (!demand) {
+      return res.status(404).json({ message: 'Demand not found for the user.' });
+    }
+
+    // Check if the demand has a driver attribute, if not, set it to the user ID
+    if (!mission?.driver) {
+      mission.driver = userId;
+
+    }
+
+    // Increment or decrement the offer by 0.5
+    demand.status = "Terminée";
+    mission.status="Terminée"
+    const newFacture = new factureModel({
+     partner:mission?.driver,
+     totalAmmount:demand?.remunerationAmount
+
+    });
+    const createdFacture = await newFacture.save();
+
+    // Save the new demand
+    // const createdDemande = await newDemande.save();
+
+
+
+    // Save the updated demand
+    const updatedDemand = await demand.save();
+    const updatedMission = await mission.save();
 
     res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
   } catch (error) {
@@ -1908,6 +1957,7 @@ const findMissionsByUser = async (req, res) => {
       $or: [
         { status: 'Confirmée' },
         { status: 'en retard' },
+        { status: 'Démarrée' },
       ],
     });
 
@@ -1921,6 +1971,49 @@ const findMissionsByUser = async (req, res) => {
         $or: [
           { status: 'Confirmée' },
           { status: 'en retard' },
+        { status: 'Démarrée' },
+
+        ],
+      })
+      .populate('mission')
+      .populate('partner')
+      .sort({ 'mission.dateDepart': -1 }) // Sort by the datedepart property in descending order
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    res.status(200).json({ missions, count: missionCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+const findMissionsTermineeByUser = async (req, res) => {
+  const { id } = req.user;
+  const { limit = 10, skip = 0 } = req.query;
+
+  try {
+    // Count the number of missions that match the criteria
+    const missionCount = await devisModel.countDocuments({
+      $or: [
+        { 'mission.driver': null },
+        { 'mission.driver': id },
+      ],
+      $or: [
+        { status: 'Terminée' },
+
+      ],
+    });
+
+    // Find demands without a driver, with the current driver's id, and in progress
+    const missions = await devisModel
+      .find({
+        $or: [
+          { 'mission.driver': null },
+          { 'mission.driver': id },
+        ],
+        $or: [
+          { status: 'Terminée' },
+
+
         ],
       })
       .populate('mission')
@@ -2024,11 +2117,13 @@ module.exports = {
   updatePassword,
   getUsersById,
   findMissionsByUser,
+  findMissionsTermineeByUser,
   findDemandsCreatedByPartner,
   getMissionsCountByUser,
   findAllPartnersAndTheirDemands,
   findMissionsAcceptedByUser,
   AccepteMission,
+  TermineeMission,
   RefuseMission,
   CompleteMission,
   fetchCurrentUser,

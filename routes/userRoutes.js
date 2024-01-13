@@ -62,7 +62,9 @@ const {
   RejeteDevis,
   findMissionsAcceptedByUser,
   deleteSocket,
-  findDevisByPartnerId
+  findDevisByPartnerId,
+  TermineeMission,
+  findMissionsTermineeByUser
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -77,6 +79,7 @@ router.route('/createDemande').post(passport.authenticate('jwt', {session: false
 router.route('/findDemandsByUserId').get(passport.authenticate('jwt', {session: false}),findDemandsByUserId)
 router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {session: false}),incrementOffer)
 router.route('/AccepteMission/:demandId').post(passport.authenticate('jwt', {session: false}),AccepteMission)
+router.route('/TermineeMission/:demandId').post(passport.authenticate('jwt', {session: false}),TermineeMission)
 router.route('/RefuseMission/:demandId').post(passport.authenticate('jwt', {session: false}),RefuseMission)
 router.route('/CompleteMission/:demandId').post(passport.authenticate('jwt', {session: false}),CompleteMission)
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
@@ -101,6 +104,7 @@ router.route('/getMissionsCountByUser').get(passport.authenticate('jwt', {sessio
 router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)
 router.route('/getUsersById').get(passport.authenticate('jwt', {session: false}),getUsersById)
 router.route('/findMissionsByUser').get(passport.authenticate('jwt', {session: false}),findMissionsByUser)
+router.route('/findMissionsTermineeByUser').get(passport.authenticate('jwt', {session: false}),findMissionsTermineeByUser)
 router.route('/findMissionsAcceptedByUser').get(passport.authenticate('jwt', {session: false}),findMissionsAcceptedByUser)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
 router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false}), (req, res) => {
