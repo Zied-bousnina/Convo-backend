@@ -1900,12 +1900,15 @@ const findMissionsByUser = async (req, res) => {
 
   try {
     // Count the number of missions that match the criteria
-    const missionCount = await DemandeModel.countDocuments({
+    const missionCount = await devisModel.countDocuments({
       $or: [
-        { driver: null },
-        { driver: id },
+        { 'mission.driver': null },
+        { 'mission.driver': id },
       ],
-      status: 'in progress',
+       $or: [
+    { status: 'Confirmée' },
+    { status: 'en retard' },
+  ],
     });
 
     // Find demands without a driver, with the current driver's id, and in progress
@@ -1914,7 +1917,10 @@ const findMissionsByUser = async (req, res) => {
         { 'mission.driver': null },
         { 'mission.driver': id },
       ],
-      status: 'Confirmée',
+       $or: [
+    { status: 'Confirmée' },
+    { status: 'en retard' },
+  ],
     }).populate("mission")
     .populate("partner")
     .sort({ createdAt: -1 })
