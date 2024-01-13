@@ -1986,6 +1986,34 @@ const findMissionsByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const findLastMissionByUser = async (req, res) => {
+  const { id } = req.user;
+
+  try {
+    // Find the last mission without a driver, with the current driver's id, and in progress
+    const lastMission = await devisModel
+      .findOne({
+        $or: [
+          { 'mission.driver': null },
+          { 'mission.driver': id },
+        ],
+        $or: [
+          { status: 'Confirmée' },
+          { status: 'en retard' },
+          { status: 'Démarrée' },
+        ],
+      })
+      .populate('mission')
+      .populate('partner')
+      .sort({ 'createdAt': -1 }) // Sort by the createdAt property in descending order
+      .limit(1);
+
+    res.status(200).json({ mission: lastMission });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 const findMissionsTermineeByUser = async (req, res) => {
   const { id } = req.user;
   const { limit = 10, skip = 0 } = req.query;
@@ -2055,6 +2083,7 @@ const findMissionsAcceptedByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const findMissionById = async (req, res) => {
   const demandId = req.params.demandId// Assuming user ID is available in req.user.id
 
@@ -2117,6 +2146,7 @@ module.exports = {
   updatePassword,
   getUsersById,
   findMissionsByUser,
+  findLastMissionByUser,
   findMissionsTermineeByUser,
   findDemandsCreatedByPartner,
   getMissionsCountByUser,

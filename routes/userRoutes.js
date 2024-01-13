@@ -64,7 +64,8 @@ const {
   deleteSocket,
   findDevisByPartnerId,
   TermineeMission,
-  findMissionsTermineeByUser
+  findMissionsTermineeByUser,
+  findLastMissionByUser
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -104,6 +105,7 @@ router.route('/getMissionsCountByUser').get(passport.authenticate('jwt', {sessio
 router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)
 router.route('/getUsersById').get(passport.authenticate('jwt', {session: false}),getUsersById)
 router.route('/findMissionsByUser').get(passport.authenticate('jwt', {session: false}),findMissionsByUser)
+router.route('/findLastMissionByUser').get(passport.authenticate('jwt', {session: false}),findLastMissionByUser)
 router.route('/findMissionsTermineeByUser').get(passport.authenticate('jwt', {session: false}),findMissionsTermineeByUser)
 router.route('/findMissionsAcceptedByUser').get(passport.authenticate('jwt', {session: false}),findMissionsAcceptedByUser)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
