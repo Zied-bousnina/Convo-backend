@@ -1909,13 +1909,14 @@ const findMissionsByUser = async (req, res) => {
     });
 
     // Find demands without a driver, with the current driver's id, and in progress
-    const missions = await DemandeModel.find({
+    const missions = await devisModel.find({
       $or: [
-        { driver: null },
-        { driver: id },
+        { 'mission.driver': null },
+        { 'mission.driver': id },
       ],
-      status: 'in progress',
-    })
+      status: 'Confirmée',
+    }).populate("mission")
+    .populate("partner")
     .sort({ createdAt: -1 })
     // .limit(parseInt(limit))
     // .skip(parseInt(skip));
