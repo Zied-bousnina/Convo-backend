@@ -116,12 +116,25 @@ const fetchFactureById = async (req, res)=> {
         }
 
 }
+const fetchFacturesByDriver = async(req, res)=> {
+    const driver = req.user.id
+    try{
+        const factures = await factureModel.find({ partner:driver }).populate("partner").populate("mission");
+        if(!factures){
+            return res.status(404).json({error: 'Facture not found'});
+        }
+        res.status(200).json(factures);
+        }catch(e){
+        res.status(500).json({error: e.message});
+        }
+}
 
 
 
 module.exports = {
     createFacture,
     fetchFactureByPartner,
-    fetchFactureById
+    fetchFactureById,
+    fetchFacturesByDriver
   }
 

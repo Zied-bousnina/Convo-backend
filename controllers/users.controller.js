@@ -492,7 +492,8 @@ const TermineeMission = async (req, res) => {
     mission.status="Terminée"
     const newFacture = new factureModel({
      partner:mission?.driver,
-     totalAmmount:demand?.remunerationAmount
+     totalAmmount:demand?.remunerationAmount,
+     mission:mission
 
     });
     const createdFacture = await newFacture.save();
@@ -777,6 +778,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
               email: req.body.email,
               password: bcrypt.hashSync(req.body.password, 10),
               role: "DRIVER",
+              firstLogin: req.body.firstLogin
 
 
             })

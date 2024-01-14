@@ -20,6 +20,12 @@ const FactureSchema = new Schema({
             type: String,
             // required: true
 
+        },
+        mission:{
+            type: Schema.Types.ObjectId,
+            ref: 'Deamnde',
+            // required: true
+
         }
 
 

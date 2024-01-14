@@ -460,6 +460,9 @@ socket.on("refuse devis", async (devis) => {
 });
 
 socket.on("accept devis", async (devis) => {
+  console.log("-----------------------------------------------------------------------------------")
+  console.log(devis)
+  console.log("-----------------------------------------------------------------------------------")
     // await handleDevisStatusChange(devis, "Accepted");
     try {
       const data = devis;
@@ -524,8 +527,8 @@ socket.on("accept devis", async (devis) => {
 
       console.log("devis_doc", doc);
       user.Newsocket.push({ ...doc });
-      await user.save();
       socket.broadcast.emit("message received", devis1);
+      await user.save();
 
       // Broadcast to the partner
       const partnerUser = await userModel.findById(data.partner);
