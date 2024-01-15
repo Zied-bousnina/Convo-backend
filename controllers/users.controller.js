@@ -1283,7 +1283,7 @@ const forgotPassword = async (req, res) => {
   mailer.send({
     to: ["zbousnina@yahoo.com",user.email ],
     subject: "Verification code",
-    html: generatePasswordResetTemplate(`https://reset-password-xgenbox.netlify.app/reset-password?token=${resetToken}&id=${user._id}`)
+    html: generatePasswordResetTemplate(`https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`)
   }, (err)=>{
     console.log(err)
   })
