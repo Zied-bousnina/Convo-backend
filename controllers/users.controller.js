@@ -2001,7 +2001,7 @@ const findLastMissionByUser = async (req, res) => {
         ],
         $or: [
           { status: 'Confirmée' },
-          { status: 'en retard' },
+          { status: 'En retard' },
           { status: 'Démarrée' },
         ],
       })
