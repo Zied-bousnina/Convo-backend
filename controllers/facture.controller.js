@@ -30,6 +30,7 @@ const cloudinary = require('../utils/uploadImage');
 const DemandeModel = require('../models/Demande.model');
 const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
+const DriverFactureModel = require('../models/DriverFacture.model.js');
 
 
 const createFacture = async (req, res) => {
@@ -58,6 +59,81 @@ const createFacture = async (req, res) => {
         res.status(500).json({ error5: 'Internal Server Error' });
     }
 };
+const calculateTotalAmmount = (devisArray) => {
+  // Assuming each devis has a 'totalAmmount' field
+  let totalAmmount = 0;
+
+  devisArray.forEach((devisItem) => {
+    // Add the totalAmmount of each devis to the totalAmmount for FactureDriver
+    totalAmmount += parseFloat(devisItem.totalAmmount) || 0;
+  });
+
+  return totalAmmount.toString(); // Convert the total to string if needed
+};
+const fetchFactureByDriver = async (req, res) => {
+  const partner = req.user.id;
+  let { from, to } = req.body; // Use let instead of const
+  try {
+    console.log(from, to);
+    let query = { partner: partner };
+
+    // If fromDate and toDate are provided, add date filter to the query
+    if (from && to && from != 'Invalid Date' && to != 'Invalid Date') {
+      from = new Date(from); // Use let instead of const
+      to = new Date(to);     // Use let instead of const
+
+      if (!isNaN(from.valueOf()) && !isNaN(to.valueOf())) {
+        // Assuming 'createdAt' is the field in the schema where the date is stored
+        query.createdAt = { $gte: from, $lte: to };
+      } else {
+        res.status(400).json({ message: 'Invalid date format in request parameters.' });
+        return;
+      }
+    }
+
+    const devis = await factureModel.find(query);
+    // Create a new FactureDriver based on the fetched devis
+    const factureDriver = new DriverFactureModel({
+      driver: req.user.id,
+      factures: devis.map((devisItem) => devisItem._id),
+      from: from.toString(),
+      to: to.toString(),
+      totalAmmount: calculateTotalAmmount(devis), // You need to implement this function
+    });
+
+    // Save the new FactureDriver to the database
+    await factureDriver.save();
+
+
+    res.status(200).json({ devis,factureDriver  });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+const fetchAllFacturesByDriver = async (req, res) => {
+  const driver = req.user.id;
+  try {
+    const factures = await DriverFactureModel.find({ driver: driver })
+  .populate({
+    path: 'factures',
+    populate: [
+      { path: 'mission' },  // Assuming 'mission' is a field in the 'factures' array
+      // { path: 'anotherField' }  // Replace 'anotherField' with the actual field name in 'factures'
+    ]
+  });
+
+    if (!factures) {
+      return res.status(404).json({ error: 'Facture not found' });
+    }
+    res.status(200).json(factures);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+
+};
+
+
+
 
 const fetchFactureByPartner = async (req, res) => {
     try {
@@ -135,6 +211,8 @@ module.exports = {
     createFacture,
     fetchFactureByPartner,
     fetchFactureById,
-    fetchFacturesByDriver
+    fetchFacturesByDriver,
+    fetchFactureByDriver,
+    fetchAllFacturesByDriver
   }
 

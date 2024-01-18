@@ -8,6 +8,7 @@ var indexRouter = require('./routes/index');
 const mongoose = require('mongoose')
 const passport = require('passport');
 const userRoutes = require('./routes/userRoutes.js');
+const profileRoutes = require('./routes/profiles.route.js');
 const BasicInfoRoutes = require('./routes/BasicInfo.js');
 const connectDB = require('./config/db.js');
 const formData = require('express-form-data');
@@ -547,6 +548,10 @@ socket.on("accept devis", async (devis) => {
   socket.on("join chat", (room) => {
     socket.join(room);
   });
+  socket.on("MissionAccepted",()=> {
+    console.log("MissionAccepted")
+    socket.broadcast.emit("MissionAccepted")
+  })
 
 
 
@@ -591,6 +596,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api', indexRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/basicInfo', BasicInfoRoutes);
+app.use('/api/profile', profileRoutes);
 
 
 module.exports = app;

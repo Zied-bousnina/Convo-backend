@@ -437,12 +437,26 @@ const incrementOffer = async (req, res) => {
 };
 const AccepteMission = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
-  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+  const demandId = req.params.demandId;
 
   try {
     // Find the demand by ID and user ID
     const demand = await devisModel.findOne({ _id: demandId});
     const mission = await demandeModels.findOne({ _id: demand.mission._id })
+    console.log("mission",mission) // Assuming you pass the demandId in the request parameters
+     // Check if there's already a mission with status "Démarrée"
+     const existingStartedMission = await demandeModels.findOne({ driver: userId, status: 'Démarrée' });
+ // Check if the mission is already taken
+// Check if the mission is already taken
+console.log("mission?.driver !== null && mission.driver !== userId",mission?.driver ,userId)
+if (mission?.driver != null && mission.driver != userId) {
+  console.log("La mission a déjà été attribuée à un autre utilisateur.");
+  return res.status(400).json({ message: 'La mission a déjà été attribuée à un autre utilisateur.' });
+}
+     if (existingStartedMission) {
+      console.log("Vous avez déjà une mission en cours.")
+       return res.status(400).json({ message: 'Vous avez déjà une mission en cours.' });
+     }
 
     if (!demand) {
       return res.status(404).json({ message: 'Demand not found for the user.' });
@@ -451,12 +465,49 @@ const AccepteMission = async (req, res) => {
     // Check if the demand has a driver attribute, if not, set it to the user ID
     if (!mission?.driver) {
       mission.driver = userId;
-
     }
+    const uploadFileToCloudinary = async (file, folderName) => {
+      if (file) {
+
+        const result = await cloudinary.uploader.upload(file?.path, {
+          resource_type: 'auto',
+          folder: folderName,
+          public_id: `${folderName}_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        return result.secure_url;
+      }
+      return null;
+    };
+
+    const imagesUploaded = [];
+
+    await Promise.all(
+      Object.values(req?.files).map(async (e) => {
+        try {
+          const uploadedUrl = await uploadFileToCloudinary(e, `mission :${demandId}`);
+          imagesUploaded.push(uploadedUrl);
+        } catch (error) {
+          console.error("Error uploading file to Cloudinary:", error);
+          throw error; // Propagate the error to the outer catch block
+        }
+      })
+    );
 
     // Increment or decrement the offer by 0.5
     demand.status = "Démarrée";
     mission.status="Démarrée"
+    if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url == 'string')) {
+      console.log("bien")
+      mission.demareeMissionImages = imagesUploaded;
+  } else {
+      console.error('Invalid image data format');
+      // Handle the error accordingly
+      res.status(400).json({ message: 'Invalid image data format' });
+      return;
+  }
+    mission.demareeMissionImages= imagesUploaded
 
     // Save the updated demand
     const updatedDemand = await demand.save();
@@ -468,6 +519,56 @@ const AccepteMission = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+
+
+// for test upload files
+// const AccepteMission = async (req, res) => {
+//   const userId = req.user.id;
+//   const demandId = req.params.demandId;
+//   const images = req.body;
+//   console.log(req?.files)
+
+//   try {
+//     const uploadFileToCloudinary = async (file, folderName) => {
+//       if (file) {
+
+//         const result = await cloudinary.uploader.upload(file?.path, {
+//           resource_type: 'auto',
+//           folder: folderName,
+//           public_id: `${folderName}_${Date.now()}`,
+//           overwrite: true,
+//         });
+//         console.log(result);
+//         return result.secure_url;
+//       }
+//       return null;
+//     };
+
+//     const imagesUploaded = [];
+
+//     await Promise.all(
+//       Object.values(req?.files).map(async (e) => {
+//         try {
+//           const uploadedUrl = await uploadFileToCloudinary(e, `mission :${demandId}`);
+//           imagesUploaded.push(uploadedUrl);
+//         } catch (error) {
+//           console.error("Error uploading file to Cloudinary:", error);
+//           throw error; // Propagate the error to the outer catch block
+//         }
+//       })
+//     );
+
+//     console.log(imagesUploaded);
+
+//     res.status(200).json({ message: 'Mission updated successfully' });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// };
+
+
 const TermineeMission = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
@@ -486,6 +587,34 @@ const TermineeMission = async (req, res) => {
       mission.driver = userId;
 
     }
+    const uploadFileToCloudinary = async (file, folderName) => {
+      if (file) {
+
+        const result = await cloudinary.uploader.upload(file?.path, {
+          resource_type: 'auto',
+          folder: folderName,
+          public_id: `${folderName}_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        return result.secure_url;
+      }
+      return null;
+    };
+    const imagesUploaded = [];
+
+    await Promise.all(
+      Object.values(req?.files).map(async (e) => {
+        try {
+          const uploadedUrl = await uploadFileToCloudinary(e, `mission :${demandId}`);
+          imagesUploaded.push(uploadedUrl);
+        } catch (error) {
+          console.error("Error uploading file to Cloudinary:", error);
+          throw error; // Propagate the error to the outer catch block
+        }
+      })
+    );
+
 
     // Increment or decrement the offer by 0.5
     demand.status = "Terminée";
@@ -496,6 +625,16 @@ const TermineeMission = async (req, res) => {
      mission:mission
 
     });
+    if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url == 'string')) {
+      console.log("bien")
+      mission.termineemissionImages = imagesUploaded;
+  } else {
+      console.error('Invalid image data format');
+      // Handle the error accordingly
+      res.status(400).json({ message: 'Invalid image data format' });
+      return;
+  }
+    mission.termineemissionImages= imagesUploaded
     const createdFacture = await newFacture.save();
 
     // Save the new demand
@@ -1375,7 +1514,7 @@ const getAllPartner = async (req, res) => {
 const getAllDriver = async (req, res) => {
   // console.log(req.user.id)
   try {
-      const driver = await User.find({ role: "DRIVER" });
+      const driver = await User.find({ role: "DRIVER",verified: true });
       res.status(200).json({ driver})
       // return basicInfo;
   } catch (error) {

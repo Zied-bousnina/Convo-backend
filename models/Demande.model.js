@@ -79,7 +79,19 @@ const DeamndeSchema = new Schema({
             default: 'normal',
 
 
-          }
+          },
+          demareeMissionImages: [
+            {
+                type: String,
+            }
+
+          ],
+          termineemissionImages: [
+            {
+                type: String,
+            }
+
+        ]
 
 
 

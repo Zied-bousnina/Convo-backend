@@ -26,6 +26,7 @@ const uploads = multer({ storage, fileFilter });
 // Profiles admin
 // addProfile
 router.route('/upload-profile',uploads.single('avatar')).post(passport.authenticate('jwt', {session: false}), AddProfile)
+
 router.route('/',uploads.single('avatar')).post(passport.authenticate('jwt', {session: false}), AddProfile)
 
 //find All profile

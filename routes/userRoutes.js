@@ -70,7 +70,21 @@ const {
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
 const { CreateReportOnuser, CreateSupport } = require('../controllers/Report.controller');
+const multer = require('multer');
 
+
+// const multer = require('multer');
+
+const storage = multer.diskStorage({});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb('invalid image file!', false);
+  }
+};
+const uploads = multer({ storage, fileFilter });
 router.route('/').post(registerUser)
 router.route('/login').post(authUser)
 router.route('/createReport').post(passport.authenticate('jwt', {session: false}),CreateReportOnuser)
@@ -162,7 +176,7 @@ router
 
   /* ---------------------------- */
   const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller');
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver } = require('../controllers/facture.controller.js');
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
@@ -175,6 +189,8 @@ const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByD
   router.route("/facture/create").post(createFacture)
   router.route('/facture/fetchFactureByPartner').get(passport.authenticate('jwt', {session: false}),fetchFactureByPartner )
   router.route('/facture/findFactureById/:id').get(passport.authenticate('jwt', {session: false}),fetchFactureById )
+  router.route('/facture/fetchFactureByDriver').post(passport.authenticate('jwt', {session: false}),fetchFactureByDriver )
   router.route('/facture/findFactureBydriver').get(passport.authenticate('jwt', {session: false}),fetchFacturesByDriver )
+  router.route('/facture/fetchAllFacturesByDriver').get(passport.authenticate('jwt', {session: false}),fetchAllFacturesByDriver )
 
 module.exports = router
