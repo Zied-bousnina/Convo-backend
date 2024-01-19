@@ -65,7 +65,9 @@ const {
   findDevisByPartnerId,
   TermineeMission,
   findMissionsTermineeByUser,
-  findLastMissionByUser
+  findLastMissionByUser,
+  AddDriverDoc_DriverLicence,
+  finDocByDriver
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -110,6 +112,8 @@ router.route("/getDemandeCounts").get(getTotalDemandesCount)
 router.route('/AddAddress').post(passport.authenticate('jwt', {session: false}),addAddress)
 router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddPartner)
 router.route('/driver/AddDriver').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddDriver)
+router.route('/driver/UpdateDocDriver').post(passport.authenticate('jwt', {session: false}),AddDriverDoc_DriverLicence)
+router.route('/driver/finDocByDriver').get(passport.authenticate('jwt', {session: false}),finDocByDriver)
 router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateDriver)
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
 router.route('/mission/updateMission/:id').post(passport.authenticate('jwt', {session: false}),updateMission)
@@ -134,7 +138,7 @@ router.route('/getUsers').get(getUsers)
   // router.route('/registerGoogleUser').post(registerGoogleUser)
 //   .put(protect, updateUser)
 router.route('/verifyemail').post(verifyEmail)
-router.route('/deleteaccount').post(DeleteAccount)
+router.route('/deleteaccount').post(passport.authenticate('jwt', {session: false}),DeleteAccount)
 router.route("/forgot-password").post( forgotPassword )
 router.route("/resendotp").post( resendOTP )
 router.route("/resendOTPDeleteAccount").post( resendOTPDeleteAccount )

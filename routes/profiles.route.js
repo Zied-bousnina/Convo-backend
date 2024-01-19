@@ -35,7 +35,7 @@ router.route('/EditProfile',uploads.single('avatar')).put( passport.authenticate
 
 
 // get single Profile
-router.route('/').get( passport.authenticate('jwt', {session: false}),isRole(ROLES.USER, ROLES.ADMIN, ROLES.MUNICIPAL, ROLES.PRIVATE_COMPANY), findSingleProfile )
+router.route('/').get( passport.authenticate('jwt', {session: false}), findSingleProfile )
 
 //delete profile
 router.route('/:id').delete( passport.authenticate('jwt', {session: false}),isRole(ROLES.USER, ROLES.ADMIN), DeleteProfile )

@@ -1306,7 +1306,8 @@ const verifyEmail = async (req, res) => {
 };
 
 const DeleteAccount = async (req, res) => {
-  const { userId, otp } = req.body;
+  const {  otp } = req.body;
+  const userId = req.user.id
   // console.log(userId, otp)
   console.log(req.body)
 
@@ -2010,6 +2011,92 @@ const AddDriver = asyncHandler(async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 });
+const AddDriverDoc_DriverLicence = asyncHandler(async (req, res, next) => {
+  console.log(req.body)
+  const {
+    assurance,
+    CinfrontCard,
+    CinbackCard,
+    permisConduirefrontCard,
+    permisConduirebackCard,
+    proofOfAddress,
+    avatar,
+    kbis
+  } = req.files;
+  try {
+    const uploadFileToCloudinary = async (file, folderName) => {
+      if (file) {
+        const result = await cloudinary.uploader.upload(file.path, {
+          resource_type: 'auto',
+          folder: folderName,
+          public_id: `${folderName}_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        return result.secure_url;
+      }
+      return null;
+    };
+    // Find the existing document for the logged-in user
+    let driverDocuments = await DriverDocuments.findOne({ user: req.user.id });
+    if (!driverDocuments) {
+      // If no document found, create a new one
+      driverDocuments = new DriverDocuments({ user: req.user.id });
+    }
+    // Update or add new values
+     // Update or add new values based on files in req.files
+     if (permisConduirefrontCard) {
+      driverDocuments.permisConduirefrontCard = await uploadFileToCloudinary(permisConduirefrontCard, 'permis_uploads');
+    }
+    if (permisConduirebackCard) {
+      driverDocuments.permisConduirebackCard = await uploadFileToCloudinary(permisConduirebackCard, 'permis_uploads');
+    }
+
+    if ( assurance) {
+      driverDocuments.assurance = await uploadFileToCloudinary(assurance, 'assurance_uploads');
+
+    }
+
+    if(CinfrontCard ) {
+      driverDocuments.CinfrontCard = await uploadFileToCloudinary(CinfrontCard, 'cin_uploads');
+
+    }
+
+    if(CinbackCard ) {
+      driverDocuments.CinbackCard = await uploadFileToCloudinary(CinbackCard, 'cin_uploads');
+
+
+    }
+
+    if (proofOfAddress) {
+      driverDocuments.proofOfAddress = await uploadFileToCloudinary(proofOfAddress, 'address_uploads');
+    }
+
+      if (kbis) {
+        driverDocuments.kbis = await uploadFileToCloudinary(kbis, 'address_uploads');
+      }
+
+
+    // Save the document
+    await driverDocuments.save();
+
+    return res.status(200).json({ success: true, msg: 'Driver doc updated' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
+
+const finDocByDriver = async(req, res)=> {
+  try {
+    const driverDocuments = await DriverDocuments.findOne({ user: req.user.id });
+    res.status(200).json({ driverDocuments });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+
+}
+
 
 const updateDriver = asyncHandler(async (req, res, next) => {
 
@@ -2197,6 +2284,7 @@ const findMissionsTermineeByUser = async (req, res) => {
   }
 };
 
+
 const findMissionsAcceptedByUser = async (req, res) => {
   const { id } = req.user;
   // const { limit = 10, skip = 0 } = req.query;
@@ -2282,6 +2370,8 @@ module.exports = {
   updateMission,
   DeleteAccountByAdmin,
   AddDriver,
+  AddDriverDoc_DriverLicence,
+  finDocByDriver,
   updateDriver,
   getPartnerCount,
   updatePassword,
