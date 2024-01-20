@@ -1101,6 +1101,7 @@ const updatePartner = asyncHandler(async (req, res, next) => {
         existingPartner.email = newEmail || existingPartner.email ; // Update with the new email
         existingPartner.phoneNumber = req.body.phoneNumber || existingPartner.phoneNumber;
         existingPartner.password = bcrypt.hashSync(newGeneratedPassword, 10);
+        existingPartner.firstLogin = true;
 
         // Save the updated partner if the new email is unique
         const updatedPartner = await existingPartner.save();
