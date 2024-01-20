@@ -35,7 +35,7 @@ let server = app.listen(PORT, async (req, res) => {
 });
 cron.schedule('0 * * * *', async () => {
   // Check and update status for all 'confirmée' missions
-  const confirmeeMissions = await devisModel.find({ status: 'Confirmée' });
+  const confirmeeMissions = await devisModel.find({ status: 'Confirmée' }).populate("mission");
   const confirmeedevis = await DemandeModel.find({ status: 'Confirmée' });
   const Affectéeemission = await DemandeModel.find({ status: 'Affectée' }) .populate("driver")
   const AffectéeDevis = await devisModel.find({ status: 'Affectée' }).populate({
@@ -48,7 +48,7 @@ cron.schedule('0 * * * *', async () => {
   confirmeeMissions.forEach(async (mission) => {
       const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
       const currentTime = new Date();
-      const timeDifference = currentTime - mission.updatedAt;
+      const timeDifference = currentTime - mission.mission.dateDepart;
       // console.log("timeDifference",timeDifference)
 
       // If more than 2 hours have passed, update the status to 'En retard'
@@ -60,7 +60,7 @@ cron.schedule('0 * * * *', async () => {
   AffectéeDevis.forEach(async (mission) => {
     const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
     const currentTime = new Date();
-    const timeDifference = currentTime - mission.updatedAt;
+    const timeDifference = currentTime - mission.mission.dateDepart;
 
     // If more than 2 hours have passed, update the status to 'En retard'
     if (timeDifference >= twoHoursInMillis) {
@@ -74,7 +74,7 @@ cron.schedule('0 * * * *', async () => {
 Affectéeemission.forEach(async (mission) => {
   const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
   const currentTime = new Date();
-  const timeDifference = currentTime - mission.updatedAt;
+  const timeDifference = currentTime - mission.dateDepart;
 
   // If more than 2 hours have passed, update the status to 'En retard'
   if (timeDifference >= twoHoursInMillis) {
@@ -88,7 +88,7 @@ Affectéeemission.forEach(async (mission) => {
 confirmeedevis.forEach(async (mission) => {
   const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
   const currentTime = new Date();
-  const timeDifference = currentTime - mission.updatedAt;
+  const timeDifference = currentTime - mission.dateDepart;
 
   // If more than 2 hours have passed, update the status to 'En retard'
   if (timeDifference >= twoHoursInMillis) {
