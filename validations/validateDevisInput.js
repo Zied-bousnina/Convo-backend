@@ -5,7 +5,7 @@ module.exports = function validateDevisInput(data) {
   let errors = {};
 
   // Assuming categorie is a required field
-  data.categorie = !isEmpty(data.categorie) ? data.categorie : "";
+  // data.categorie = !isEmpty(data.categorie) ? data.categorie : "";
   // Assuming mission is a required field
   data.mission = !isEmpty(data.mission) ? data.mission : "";
   data.distance = !isEmpty(data.distance) ? data.distance : "";
@@ -17,9 +17,9 @@ module.exports = function validateDevisInput(data) {
 
 
 
-  if (validator.isEmpty(data.categorie)) {
-    errors.categorie = "Categorie field is required";
-  }
+  // if (validator.isEmpty(data.categorie)) {
+  //   errors.categorie = "Categorie field is required";
+  // }
 
   if (validator.isEmpty(data.mission)) {
     errors.mission = "Mission field is required";

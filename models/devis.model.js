@@ -7,7 +7,7 @@ const DevisSchema = new Schema({
     categorie:{
         type:Schema.Types.ObjectId,
         ref:'Categorie',
-        required:true
+        // required:true
 
     },
     mission:{

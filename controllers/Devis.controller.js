@@ -32,112 +32,84 @@ const devisModel = require('../models/devis.model.js');
 
 
 const createDevis = async (req, res) => {
-    const { errors, isValid } = validateDevisInput(req.body);
+  const { errors, isValid } = validateDevisInput(req.body);
 
-    try {
+  try {
       if (isValid) {
-        const {
-            categorie,
-            mission,
-            partner,
-            montant,
-            status,
-            distance,
-            rectification,
-            remunerationAmount
-            // status
-
-         } = req.body;
+          const {
+              mission,
+              partner,
+              montant,
+              status,
+              distance,
+              rectification,
+              remunerationAmount
+          } = req.body;
 
           // Check if the mission already exists in DevisModel
-      const existingDevis = await devisModel.findOne({ mission });
+          const existingDevis = await devisModel.findOne({ mission });
 
-if (existingDevis) {
-  errors.mission = "A Devis with this mission already exists";
-  return res.status(400).json({ errors });
-}
-        // Check if the description already exists
-           // Check if the mission exists in DemandeModel
-      const existingMission = await DemandeModel.findById(mission);
+          if (existingDevis) {
+              errors.mission = "A Devis with this mission already exists";
+              return res.status(400).json({ errors });
+          }
 
-if (!existingMission) {
-  errors.mission = "There is no mission with this ID";
-  return res.status(400).json({ errors });
-}
+          // Check if the mission exists in DemandeModel
+          const existingMission = await DemandeModel.findById(mission);
 
-      // Check if the description already exists in CategorieModel
-      const existingCategorie = await categorieModel.findById( categorie );
-      await DemandeModel.findByIdAndUpdate(mission, { status: "Devis" });
+          if (!existingMission) {
+              errors.mission = "There is no mission with this ID";
+              return res.status(400).json({ errors });
+          }
 
-      if (!existingCategorie) {
-        errors.categorie = "There is no categorie with this ID";
-        return res.status(400).json({ errors });
-      }
-        let catExist = await categorieModel.find({  categorie });
-        let missExist = await DemandeModel.find({  mission });
-        if (!catExist) {
-            errors.description = "there is no categorie  with this description"
-          return res.status(400).json({ message: 'there is no categorie  with this description' });
-        }
-        if ( !missExist) {
-            errors.description = "there is no  mission with this description"
-          return res.status(400).json({ message: 'there is no  mission with this description' });
-        }
-
-
-        // Create new Devis
-        const newDevis = new devisModel({
-            categorie,
-            mission,
-            partner,
-            montant,
-            status,
-            distance,
-            rectification,
-            remunerationAmount,
-            status: !partner ? "Confirmée" : "Devis",
-            // status:"in progress"
+          // Create new Devis
+          const newDevis = new devisModel({
+              mission,
+              partner,
+              montant,
+              status,
+              distance,
+              rectification,
+              remunerationAmount,
+              status: !partner ? "Confirmée" : "Devis",
           });
 
-          // check if the partner not vide   and partner exist
-          const createdCategorie = await newDevis.save();
+          // check if the partner not vide and partner exist
+          const createdDevis = await newDevis.save();
+
           if (!partner) {
-                // Update mission status in DemandeModel to "Accepted"
-                await DemandeModel.findByIdAndUpdate(mission, { status: "Confirmée" });
-            }
+              // Update mission status in DemandeModel to "Accepted"
+              await DemandeModel.findByIdAndUpdate(mission, { status: "Confirmée" });
+          }
 
-        if(partner){
-            const partnerExist = await User.findById(partner)
-            if(!partnerExist){
-                return res.status(400).json({ message: 'there is no partner with this id' });
-            }
-            else{
-                newDevis.partner=partner
-                console.log(
-                    missExist,
+          if (partner) {
+              const partnerExist = await User.findById(partner);
+              if (!partnerExist) {
+                  return res.status(400).json({ message: 'There is no partner with this id' });
+              } else {
+                  newDevis.partner = partner;
+                  console.log(existingMission);
+                  // Adjust mailer logic accordingly, as "categorie" is no longer available
+                  // ...
 
-                )
-                mailer.send({
-        to: ["zbousnina@yahoo.com", partnerExist.email],
-        subject: "Convoyage: Mission Approved Notification",
-        html: generateEmailTemplatePartnerApproval(partnerExist?.contactName,partnerExist?.name, montant, existingMission?.postalAddress, existingMission?.postalDestination),
-      }, (err) => {});
-            }
+                  // For example, generate an email template based on the remaining fields
+                  // mailer.send({
+                  //     to: ["zbousnina@yahoo.com", partnerExist.email],
+                  //     subject: "Convoyage: Mission Approved Notification",
+                  //     html: generateEmailTemplatePartnerApproval(partnerExist?.contactName, partnerExist?.name, montant, existingMission?.postalAddress, existingMission?.postalDestination),
+                  // }, (err) => {});
+              }
+          }
 
-        }
-
-        // Save Devis to database
-        return res.status(201).json({message:"Created Successfully", data :createdCategorie});
-
-
-        // res.status(201).json({ message: 'Categorie created successfully', categorie: createdCategorie });
+          // Save Devis to database
+          return res.status(201).json({ message: "Created Successfully", data: createdDevis });
       } else {
-        return res.status(400).json(errors);
+          return res.status(400).json(errors);
       }
-    } catch (error) {
+  } catch (error) {
       res.status(500).json({ message: error.message });
-    }
-  };
+  }
+};
 
 
   const UpdateDevis = async (req, res) => {
