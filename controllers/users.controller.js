@@ -211,12 +211,12 @@ const RemoveSocketById = async (req, res) => {
 const findAllPartnersAndTheirDemands = async (req, res) => {
   try {
     // Find all partners
-    const partners = await User.find({ role: 'PARTNER' });
+    const partners = await User.find({ role: 'PARTNER' }).populate("driver");
 
     // Find demands for each partner
     const partnerDemands = await Promise.all(
       partners.map(async (partner) => {
-        const demands = await demandeModels.find({ user: partner._id });
+        const demands = await demandeModels.find({ user: partner._id }).populate("driver");
         return { partner, demands };
       })
     );
@@ -232,7 +232,7 @@ const findDemandsByUserId = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
 
   try {
-    const demands = await demandeModels.find({ user: userId });
+    const demands = await demandeModels.find({ user: userId }).populate("driver");
 
     if (demands.length > 0) {
       res.status(200).json({ demands });
@@ -248,7 +248,7 @@ const findDemandsCreatedByPartner = async (req, res) => {
   try {
     // Fetch all demands
     const allDemands = await demandeModels.find({})
-      .populate('user') // Populate the 'user' field to get user details
+      .populate('user').populate("driver") // Populate the 'user' field to get user details
       .exec();
 
     // Filter demands created by users with the role 'partner'
@@ -1527,7 +1527,8 @@ const getPartnerById = async (req, res) => {
   // console.log(req.user.id)
   try {
       const partner = await User.findById(req.params.id);
-      res.status(200).json({ partner})
+      const documents = await DriverDocuments.find({user:req.params.id})
+      res.status(200).json({ partner, documents})
       // return basicInfo;
   } catch (error) {
       res.status(500).json({message1: "error2", message: error.message})
