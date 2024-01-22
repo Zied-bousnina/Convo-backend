@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -70,7 +70,9 @@ const {
   AddDriverDoc_DriverLicence,
   finDocByDriver,
   findAllPartnersAndTheirFactures,
-  GetFactureById
+  GetFactureById,
+  findAllDriversAndTheirFactures,
+  findDriveFactureById
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -107,9 +109,12 @@ router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {sess
 router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)
 router.route('/findAllPartnersAndTheirDemands').get(findAllPartnersAndTheirDemands )
 router.route('/findAllPartnersAndTheirFactures').get(findAllPartnersAndTheirFactures )
+router.route('/findAllDriversAndTheirFactures').get(findAllDriversAndTheirFactures )
 router.route('/mission/deleteMission/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/factureById/:id').get(passport.authenticate('jwt', {session: false}),GetFactureById)
+router.route('/factureDriverById/:id').get(passport.authenticate('jwt', {session: false}),findDriveFactureById)
 router.route('/payeeFacture/:id').get(passport.authenticate('jwt', {session: false}),PayeeFacture)
+router.route('/payeeFactureDriver/:id').get(passport.authenticate('jwt', {session: false}),PayeeFactureDriver)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route('/updatePassword').post(passport.authenticate('jwt', {session: false}),updatePassword)
 router.route("/getUserCounts").get(getUsersCount)

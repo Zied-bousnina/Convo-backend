@@ -155,6 +155,29 @@ const PayeeFacture = async (req, res)=> {
         res.status(500).json({error: e.message});
         }
 }
+const PayeeFactureDriver = async (req, res)=> {
+  const id = req.params.id;
+  const partner = req.user.id
+  try{
+      const facture = await DriverFactureModel.findById(id);
+      if(!facture){
+          return res.status(404).json({error: 'Facture not found'});
+      }
+       // Check if the 'payed' attribute exists
+       if ('payed' in facture) {
+        // Toggle the value of 'payed'
+        facture.payed = !facture.payed;
+    } else {
+        // If 'payed' does not exist, set it to true
+        facture.payed = true;
+    }
+
+      await facture.save();
+      res.status(200).json(facture);
+      }catch(e){
+      res.status(500).json({error: e.message});
+      }
+}
 
 
 
@@ -238,6 +261,7 @@ module.exports = {
     fetchFacturesByDriver,
     fetchFactureByDriver,
     fetchAllFacturesByDriver,
-    PayeeFacture
+    PayeeFacture,
+    PayeeFactureDriver
   }
 

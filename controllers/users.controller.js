@@ -31,6 +31,7 @@ const DemandeModel = require('../models/Demande.model');
 const devisModel = require('../models/devis.model.js');
 const userModel = require('../models/userModel.js');
 const factureModel = require('../models/facture.model.js');
+const DriverFactureModel = require('../models/DriverFacture.model.js');
 
 
 
@@ -246,6 +247,105 @@ const findAllPartnersAndTheirFactures = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+// const findAllDriversAndTheirFactures = async (req, res) => {
+//   try {
+//     // Find all partners
+//     const partners = await userModel.find({ role: 'DRIVER' });
+
+//     // Aggregate to group factures by driver
+//     const result = await DriverFactureModel.aggregate([
+//       {
+//         $match: {
+//           driver: { $in: partners.map((partner) => partner._id) },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: 'factures', // Collection name for FactureModel
+//           localField: 'factures',
+//           foreignField: '_id',
+//           as: 'factures',
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: '$driver',
+//           factures: { $push: '$factures' },
+//           from: { $first: '$from' },
+//           to: { $first: '$to' },
+//           totalAmmount: { $first: '$totalAmmount' },
+//           createdAt: { $first: '$createdAt' },
+//           updatedAt: { $first: '$updatedAt' },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: 'users', // Collection name for User model
+//           localField: '_id',
+//           foreignField: '_id',
+//           as: 'driver',
+//         },
+//       },
+//       {
+//         $unwind: '$driver',
+//       },
+//       {
+//         $project: {
+//           _id: 0, // Exclude _id field if you don't need it
+//           driver: 1,
+//           factures: 1,
+//           from: 1,
+//           to: 1,
+//           totalAmmount: 1,
+//           createdAt: 1,
+//           updatedAt: 1,
+//         },
+//       },
+//     ]);
+
+//     return res.status(200).json(result);
+//   } catch (error) {
+//     console.error('Error finding partners and their demands:', error);
+//     return res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// };
+const findAllDriversAndTheirFactures = async (req, res) => {
+  try {
+    // Find all partners
+    const partners = await User.find({ role: 'DRIVER' }).populate("factures");
+
+    // Find demands for each partner
+    const partnerDemands = await Promise.all(
+      partners.map(async (partner) => {
+        const facture = await DriverFactureModel.find({ driver: partner._id }).populate("factures");
+        const facturesArray = facture.map(item => item); // Extract the factures array
+        return { partner, facture: facturesArray };
+      })
+    );
+
+    return res.status(200).json(partnerDemands);
+  } catch (error) {
+    console.error('Error finding partners and their demands:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+const findDriveFactureById = async (req, res) => {
+  try {
+
+      const facture = await DriverFactureModel.findById(req.params.id).populate({
+        path: 'factures',
+        populate: { path: 'mission' } // Populate the 'mission' field in the 'factures' array
+      }).populate("driver");
+
+      return res.status(200).json(facture);
+
+
+  } catch (error) {
+    console.error('Error finding partners and their demands:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 const GetFactureById = async (req, res) => {
   try {
 
@@ -2416,6 +2516,8 @@ module.exports = {
   getMissionsCountByUser,
   findAllPartnersAndTheirDemands,
   findAllPartnersAndTheirFactures,
+  findAllDriversAndTheirFactures,
+  findDriveFactureById,
   GetFactureById,
   findMissionsAcceptedByUser,
   AccepteMission,
