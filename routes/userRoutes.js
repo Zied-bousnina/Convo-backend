@@ -1,3 +1,4 @@
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -108,7 +109,7 @@ router.route('/findAllPartnersAndTheirDemands').get(findAllPartnersAndTheirDeman
 router.route('/findAllPartnersAndTheirFactures').get(findAllPartnersAndTheirFactures )
 router.route('/mission/deleteMission/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/factureById/:id').get(passport.authenticate('jwt', {session: false}),GetFactureById)
-router.route('/PayeeFacture/:id').get(passport.authenticate('jwt', {session: false}),PayeeFacture)
+router.route('/payeeFacture/:id').get(passport.authenticate('jwt', {session: false}),PayeeFacture)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route('/updatePassword').post(passport.authenticate('jwt', {session: false}),updatePassword)
 router.route("/getUserCounts").get(getUsersCount)
@@ -185,7 +186,6 @@ router
 
   /* ---------------------------- */
   const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller');
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture } = require('../controllers/facture.controller.js');
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)

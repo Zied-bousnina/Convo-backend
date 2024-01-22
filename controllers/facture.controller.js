@@ -140,7 +140,15 @@ const PayeeFacture = async (req, res)=> {
         if(!facture){
             return res.status(404).json({error: 'Facture not found'});
         }
-        facture.payed = true;
+         // Check if the 'payed' attribute exists
+         if ('payed' in facture) {
+          // Toggle the value of 'payed'
+          facture.payed = !facture.payed;
+      } else {
+          // If 'payed' does not exist, set it to true
+          facture.payed = true;
+      }
+
         await facture.save();
         res.status(200).json(facture);
         }catch(e){
