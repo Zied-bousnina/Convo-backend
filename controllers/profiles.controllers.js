@@ -1,6 +1,7 @@
 const profileModels = require("../models/profile.models")
 const profileInputValidator = require("../validations/profile2")
-const cloudinary = require('../utils/uploadImage')
+const cloudinary = require('../utils/uploadImage');
+const userModel = require("../models/userModel");
 
 const skipProfile = async (req, res) => {
   try {
@@ -150,6 +151,101 @@ const EditProfile = async (req, res) => {
       res.status(200).json(updatedProfile);
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+  const EditProfileV_WEB = async (req, res) => {
+    console.log(req.user.id)
+    // console.log(req.files?.avatar?.size)
+    try {
+      let profile = await profileModels.findOne({ user: req.user.id });
+
+
+      if (!profile) {
+        profile = new profileModels({ user: req.user.id });
+    }
+    // console.log('prrr', profile)
+
+      const { tel, address, city, country, postalCode, name, email } = req.body;
+      if (name) {
+        try {
+            const user = await userModel.findById(req.user.id);
+            if (!user) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            user.name = name;
+            await user.save();
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal Server Error" });
+        }
+    }
+    if (email) {
+        try {
+            const emailExist = await userModel.findOne({ email });
+
+            if (emailExist && emailExist._id.toString() !== req.user.id) {
+                return res.status(400).json({ error: "Email already exists" });
+            } else {
+                // Only update the userModel email if it doesn't exist in another account
+                const user = await userModel.findById(req.user.id);
+
+                if (!user) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+
+                user.email = email;
+                await user.save();
+            }
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal Server Error" });
+        }
+    }
+
+      if (tel) {
+        const telExist = await profileModels.findOne({ tel });
+        if (telExist && telExist.user.toString() !== req.user.id) {
+          return res.status(404).json({ error: "Tel already exists" });
+        }
+        profile.tel = tel;
+      }
+
+      if(req.files?.avatar?.size > 0){
+        const result = await cloudinary.uploader.upload(req.files.avatar.path, {
+            public_id: `${req.user.id}_profile`,
+            width: 500,
+            height: 500,
+            crop: 'fill',
+        });
+        // console.log(result)
+        profile.avatar = result.secure_url
+    }
+
+      if (address) {
+        profile.address = address;
+      }
+
+      if (city) {
+        profile.city = city;
+      }
+
+      if (country) {
+        profile.country = country;
+      }
+
+      if (postalCode) {
+        profile.postalCode = postalCode;
+      }
+
+
+
+      const updatedProfile = await profile.save();
+      console.log(updatedProfile)
+
+      res.status(200).json(updatedProfile);
+    } catch (error) {
+      res.status(500).json({ error: "Internal ddServer Error", error2: error.message });
     }
   };
 
@@ -326,6 +422,7 @@ module.exports = {
     findSingleProfile,
     DeleteProfile,
     EditProfile,
-    skipProfile
+    skipProfile,
+    EditProfileV_WEB
 }
 
