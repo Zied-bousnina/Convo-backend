@@ -67,7 +67,9 @@ const {
   findMissionsTermineeByUser,
   findLastMissionByUser,
   AddDriverDoc_DriverLicence,
-  finDocByDriver
+  finDocByDriver,
+  findAllPartnersAndTheirFactures,
+  GetFactureById
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -103,7 +105,10 @@ router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {sess
 router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {session: false}),findDemandById)
 router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)
 router.route('/findAllPartnersAndTheirDemands').get(findAllPartnersAndTheirDemands )
+router.route('/findAllPartnersAndTheirFactures').get(findAllPartnersAndTheirFactures )
 router.route('/mission/deleteMission/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
+router.route('/factureById/:id').get(passport.authenticate('jwt', {session: false}),GetFactureById)
+router.route('/PayeeFacture/:id').get(passport.authenticate('jwt', {session: false}),PayeeFacture)
 router.route('/SetUserStatus').post(passport.authenticate('jwt', {session: false}),SetUserStatus)
 router.route('/updatePassword').post(passport.authenticate('jwt', {session: false}),updatePassword)
 router.route("/getUserCounts").get(getUsersCount)
@@ -180,7 +185,7 @@ router
 
   /* ---------------------------- */
   const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller');
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture } = require('../controllers/facture.controller.js');
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)

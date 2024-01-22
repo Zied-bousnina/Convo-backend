@@ -26,6 +26,11 @@ const FactureSchema = new Schema({
             ref: 'Deamnde',
             // required: true
 
+        },
+        payed: {
+            type: Boolean,
+            default: false
+
         }
 
 

@@ -132,6 +132,22 @@ const fetchAllFacturesByDriver = async (req, res) => {
 
 };
 
+const PayeeFacture = async (req, res)=> {
+    const id = req.params.id;
+    const partner = req.user.id
+    try{
+        const facture = await factureModel.findById(id);
+        if(!facture){
+            return res.status(404).json({error: 'Facture not found'});
+        }
+        facture.payed = true;
+        await facture.save();
+        res.status(200).json(facture);
+        }catch(e){
+        res.status(500).json({error: e.message});
+        }
+}
+
 
 
 
@@ -213,6 +229,7 @@ module.exports = {
     fetchFactureById,
     fetchFacturesByDriver,
     fetchFactureByDriver,
-    fetchAllFacturesByDriver
+    fetchAllFacturesByDriver,
+    PayeeFacture
   }
 

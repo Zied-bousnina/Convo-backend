@@ -227,6 +227,37 @@ const findAllPartnersAndTheirDemands = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+const findAllPartnersAndTheirFactures = async (req, res) => {
+  try {
+    // Find all partners
+    const partners = await User.find({ role: 'PARTNER' }).populate("driver");
+
+    // Find demands for each partner
+    const partnerDemands = await Promise.all(
+      partners.map(async (partner) => {
+        const facture = await factureModel.find({ partner: partner._id }).populate("driver");
+        return { partner, facture };
+      })
+    );
+
+    return res.status(200).json(partnerDemands);
+  } catch (error) {
+    console.error('Error finding partners and their demands:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+const GetFactureById = async (req, res) => {
+  try {
+
+    const facture = await factureModel.findById(req.params.id).populate("mission").populate("partner");
+
+    return res.status(200).json(facture);
+
+  } catch (error) {
+    console.error('Error finding partners and their demands:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 const findDemandsByUserId = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
@@ -2384,6 +2415,8 @@ module.exports = {
   findDemandsCreatedByPartner,
   getMissionsCountByUser,
   findAllPartnersAndTheirDemands,
+  findAllPartnersAndTheirFactures,
+  GetFactureById,
   findMissionsAcceptedByUser,
   AccepteMission,
   TermineeMission,
