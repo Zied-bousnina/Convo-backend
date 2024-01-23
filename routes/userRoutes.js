@@ -72,7 +72,8 @@ const {
   findAllPartnersAndTheirFactures,
   GetFactureById,
   findAllDriversAndTheirFactures,
-  findDriveFactureById
+  findDriveFactureById,
+  ConfirmeMissionByDriver
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -102,6 +103,7 @@ router.route('/findDemandsByUserId').get(passport.authenticate('jwt', {session: 
 router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {session: false}),incrementOffer)
 router.route('/AccepteMission/:demandId').post(passport.authenticate('jwt', {session: false}),AccepteMission)
 router.route('/TermineeMission/:demandId').post(passport.authenticate('jwt', {session: false}),TermineeMission)
+router.route('/ConfirmeMissionByDriver/:demandId').post(passport.authenticate('jwt', {session: false}),ConfirmeMissionByDriver)
 router.route('/RefuseMission/:demandId').post(passport.authenticate('jwt', {session: false}),RefuseMission)
 router.route('/CompleteMission/:demandId').post(passport.authenticate('jwt', {session: false}),CompleteMission)
 router.route('/decreaseOffer/:demandId').post(passport.authenticate('jwt', {session: false}),decreaseOffer)
