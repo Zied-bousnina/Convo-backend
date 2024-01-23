@@ -2476,14 +2476,18 @@ const findLastMissionByUser = async (req, res) => {
 
       if (lastMission.partner) {
         const partnerProfile = await profileModels.findOne({ user: lastMission.partner._id });
-        const plainProfile = partnerProfile.toObject();
-        responseMission.profile = plainProfile;
-        console.log("partner", partnerProfile);
-      } else if (lastMission.mission.user) {
+        if (partnerProfile) {
+          const plainProfile = partnerProfile.toObject();
+          responseMission.profile = plainProfile;
+          console.log("partner", partnerProfile);
+        }
+      } else if (lastMission.mission && lastMission.mission.user) {
         const partnerProfile = await profileModels.findOne({ user: lastMission.mission.user });
-        const plainProfile = partnerProfile.toObject();
-        responseMission.profile = plainProfile;
-        console.log("admin", partnerProfile);
+        if (partnerProfile) {
+          const plainProfile = partnerProfile.toObject();
+          responseMission.profile = plainProfile;
+          console.log("admin", partnerProfile);
+        }
       }
 
       // Send the response with the profile information
@@ -2496,6 +2500,7 @@ const findLastMissionByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 const findMissionsTermineeByUser = async (req, res) => {
