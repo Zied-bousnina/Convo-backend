@@ -799,7 +799,8 @@ const ConfirmeMissionByDriver = async (req, res) => {
     // Check if the demand has a driver attribute, if not, set it to the user ID
     if (!mission?.driver) {
       mission.driver = userId;
-
+    } else if (mission.status == "Confirmée driver") {
+      return res.status(400).json({ message: 'La mission a déjà été attribuée à un autre utilisateur.' });
     }
     // Increment or decrement the offer by 0.5
     demand.status = "Confirmée driver";
