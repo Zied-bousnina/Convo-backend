@@ -61,7 +61,7 @@ exports.mailTransport =()=>
             return `
               <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
                 <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706050823/bddojqjjdmmgki8exnou.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
                   <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Welcome to Convoyage, ${name}!</h2>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your account as a partner for ${businessName} has been created.</p>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Here is your generated password:</p>
@@ -78,7 +78,7 @@ exports.mailTransport =()=>
   return `
     <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
       <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706050823/bddojqjjdmmgki8exnou.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
         <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Mission Approved!</h2>
         <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Dear ${partnerName},</p>
         <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your mission for<strong> ${companyName} </strong>has been approved. Please log in to your account to review the details.</p>
@@ -96,7 +96,7 @@ exports.generateEmailTemplateMissionDelayed = (driverName, startingPoint, destin
   return `
     <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
       <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706050823/bddojqjjdmmgki8exnou.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
         <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Mission Delayed Notification</h2>
         <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Dear ${driverName},</p>
         <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">This is a notification to inform you that the mission has been delayed.</p>
@@ -117,7 +117,7 @@ exports.generateEmailTemplateMissionDelayed = (driverName, startingPoint, destin
             return `
               <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
                 <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706050823/bddojqjjdmmgki8exnou.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
                   <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Mission Affectation for ${driverName}!</h2>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">You have been assigned a new mission:</p>
                   <ul style="list-style: none; padding: 0; margin: 0;">
@@ -135,7 +135,7 @@ exports.generateEmailTemplateMissionDelayed = (driverName, startingPoint, destin
             return `
               <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
                 <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706050823/bddojqjjdmmgki8exnou.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
                   <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Welcome to Convoyage, ${name}!</h2>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your account as a Driver for ${name} has been created.</p>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Here is your generated password:</p>
@@ -151,7 +151,7 @@ exports.generateEmailTemplateMissionDelayed = (driverName, startingPoint, destin
             return `
               <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
                 <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1699918239/vzoatdref0mlnpuq1krs.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                  <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706050823/bddojqjjdmmgki8exnou.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
                   <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Account Deleted from Convoyage, ${name}!</h2>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Your account has been deleted by an admin.</p>
                   <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">If you have any questions, please contact support.</p>
