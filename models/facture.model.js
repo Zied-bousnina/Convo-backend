@@ -43,39 +43,13 @@ const FactureSchema = new Schema({
 
 
 // Pre-save middleware to generate and set numFacture
-// FactureSchema.pre('save', async function (next) {
-//     try {
-//         // Check if numFacture is not already set
-//         if (!this.numFacture) {
-//             // Generate a unique incrementing value (you can customize this as per your requirements)
-//             const count = await mongoose.model('Facture').countDocuments();
-//             this.numFacture = `FP${count + 1}`;
-//         }
-//         next();
-//     } catch (error) {
-//         next(error);
-//     }
-// });
-
 FactureSchema.pre('save', async function (next) {
     try {
+        // Check if numFacture is not already set
         if (!this.numFacture) {
-            const user = await mongoose.model('User').findById(this.partner);
-
-            // Check if the user has the role 'driver'
-            if (user && user.role === 'driver') {
-                // Do not increment numFacture
-                this.numFacture = `F0`; // Or any other format you want for driver
-            } else {
-                // Find the largest existing numFacture and increment it
-                const maxFacture = await mongoose.model('Facture')
-                    .findOne({}, { numFacture: 1 })
-                    .sort({ numFacture: -1 })
-                    .limit(1);
-
-                const maxNumFacture = maxFacture ? parseInt(maxFacture.numFacture.slice(1)) : 0;
-                this.numFacture = `FP${maxNumFacture + 1}`;
-            }
+            // Generate a unique incrementing value (you can customize this as per your requirements)
+            const count = await mongoose.model('Facture').countDocuments();
+            this.numFacture = `FP${count + 1}`;
         }
         next();
     } catch (error) {
