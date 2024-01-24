@@ -33,10 +33,31 @@ const FactureDriverSchema = new Schema({
             type: Boolean,
             default: false
 
-        }
+        },
+        numFacture: {
+            type: String,
+            // required: true
+
+        },
 
 
 
 }, {timestamps:true})
+
+// Pre-save middleware to generate and set numFacture
+FactureDriverSchema.pre('save', async function (next) {
+    try {
+        // Check if numFacture is not already set
+        if (!this.numFacture) {
+            // Generate a unique incrementing value (you can customize this as per your requirements)
+            const count = await mongoose.model('FactureDriver').countDocuments();
+            this.numFacture = `FD${count + 1}`;
+        }
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 module.exports = mongoose.model('FactureDriver', FactureDriverSchema)

@@ -433,7 +433,7 @@ const findDevisByPartnerId = async (req, res) => {
         // Assuming 'createdAt' is the field in the schema where the date is stored
         query.createdAt = { $gte: from, $lte: to };
       } else {
-        res.status(400).json({ message: 'Invalid date format in request parameters.' });
+        res.status(400).json({ message: 'Format de date invalide dans les paramètres de la demande.' });
         return;
       }
     }
@@ -452,11 +452,11 @@ const findDevisByPartnerId = async (req, res) => {
     if (devis.length > 0) {
       res.status(200).json({ devis });
     } else {
-      res.status(404).json({ message: 'No devis found for the user within the specified date range.' });
+      res.status(404).json({ message: "Aucun devis trouvé pour l'utilisateur dans la plage de dates spécifiée." });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: "Assurez-vous d'avoir sélectionné le partenaire" });
   }
 };
 
