@@ -421,7 +421,7 @@ const findDevisByPartnerId = async (req, res) => {
   const { fromDate, toDate } = req.body; // Extracting fromDate and toDate from query parameters
 
   try {
-    let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée'];
+    let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée',"Confirmée driver"];
     let query = { partner: userId, status: { $in: statusValues } };
 
     // If fromDate and toDate are provided, add date filter to the query

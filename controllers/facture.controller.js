@@ -202,7 +202,7 @@ const fetchFactureById = async (req, res)=> {
     const id = req.params.id;
     const partner = req.user.id
     try{
-      let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée'];
+      let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée', "Confirmée driver"];
         const facture = await factureModel.findById(id).populate("partner");
         if(!facture){
             return res.status(404).json({error: 'Facture not found'});
