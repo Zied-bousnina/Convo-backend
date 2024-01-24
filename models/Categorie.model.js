@@ -11,7 +11,9 @@ const CategorieSchema = new Schema({
         unitPrice: {
             type: Number, // Assuming unitPrice is a numeric value (number réel)
           },
-
+          distance: {
+            type: String, // Assuming distance is a numeric value (number réel)
+          },
 
 }, {timestamps:true})
 

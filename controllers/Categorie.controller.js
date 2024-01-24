@@ -36,10 +36,20 @@ const createCategorie = async (req, res) => {
 
     try {
       if (isValid) {
-        const { description, unitPrice } = req.body;
+        const { description, unitPrice , distance} = req.body;
 
         // Check if the description already exists
         const existingCategorie = await categorieModel.findOne({ description });
+        const existingCategoriedistance = await categorieModel.findOne({
+          distance
+
+        });
+
+        if (existingCategoriedistance) {
+          // If the category with the same distance exists for a different category, return an error
+          errors.distance = "La catégorie avec cette distance existe déjà";
+          return res.status(400).json({ message: 'La catégorie avec cette distance existe déjà', errors });
+        }
 
         if (existingCategorie) {
             errors.description = "Categorie with this description already exists"
@@ -50,6 +60,8 @@ const createCategorie = async (req, res) => {
         const newCategorie = new categorieModel({
           description,
           unitPrice,
+          distance
+
         });
 
         // Save the new categorie
@@ -115,7 +127,17 @@ const UpdateCategorie = async (req, res) => {
   try {
     if (isValid) {
       const categoryId = req.params.id
-      const {  description, unitPrice } = req.body;
+      const {  description, unitPrice , distance} = req.body;
+      const existingCategoriedistance = await categorieModel.findOne({
+        distance,
+        _id: { $ne: categoryId } // Exclude the current category ID
+      });
+
+      if (existingCategoriedistance) {
+        // If the category with the same distance exists for a different category, return an error
+        errors.distance = "La catégorie avec cette distance existe déjà";
+        return res.status(400).json({ message: 'La catégorie avec cette distance existe déjà', errors });
+      }
 
       // Find the existing category by description excluding the current category
       const existingCategorie = await categorieModel.findOne({
@@ -143,6 +165,10 @@ const UpdateCategorie = async (req, res) => {
       ;
       currentCategorie.unitPrice =
         unitPrice ? unitPrice : currentCategorie.unitPrice;
+
+      currentCategorie.distance =
+
+        distance ? distance : currentCategorie.distance;
 
       // Save the updated category
       const updatedCategorie = await currentCategorie.save();
