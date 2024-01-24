@@ -202,12 +202,13 @@ const fetchFactureById = async (req, res)=> {
     const id = req.params.id;
     const partner = req.user.id
     try{
+      let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée'];
         const facture = await factureModel.findById(id).populate("partner");
         if(!facture){
             return res.status(404).json({error: 'Facture not found'});
         }
         console.log(facture.from)
-        let query = { partner: partner };
+        let query = { partner: partner, status: { $in: statusValues  }}
 
         // If fromDate and toDate are provided, add date filter to the query
         if (facture?.from && facture?.to && facture?.from !== 'Invalid Date' && facture?.to !== 'Invalid Date') {

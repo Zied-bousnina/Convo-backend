@@ -182,7 +182,7 @@ router
   const { createCategorie, getAllCategorie, FindCategorieByid, deleteCategorie, UpdateCategorie } = require('../controllers/Categorie.controller')
   router.route('/categorie/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createCategorie)
   router.route('/deleteSocket/:id').post(deleteSocket)
-  router.route('/categorie/getAllCategorie').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getAllCategorie)
+  router.route('/categorie/getAllCategorie').get(getAllCategorie)
   router.route('/categorie/:id').get(FindCategorieByid)
   router.route('/categorie/deleteCategorie/:id').delete(passport.authenticate('jwt', {session: false}),deleteCategorie)
   router.route('/categorie/updateCategorie/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateCategorie)
