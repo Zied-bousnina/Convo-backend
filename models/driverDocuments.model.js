@@ -44,6 +44,13 @@ const DriverDocumentsSchema = new Schema({
         type:Boolean,
         default:false
 
+    },
+    refus: {
+        type:Boolean,
+        default:false
+    },
+    raisonRefus : {
+        type:String
     }
 
 }, {timestamps:true})

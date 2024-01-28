@@ -414,16 +414,21 @@ const checkDriverDocumentIsCompleted = async (req, res) => {
       driverDocuments.proofOfAddress;
 
     if (!isComplete) {
-      return res.status(400).json({ message: "Incomplete driver documents" });
+      return res.status(400).json({ message: "Oops! Merci de compléter vos documents de conducteur" });
     }
 
+    if(driverDocuments.refus) {
+      return res.status(400).json({ message: "Oops! Vos documents ont été refusés par l'administrateur",
+      raison: driverDocuments.raisonRefus
+     });
+    }
     // Check if the documents are verified
     if (driverDocuments.verified) {
       return res.status(200).json({ message: "Driver documents are complete and verified",
       driverIsVerified:true
      });
     } else {
-      return res.status(403).json({ message: "Driver documents are complete but not verified yet" });
+      return res.status(403).json({ message: "Vos documents sont en cours de vérification par l'administrateur" });
     }
 
   } catch (error) {
@@ -432,6 +437,29 @@ const checkDriverDocumentIsCompleted = async (req, res) => {
   }
 };
 
+const deleteAllSocketByUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Assuming your user model is named 'User'
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Clear the 'Newsocket' array for the user
+    user.Newsocket = [];
+
+    // Save the updated user object
+    await user.save();
+
+    return res.status(200).json({ message: 'All sockets deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting sockets:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 
 
@@ -2722,6 +2750,7 @@ module.exports = {
   findDevisById,
   RejeteDevis,
   AccepteDevis,
-  checkDriverDocumentIsCompleted
+  checkDriverDocumentIsCompleted,
+  deleteAllSocketByUser
 
 }

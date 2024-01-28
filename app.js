@@ -545,6 +545,50 @@ socket.on("accept devis", async (devis) => {
   }
 });
 
+socket.on("validate_me", async (devis) => {
+  console.log("-----------------------------------------------------------------------------------")
+  console.log(devis)
+  console.log("-----------------------------------------------------------------------------------")
+  // output
+//   -----------------------------------------------------------------------------------
+// { userId: '659aea02d1eb35004e61c65a', role: 'ADMIN' }
+// -----------------------------------------------------------------------------------
+
+    // await handleDevisStatusChange(devis, "Accepted");
+    try {
+      const admin = await userModel.findOne({
+        role:"ADMIN"
+      });
+      const user = await userModel.findById(devis?.userId);
+      if (!user) {
+          console.error("User not found");
+          return;
+      }
+      admin.Newsocket.push({...devis,
+        driver:{
+           name:user?.name,
+           email:user?.email,
+
+        } });
+      await admin.save();
+      socket.broadcast.emit("validate_me", {
+        ...devis,
+       driver:{
+          name:user?.name,
+          email:user?.email,
+
+       }
+
+      },
+
+      );
+      console.log(user)
+
+  } catch (error) {
+      console.error("Error handling new message:", error);
+  }
+});
+
   socket.on("join chat", (room) => {
     socket.join(room);
   });
