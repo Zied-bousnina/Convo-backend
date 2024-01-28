@@ -73,7 +73,8 @@ const {
   GetFactureById,
   findAllDriversAndTheirFactures,
   findDriveFactureById,
-  ConfirmeMissionByDriver
+  ConfirmeMissionByDriver,
+  checkDriverDocumentIsCompleted
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -126,6 +127,7 @@ router.route('/AddAddress').post(passport.authenticate('jwt', {session: false}),
 router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddPartner)
 router.route('/driver/AddDriver').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddDriver)
 router.route('/driver/UpdateDocDriver').post(passport.authenticate('jwt', {session: false}),AddDriverDoc_DriverLicence)
+router.route('/driver/checkDriverDocumentIsCompleted').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.DRIVER),checkDriverDocumentIsCompleted)
 router.route('/driver/finDocByDriver').get(passport.authenticate('jwt', {session: false}),finDocByDriver)
 router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateDriver)
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)

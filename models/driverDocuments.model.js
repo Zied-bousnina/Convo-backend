@@ -40,6 +40,11 @@ const DriverDocumentsSchema = new Schema({
 
     },
     avatar: String,
+    verified:{
+        type:Boolean,
+        default:false
+
+    }
 
 }, {timestamps:true})
 

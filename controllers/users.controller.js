@@ -392,6 +392,48 @@ const findDemandsCreatedByPartner = async (req, res) => {
   }
 };
 
+const checkDriverDocumentIsCompleted = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Find the driver documents for the user
+    const driverDocuments = await DriverDocuments.findOne({ user: userId });
+
+    if (!driverDocuments) {
+      return res.status(404).json({ message: "Driver documents not found for the user" });
+    }
+
+    // Check if all required fields are present
+    const isComplete =
+      driverDocuments.assurance &&
+      driverDocuments.CinfrontCard &&
+      driverDocuments.CinbackCard &&
+      driverDocuments.permisConduirefrontCard &&
+      driverDocuments.kbis &&
+      driverDocuments.permisConduirebackCard &&
+      driverDocuments.proofOfAddress;
+
+    if (!isComplete) {
+      return res.status(400).json({ message: "Incomplete driver documents" });
+    }
+
+    // Check if the documents are verified
+    if (driverDocuments.verified) {
+      return res.status(200).json({ message: "Driver documents are complete and verified",
+      driverIsVerified:true
+     });
+    } else {
+      return res.status(403).json({ message: "Driver documents are complete but not verified yet" });
+    }
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
 
 const findDevisByPartner = async (req, res)=> {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
@@ -2679,6 +2721,7 @@ module.exports = {
   findDevisByPartnerId,
   findDevisById,
   RejeteDevis,
-  AccepteDevis
+  AccepteDevis,
+  checkDriverDocumentIsCompleted
 
 }

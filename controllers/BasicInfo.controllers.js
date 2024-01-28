@@ -64,6 +64,7 @@ const AddBasicInfo = async(req, res)=>{
         res.status(500).json({message1: "error2", message: error.message})
     }
 }
+
 const findBasicInfoByUserId = async (req, res) => {
     console.log(req.user.id)
     try {

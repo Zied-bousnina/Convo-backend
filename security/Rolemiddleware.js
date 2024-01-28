@@ -9,7 +9,8 @@ const ROLES = {
     "ADMIN": 'ADMIN',
     "USER": 'USER',
     "MUNICIPAL": "MUNICIPAL",
-    "PRIVATE_COMPANY": "PRIVATE_COMPANY"
+    "PRIVATE_COMPANY": "PRIVATE_COMPANY",
+    "DRIVER": "DRIVER",
 
 }
 
@@ -17,10 +18,10 @@ const isRole = (...roles)=> (req, res, next)=> {
     const role =  roles.find(role=>req.user.role === role.toUpperCase())
     if(!role) return res.status(401).json({message: "no access"})
     next()
-    
+
 }
 
-const isResetTokenValid  =async(req, res, 
+const isResetTokenValid  =async(req, res,
     next)=> {
     const {token, id} = req.query;
     if(!token || !id)return sendError(res, "Invalid request!");
@@ -35,8 +36,8 @@ const isResetTokenValid  =async(req, res,
     if(!isTokenValid) return sendError(res, "Invalid Token!");
 
     req.user = user
-    next() 
-        
+    next()
+
 
 }
 
