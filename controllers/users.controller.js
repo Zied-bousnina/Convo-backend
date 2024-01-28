@@ -2463,8 +2463,8 @@ const findMissionsByUser = async (req, res) => {
       $or: [
         { status: 'Confirmée' },
         { status: 'En retard' },
-        { status: 'Démarrée' },
-        { status: 'Confirmée driver' },
+        // { status: 'Démarrée' },
+        // { status: 'Confirmée driver' },
       ],
     });
 
@@ -2478,6 +2478,75 @@ const findMissionsByUser = async (req, res) => {
         $or: [
           { status: 'Confirmée' },
           { status: 'En retard' },
+          // { status: 'Démarrée' },
+          // { status: 'Confirmée driver' },
+        ],
+      })
+      .populate('mission')
+      .populate('partner')
+      .sort({ 'mission.dateDepart': -1 }) // Sort by the datedepart property in descending order
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    // Fetch profiles for partners and create a modified response
+    const missionsWithProfiles = await Promise.all(missions.map(async (mission) => {
+      let missionWithProfile = { ...mission.toObject() }; // Create a shallow copy of the mission object
+
+      if (mission.partner) {
+        const partnerProfile = await profileModels.findOne({ user: mission.partner._id });
+
+        // Convert Mongoose document to a plain JavaScript object
+        const plainProfile = partnerProfile.toObject();
+
+        // Add the profile attribute to the partner object
+        missionWithProfile.partner.profile = plainProfile;
+      }else if(mission.mission.user) {
+        const partnerProfile = await profileModels.findOne({ user: mission.mission.user._id });
+
+        // Check if partnerProfile exists before accessing its properties
+        if (partnerProfile) {
+          const plainProfile = partnerProfile.toObject();
+          missionWithProfile.profile = plainProfile;
+        }
+      }
+
+      return missionWithProfile;
+    }));
+
+    res.status(200).json({ missions: missionsWithProfiles, count: missionCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+const findMissionsConfirmeByUser = async (req, res) => {
+  const { id } = req.user;
+  const { limit = 10, skip = 0 } = req.query;
+
+  try {
+    // Count the number of missions that match the criteria
+    const missionCount = await devisModel.countDocuments({
+      $or: [
+        // { 'mission.driver': null },
+        { 'mission.driver': id },
+      ],
+      $or: [
+        // { status: 'Confirmée' },
+        // { status: 'En retard' },
+        { status: 'Démarrée' },
+        { status: 'Confirmée driver' },
+      ],
+    });
+
+    // Find demands without a driver, with the current driver's id, and in progress
+    const missions = await devisModel
+      .find({
+        $or: [
+          // { 'mission.driver': null },
+          { 'mission.driver': id },
+        ],
+        $or: [
+          // { status: 'Confirmée' },
+          // { status: 'En retard' },
           { status: 'Démarrée' },
           { status: 'Confirmée driver' },
         ],
@@ -2727,6 +2796,7 @@ module.exports = {
   updatePassword,
   getUsersById,
   findMissionsByUser,
+  findMissionsConfirmeByUser,
   findLastMissionByUser,
   findMissionsTermineeByUser,
   findDemandsCreatedByPartner,

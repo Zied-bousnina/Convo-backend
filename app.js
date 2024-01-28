@@ -565,23 +565,26 @@ socket.on("validate_me", async (devis) => {
           return;
       }
       admin.Newsocket.push({...devis,
+        _id:user?._id,
         driver:{
            name:user?.name,
            email:user?.email,
 
         } });
+        socket.broadcast.emit("validate_me", {
+          ...devis,
+          _id:user?._id,
+         driver:{
+            name:user?.name,
+            email:user?.email,
+            _id:user?._id
+
+         }
+
+        },
+
+        );
       await admin.save();
-      socket.broadcast.emit("validate_me", {
-        ...devis,
-       driver:{
-          name:user?.name,
-          email:user?.email,
-
-       }
-
-      },
-
-      );
       console.log(user)
 
   } catch (error) {
