@@ -2495,12 +2495,13 @@ const findMissionsByUser = async (req, res) => {
       if (mission.partner) {
         const partnerProfile = await profileModels.findOne({ user: mission.partner._id });
 
-        // Convert Mongoose document to a plain JavaScript object
-        const plainProfile = partnerProfile.toObject();
-
-        // Add the profile attribute to the partner object
-        missionWithProfile.partner.profile = plainProfile;
-      }else if(mission.mission.user) {
+        // Check if partnerProfile exists before accessing its properties
+        if (partnerProfile) {
+          const plainProfile = partnerProfile.toObject();
+          // Add the profile attribute to the partner object
+          missionWithProfile.partner.profile = plainProfile;
+        }
+      } else if (mission.mission && mission.mission.user) {
         const partnerProfile = await profileModels.findOne({ user: mission.mission.user._id });
 
         // Check if partnerProfile exists before accessing its properties
@@ -2518,6 +2519,7 @@ const findMissionsByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const findMissionsConfirmeByUser = async (req, res) => {
   const { id } = req.user;
   const { limit = 10, skip = 0 } = req.query;
