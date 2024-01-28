@@ -2555,7 +2555,7 @@ const findMissionsConfirmeByUser = async (req, res) => {
       })
       .populate('mission')
       .populate('partner')
-      .sort({ 'status': -1, 'mission.dateDepart': -1 }) // Sort by the datedepart property in descending order
+      .sort({ 'mission.dateDepart': -1, 'status': -1 })// Sort by the datedepart property in descending order
       .limit(parseInt(limit))
       .skip(parseInt(skip));
 
