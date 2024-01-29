@@ -566,6 +566,7 @@ socket.on("validate_me", async (devis) => {
       }
       admin.Newsocket.push({...devis,
         _id:user?._id,
+        validate_me:true,
         driver:{
            name:user?.name,
            email:user?.email,
@@ -574,6 +575,7 @@ socket.on("validate_me", async (devis) => {
         socket.broadcast.emit("validate_me", {
           ...devis,
           _id:user?._id,
+          validate_me:true,
          driver:{
             name:user?.name,
             email:user?.email,
