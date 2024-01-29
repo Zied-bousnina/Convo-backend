@@ -11,6 +11,7 @@ const ROLES = {
     "MUNICIPAL": "MUNICIPAL",
     "PRIVATE_COMPANY": "PRIVATE_COMPANY",
     "DRIVER": "DRIVER",
+    "PARTNER": "PARTNER",
 
 }
 

@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -218,5 +218,8 @@ router
   router.route('/facture/fetchFactureByDriver').post(passport.authenticate('jwt', {session: false}),fetchFactureByDriver )
   router.route('/facture/findFactureBydriver').get(passport.authenticate('jwt', {session: false}),fetchFacturesByDriver )
   router.route('/facture/fetchAllFacturesByDriver').get(passport.authenticate('jwt', {session: false}),fetchAllFacturesByDriver )
+  router.route('/facture/PayeFactureByPartnerHorLigne/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeFactureByPartnerHorLigne )
+  router.route('/facture/PayerEnLigne/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeEnligne )
+  router.route('/facture/PayerEnligneDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayerEnligneDriver )
 
 module.exports = router

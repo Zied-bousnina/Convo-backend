@@ -32,7 +32,7 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 
-
+const stripe = require("stripe")(process.env.STRIPE_SECRET_TEST)
 const createFacture = async (req, res) => {
     console.log(req.body)
     try {
@@ -179,6 +179,93 @@ const PayeeFactureDriver = async (req, res)=> {
       }
 }
 
+const PayeeEnligne = async (req, res)=> {
+    const factureId = req.params.id;
+
+    let {id } = req.body
+    try {
+
+      const facture = await factureModel.findById(factureId);
+      if(!facture){
+          return res.status(404).json({error: 'Facture not found'});
+      }
+      const payment = await stripe.paymentIntents.create({
+        amount: facture.totalAmmount,
+        currency: "EUR",
+        description: "Spatula company",
+        payment_method: id,
+        confirm: true
+      })
+      console.log("Payment", payment)
+    facture.paymentMethod = "Paiement En ligne"
+    facture.payed = true
+      res.json({
+        message: "Payment successful",
+        success: true
+      })
+    } catch (error) {
+      console.log("Error", error)
+      res.json({
+        message: "Payment failed",
+        success: false
+      })
+
+    }
+  }
+
+  const tvaRate = 20; // Change this to your actual TVA rate
+
+  const calculateTVA = (montantHT, tvaRate) => {
+
+    const TVA = montantHT * (tvaRate / 100);
+    const montantTTC = montantHT + TVA;
+    const montantPur = montantHT - TVA;
+
+    return {
+      montantHT,
+      TVA,
+      montantTTC,
+      montantPur
+    };
+  };
+  const PayerEnligneDriver = async (req, res)=> {
+    const factureId = req.params.id;
+
+    let {id } = req.body
+    try {
+
+      const facture = await DriverFactureModel.findById(factureId);
+      if(!facture){
+          return res.status(404).json({error: 'Facture not found'});
+      }
+      const payment = await stripe.paymentIntents.create({
+        amount:  calculateTVA(Number(facture.totalAmmount), tvaRate).montantPur,
+        currency: "EUR",
+        description: "Spatula company",
+        payment_method: id,
+        confirm: true
+      })
+      console.log("Payment", payment)
+    // facture.paymentMethod = "Paiement En ligne"
+    facture.payed = true
+      res.json({
+        message: "Payment successful",
+        success: true
+      })
+    } catch (error) {
+      console.log("Error", error)
+      res.json({
+        message: "Payment failed",
+        success: false
+      })
+
+    }
+  }
+
+
+
+
+
 
 
 
@@ -253,6 +340,24 @@ const fetchFacturesByDriver = async(req, res)=> {
         }
 }
 
+const PayeFactureByPartnerHorLigne = async (req, res)=> {
+    const id = req.params.id;
+
+    try{
+        const facture = await factureModel.findById(id);
+        if(!facture){
+            return res.status(404).json({error: 'Facture not found'});
+        }
+          // Check if the 'payed' attribute exists
+       facture.paymentMethod = "Paiement En cours – Hors Ligne"
+
+        await facture.save();
+        res.status(200).json(facture);
+        }catch(e){
+        res.status(500).json({error: e.message});
+        }
+}
+
 
 
 module.exports = {
@@ -263,6 +368,9 @@ module.exports = {
     fetchFactureByDriver,
     fetchAllFacturesByDriver,
     PayeeFacture,
-    PayeeFactureDriver
+    PayeeFactureDriver,
+    PayeFactureByPartnerHorLigne,
+    PayeeEnligne,
+    PayerEnligneDriver
   }
 

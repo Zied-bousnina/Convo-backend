@@ -32,6 +32,12 @@ const FactureSchema = new Schema({
             default: false
 
         },
+        paymentMethod:{
+            type: String,
+            // required: true
+
+
+        },
         numFacture: {
             type: String,
             // required: true
