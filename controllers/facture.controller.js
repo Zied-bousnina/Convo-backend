@@ -32,7 +32,7 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
+const stripe = require("stripe")("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")
 const createFacture = async (req, res) => {
     console.log(req.body)
     try {
