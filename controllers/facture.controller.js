@@ -32,7 +32,7 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_TEST)
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 const createFacture = async (req, res) => {
     console.log(req.body)
     try {
@@ -190,15 +190,17 @@ const PayeeEnligne = async (req, res)=> {
           return res.status(404).json({error: 'Facture not found'});
       }
       const payment = await stripe.paymentIntents.create({
-        amount: facture.totalAmmount,
+        amount: Math.round(facture.totalAmmount * 100),
         currency: "EUR",
-        description: "Spatula company",
+        description: "Carvoy company",
         payment_method: id,
-        confirm: true
+        confirm: true,
+        return_url: "https://convo-1.netlify.app/admin/facture-DriverdetailsPar/65b0ee02787321004ef46553"
       })
       console.log("Payment", payment)
     facture.paymentMethod = "Paiement En ligne"
     facture.payed = true
+    await facture.save()
       res.json({
         message: "Payment successful",
         success: true
@@ -239,15 +241,18 @@ const PayeeEnligne = async (req, res)=> {
           return res.status(404).json({error: 'Facture not found'});
       }
       const payment = await stripe.paymentIntents.create({
-        amount:  calculateTVA(Number(facture.totalAmmount), tvaRate).montantPur,
+        amount:  Math.round(calculateTVA(Number(facture.totalAmmount), tvaRate).montantPur * 100),
         currency: "EUR",
-        description: "Spatula company",
+        description: "CarVoy company",
         payment_method: id,
-        confirm: true
+        confirm: true,
+        return_url: "https://convo-1.netlify.app/admin/facture-DriverdetailsPar/65b0ee02787321004ef46553"
       })
       console.log("Payment", payment)
     // facture.paymentMethod = "Paiement En ligne"
     facture.payed = true
+    await facture.save()
+    console.log(facture)
       res.json({
         message: "Payment successful",
         success: true
