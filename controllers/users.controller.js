@@ -13,7 +13,7 @@ const changePasswordValidation = require('../validations/ChangePasswordValidatio
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const verificationTokenModels = require("../models/verificationToken.models");
-const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplateDriver,generateEmailTemplatePartner,generateEmailTemplateAffectation, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount } = require("../utils/mail");
+const { generateOTP,generateRandomPassword, mailTransport, generateEmailTemplate,generateDeleteAccountEmailTemplate,generateEmailTemplateDriver,generateEmailTemplatePartner,generateEmailTemplateAffectation, plainEmailTemplate, generatePasswordResetTemplate, generateEmailTemplateDeleterAccount, generateEmailTemplateValidationAccountByAdmin, generateEmailTemplateRefusAccountByAdmin } = require("../utils/mail");
 const { isValidObjectId } = require('mongoose');
 const { sendError, createRandomBytes } = require("../utils/helper");
 const resetTokenModels = require("../models/resetToken.models");
@@ -32,6 +32,7 @@ const devisModel = require('../models/devis.model.js');
 const userModel = require('../models/userModel.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
+const driverDocumentsModel = require('../models/driverDocuments.model.js');
 
 
 
@@ -2589,6 +2590,101 @@ const findMissionsConfirmeByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const ValiderDriverAccount = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+      // Find the user by ID
+      const user = await userModel.findById(id);
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Set driverIsVerified to true in the User model
+      user.driverIsVerified = true;
+      user.verified = true;
+
+      // Save the changes to the User model
+      await user.save();
+
+      // Find the corresponding driver document
+      const driverDocument = await driverDocumentsModel.findOne({ user: id });
+
+      if (!driverDocument) {
+          return res.status(404).json({ message: 'Driver document not found' });
+      }
+
+      // Update driver document details
+      driverDocument.verified = true;
+      driverDocument.refus = false;
+      driverDocument.raisonRefus = '';
+
+      // Save the changes to the DriverDocument model
+      await driverDocument.save();
+      mailer.send({
+        to: ["zbousnina@yahoo.com", user.email],
+        subject: "Félicitations ! Votre compte de conducteur a été vérifié par l'administrateur - Bienvenue chez CarVoy !",
+        html: generateEmailTemplateValidationAccountByAdmin(user.name),
+      }, (err) => {});
+
+      // Return a success response
+      return res.status(200).json({ message: 'Driver account successfully verified' });
+
+  } catch (error) {
+      // Handle any errors that occurred during the process
+      console.error(error);
+      return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+const refusDriverAccount = async (req, res) => {
+  const { id } = req.params;
+  const { raisonRefus } = req.body;
+
+  try {
+      // Find the user by ID
+      const user = await userModel.findById(id);
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Set driverIsVerified to true in the User model
+      user.driverIsVerified = false;
+
+      // Save the changes to the User model
+      await user.save();
+
+      // Find the corresponding driver document
+      const driverDocument = await driverDocumentsModel.findOne({ user: id });
+
+      if (!driverDocument) {
+          return res.status(404).json({ message: 'Driver document not found' });
+      }
+
+      // Update driver document details
+      driverDocument.verified = false;
+      driverDocument.refus = true;
+      driverDocument.raisonRefus = raisonRefus;
+
+      // Save the changes to the DriverDocument model
+      await driverDocument.save();
+      mailer.send({
+        to: ["zbousnina@yahoo.com", user.email],
+        subject: "Refus de validation de votre compte CarVoy!",
+        html: generateEmailTemplateRefusAccountByAdmin(user.name, raisonRefus),
+      }, (err) => {});
+      // Return a success response
+      return res.status(200).json({ message: 'Driver account successfully refused' });
+
+  } catch (error) {
+      // Handle any errors that occurred during the process
+      console.error(error);
+      return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 const findLastMissionByUser = async (req, res) => {
   const { id } = req.user;
 
@@ -2800,6 +2896,8 @@ module.exports = {
   findMissionsByUser,
   findMissionsConfirmeByUser,
   findLastMissionByUser,
+  ValiderDriverAccount,
+  refusDriverAccount,
   findMissionsTermineeByUser,
   findDemandsCreatedByPartner,
   getMissionsCountByUser,

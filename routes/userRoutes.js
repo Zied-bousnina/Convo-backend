@@ -76,7 +76,9 @@ const {
   ConfirmeMissionByDriver,
   checkDriverDocumentIsCompleted,
   deleteAllSocketByUser,
-  findMissionsConfirmeByUser
+  findMissionsConfirmeByUser,
+  ValiderDriverAccount,
+  refusDriverAccount
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -136,6 +138,8 @@ router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {sess
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
 router.route('/mission/updateMission/:id').post(passport.authenticate('jwt', {session: false}),updateMission)
 router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
+router.route('/Driver/ValiderDriverAccount/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),ValiderDriverAccount)
+router.route('/Driver/refusDriverAccount/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),refusDriverAccount)
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
 router.route('/getMissionsCountByUser').get(passport.authenticate('jwt', {session: false}),getMissionsCountByUser)
 router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)

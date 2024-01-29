@@ -32,7 +32,7 @@ exports.mailTransport =()=>
         return `
         <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
           <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
-            <img src="./logo.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+          <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706051113/swas9rokk2r8syf6ws0b.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
             <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Welcome to Convoyage</h2>
             <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Please use the following code to verify your email.</p>
             <div style="background-color: #333; color: #fff; font-size: 20px; font-weight: 500; padding: 10px 20px; border-radius: 5px; display: inline-block;">
@@ -130,6 +130,36 @@ exports.generateEmailTemplateMissionDelayed = (driverName, startingPoint, destin
               </div>
             `;
           };
+          exports.generateEmailTemplateValidationAccountByAdmin = (driverName) => {
+            // const { postalAddress, postalDestination, dateDepart } = missionDetails;
+            return `
+                <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+                    <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+                        <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706051113/swas9rokk2r8syf6ws0b.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                        <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Validation de votre compte par l'administrateur</h2>
+                        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Bonjour ${driverName},</p>
+                        <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Félicitations ! Votre compte en tant que conducteur a été vérifié par l'administrateur. Dès maintenant, vous pouvez prendre des missions et faire partie de CarVoy. Bienvenue!</p>
+
+                    </div>
+                </div>
+            `;
+        };
+
+        exports.generateEmailTemplateRefusAccountByAdmin = (driverName, raison) => {
+          return `
+              <div style="background-color: #f5f5f5; padding: 10px; text-align: center;">
+                  <div style="background-color: #fff; padding: 20px; border-radius: 5px;">
+                      <img src="https://res.cloudinary.com/dcuafrhwc/image/upload/v1706051113/swas9rokk2r8syf6ws0b.png" alt="Convoyage Logo" style="max-width: 100px; margin: 0 auto;">
+                      <h2 style="color: #333; font-size: 24px; font-weight: 500; margin: 0 0 10px;">Refus de validation de votre compte par l'administrateur</h2>
+                      <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Bonjour ${driverName},</p>
+                      <p style="color: #333; font-size: 16px; font-weight: 400; margin: 0 0 10px;">Nous regrettons de vous informer que votre compte en tant que conducteur n'a pas été validé par l'administrateur. La raison du refus est : ${raison}</p>
+                      <p style="color: #333; font-size: 16px; font-weight: 400; margin: 10px 0 0;">Pour plus d'informations, veuillez nous contacter.</p>
+                  </div>
+              </div>
+          `;
+      };
+
+
 
           exports.generateEmailTemplateDriver = (name, email, password) => {
             return `
