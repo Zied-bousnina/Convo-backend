@@ -241,7 +241,7 @@ const PayeeEnligne = async (req, res)=> {
           return res.status(404).json({error: 'Facture not found'});
       }
       const payment = await stripe.paymentIntents.create({
-        amount:  Math.round(calculateTVA(Number(facture.totalAmmount), tvaRate).montantPur * 100),
+        amount:  Math.round(calculateTVA(Number(facture.totalAmmount), tvaRate).montantTTC * 100),
         currency: "EUR",
         description: "CarVoy company",
         payment_method: id,
