@@ -113,10 +113,41 @@ io.on("connection", (socket) => {
   console.log(`a user connected ${socket}`);
   global.chatSocket = socket;
 
-  socket.on("add-user", (userId) => {
-    // onlineUsers.set(userId, socket.id);
-    onlineUsers2.set(userId, {  location: null });
+  socket.on("add-user", (userId, currentLocation) => {
+    console.log("user id: ", userId, "location ", currentLocation)
+    if (onlineUsers2.has(userId)) {
+        // User already exists, delete the existing entry
+        onlineUsers2.delete(userId);
+    }
+    // Add the new entry
+    onlineUsers2.set(userId, { location: currentLocation });
+    let newLocationData = {
+      userId: userId,
+      location: currentLocation
+  };
+  onlineUsers2.forEach((userData, userId) => {
+    console.log('vvvvvvvvvvv', userData)
+    socket.broadcast.emit('newLocation', {
+        userId: userId,
+        location: {latitude: userData.location?.latitude, longitude: userData.location?.longitude}
+    });
+});
+    console.log("-------",onlineUsers2.get("659aea02d1eb35004e61c65a"))
+});
+
+socket.on("getOnlineUserss",(data)=> {
+  console.log("onlineUsers2",data)
+  onlineUsers2.forEach((userData, userId) => {
+    console.log('vvvvvvvvvvv', userData)
+    socket.broadcast.emit("getonline")
+
+    socket.broadcast.emit('newLocation', {
+        userId: userId,
+        location: {latitude: userData.location?.latitude, longitude: userData.location?.longitude}
+    });
   });
+});
+
   socket.on("offline_client", (userIDD) => {
     // console.log("user disconnected ID",userIDD);
     socket.broadcast.emit('offline', userIDD);
@@ -135,7 +166,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit('userEnRoute', { userId: userId.userId, enRoute: userId.enRoute });
   })
   socket.on('locationUpdate', async(location) => {
-    // console.log('Received location update:', location);
+    console.log('Received location update:', location);
 
     // Update the location in the onlineUsers2 Map
     const user = onlineUsers2.get(location.userId);
@@ -143,33 +174,8 @@ io.on("connection", (socket) => {
       user.location = location;
       onlineUsers2.set(location.userId, user);
     }
-    // try {
-    //   // const {  address } = req.body; // Assuming you send userId and newAddress in the request body
-
-    //   // Find the user by userId
-    //   const user = await userModel.findById(location?.userId);
-
-    //   if (!user) {
-    //     return
-    //   }
-
-    //   // Call the addAddress method to update the user's address
-    //   const u =await user.addAddress({
-    //     latitude: location.location.latitude,
-    //   longitude: location.location.longitude
-
-    //   });
-    //   // console.log(u)
-
-    //   // res.json({ message: 'Address updated successfully.', user:u });
-    // } catch (error) {
-    //   console.error(error);
-    //   console.log(error)
-    //   // res.status(500).json({ error: 'Internal Server Error' });
-    // }
-    // console.log("Map :: ::   :  : : : : : : ", location)
-
-    // Broadcast the location to all connected clients
+    console.log(onlineUsers2)
+console.log("location",location)
     socket.broadcast.emit('newLocation', location);
   });
   let userid;
@@ -227,15 +233,15 @@ io.on("connection", (socket) => {
       // res.status(500).json({ message: 'Internal Server Error' });
     }
     // Remove the user from the onlineUsers Map when they disconnect
-    onlineUsers.forEach((userData, userId) => {
+    onlineUsers2.forEach((userData, userId) => {
       if (userData.socketId === socket.id) {
-        onlineUsers.delete(userId);
+        onlineUsers2.delete(userId);
         console.log(`User ${userId} disconnected`);
+        console.log("map",onlineUsers2)
       }
     });
     // console.log("data disconnected",userId)
   });
-  console.log(global.onlineUsers)
 
   socket.on("setup", (userData) => {
     socket.join(userData._id);

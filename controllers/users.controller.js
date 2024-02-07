@@ -33,6 +33,7 @@ const userModel = require('../models/userModel.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 const driverDocumentsModel = require('../models/driverDocuments.model.js');
+const { update } = require('lodash');
 
 
 
@@ -652,8 +653,8 @@ const AccepteMission = async (req, res) => {
 // Check if the mission is already taken
 console.log("mission?.driver !== null && mission.driver !== userId",mission?.driver ,userId)
 if (mission?.driver != null && mission.driver != userId) {
-  console.log("La mission a déjà été attribuée à un autre utilisateur.");
-  return res.status(400).json({ message: 'La mission a déjà été attribuée à un autre utilisateur.' });
+  console.log("mission déjà prise un autre");
+  return res.status(400).json({ message: 'mission déjà prise un autre' });
 }
      if (existingStartedMission) {
       console.log("Vous avez déjà une mission en cours.")
@@ -710,10 +711,12 @@ if (mission?.driver != null && mission.driver != userId) {
       return;
   }
     mission.demareeMissionImages= imagesUploaded
+    mission.demareeMissionCmnt = req.body.demareeMissionCmnt;
 
     // Save the updated demand
     const updatedDemand = await demand.save();
     const updatedMission = await mission.save();
+    console.log(updatedMission)
 
     res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
   } catch (error) {
@@ -723,52 +726,6 @@ if (mission?.driver != null && mission.driver != userId) {
 };
 
 
-
-// for test upload files
-// const AccepteMission = async (req, res) => {
-//   const userId = req.user.id;
-//   const demandId = req.params.demandId;
-//   const images = req.body;
-//   console.log(req?.files)
-
-//   try {
-//     const uploadFileToCloudinary = async (file, folderName) => {
-//       if (file) {
-
-//         const result = await cloudinary.uploader.upload(file?.path, {
-//           resource_type: 'auto',
-//           folder: folderName,
-//           public_id: `${folderName}_${Date.now()}`,
-//           overwrite: true,
-//         });
-//         console.log(result);
-//         return result.secure_url;
-//       }
-//       return null;
-//     };
-
-//     const imagesUploaded = [];
-
-//     await Promise.all(
-//       Object.values(req?.files).map(async (e) => {
-//         try {
-//           const uploadedUrl = await uploadFileToCloudinary(e, `mission :${demandId}`);
-//           imagesUploaded.push(uploadedUrl);
-//         } catch (error) {
-//           console.error("Error uploading file to Cloudinary:", error);
-//           throw error; // Propagate the error to the outer catch block
-//         }
-//       })
-//     );
-
-//     console.log(imagesUploaded);
-
-//     res.status(200).json({ message: 'Mission updated successfully' });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// };
 
 
 const TermineeMission = async (req, res) => {
@@ -837,6 +794,7 @@ const TermineeMission = async (req, res) => {
       return;
   }
     mission.termineemissionImages= imagesUploaded
+    mission.termineeMissionCmnt = req.body.termineeMissionCmnt;
     const createdFacture = await newFacture.save();
 
     // Save the new demand
@@ -847,7 +805,7 @@ const TermineeMission = async (req, res) => {
     // Save the updated demand
     const updatedDemand = await demand.save();
     const updatedMission = await mission.save();
-
+console.log(updatedMission)
     res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
   } catch (error) {
     console.error(error);
@@ -871,7 +829,7 @@ const ConfirmeMissionByDriver = async (req, res) => {
     if (!mission?.driver) {
       mission.driver = userId;
     } else if (mission.status == "Confirmée driver") {
-      return res.status(400).json({ message: 'La mission a déjà été attribuée à un autre utilisateur.' });
+      return res.status(400).json({ message: ' mission déjà prise un autre' });
     }
     // Increment or decrement the offer by 0.5
     demand.status = "Confirmée driver";
@@ -2703,7 +2661,13 @@ const findLastMissionByUser = async (req, res) => {
           { status: 'Confirmée driver' },
         ],
       })
-      .populate('mission')
+      .populate({
+        path: 'mission',
+        populate: {
+          path: 'driver',
+          model: 'User',
+        },
+      })
       .populate('partner')
       .sort({ createdAt: -1 }) // Sort by the createdAt property in descending order
       .limit(1);
@@ -2728,6 +2692,7 @@ const findLastMissionByUser = async (req, res) => {
       }
 
       // Send the response with the profile information
+      console.log("responseMission", responseMission);
       res.status(200).json(responseMission);
     } else {
       // Handle the case where no lastMission is found

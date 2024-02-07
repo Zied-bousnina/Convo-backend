@@ -55,16 +55,7 @@ const DeamndeSchema = new Schema({
             ref:'User',
             // required:true
         },
-        // isAccepted:Boolean,
-        // isRefused:Boolean,
-        // isPending:Boolean,
-        // isFinished:Boolean,
-        // isCanceled:Boolean,
-        // isPaid:Boolean,
-        // isRated:Boolean,
-        // rating:Number,
-        // price:Number,
-        // isPaid:Boolean,
+
 
         status: {
             type:String,
@@ -91,7 +82,16 @@ const DeamndeSchema = new Schema({
                 type: String,
             }
 
-        ]
+        ],
+        demareeMissionCmnt: {
+            type: String,
+
+        },
+        termineeMissionCmnt: {
+            type: String,
+
+        },
+
 
 
 
