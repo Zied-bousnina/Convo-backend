@@ -48,6 +48,11 @@ const DeamndeSchema = new Schema({
             type:String,
 
         },
+        time :{
+            type:String,
+
+        },
+
         dateDepart:String,
         driverIsAuto:Boolean,
         driver:{

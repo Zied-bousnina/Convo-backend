@@ -56,7 +56,7 @@ const createDemande = async (req, res) => {
   const { errors, isValid } = validateDemandeInput(req.body);
   try {
     if (isValid) {
-      const { address, destination, offer,comment, postalAddress, postalDestination, distance,dateDepart,driverIsAuto,driver,vehicleType,missionType } = req.body;
+      const { address, destination, offer,time,comment, postalAddress, postalDestination, distance,dateDepart,driverIsAuto,driver,vehicleType,missionType } = req.body;
     // Create a new demand object
     const newDemande = new demandeModels({
       user: req.user.id,
@@ -71,11 +71,13 @@ const createDemande = async (req, res) => {
       driverIsAuto,
       driver,
       missionType,
-      vehicleType
+      vehicleType,
+      time
     });
 
     // Save the new demand
     const createdDemande = await newDemande.save();
+    console.log(createdDemande)
      // Check if driver attribute is not null
      if (driver) {
       // Find the user with the specified driver ID
