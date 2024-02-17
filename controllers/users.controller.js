@@ -2488,10 +2488,7 @@ const findMissionsConfirmeByUser = async (req, res) => {
   try {
     // Count the number of missions that match the criteria
     const missionCount = await devisModel.countDocuments({
-      $or: [
-        // { 'mission.driver': null },
-        { 'mission.driver': id },
-      ],
+
       $or: [
         // { status: 'Confirmée' },
         // { status: 'En retard' },
@@ -2500,13 +2497,12 @@ const findMissionsConfirmeByUser = async (req, res) => {
       ],
     });
 
+
+
     // Find demands without a driver, with the current driver's id, and in progress
-    const missions = await devisModel
+    const missionss = await devisModel
       .find({
-        $or: [
-          // { 'mission.driver': null },
-          { 'mission.driver': id },
-        ],
+
         $or: [
           // { status: 'Confirmée' },
           // { status: 'En retard' },
@@ -2517,9 +2513,9 @@ const findMissionsConfirmeByUser = async (req, res) => {
       .populate('mission')
       .populate('partner')
       .sort({ 'mission.dateDepart': -1, 'status': -1 })// Sort by the datedepart property in descending order
-      .limit(parseInt(limit))
-      .skip(parseInt(skip));
 
+      const missions = missionss.filter(item => item.mission.driver == id);
+      console.log(id)
     // Fetch profiles for partners and create a modified response
     const missionsWithProfiles = await Promise.all(missions.map(async (mission) => {
       let missionWithProfile = { ...mission.toObject() }; // Create a shallow copy of the mission object
