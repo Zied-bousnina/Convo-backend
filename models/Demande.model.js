@@ -96,6 +96,59 @@ const DeamndeSchema = new Schema({
             type: String,
 
         },
+        services: {
+            main: {
+                type: Boolean,
+                default: false
+            },
+            charge: {
+                type: Boolean,
+                default: false
+            },
+            exteriorWash: {
+                type: Boolean,
+                default: false
+            },
+            interiorCleaning: {
+                type: Boolean,
+                default: false
+            },
+            garagePlate: {
+                type: Boolean,
+                default: false
+            },
+            fuel: {
+                type: Boolean,
+                default: false
+            }
+        },
+        vehicleRegistration : {
+            type:String
+
+        },
+        identityProof  : {
+            type:String
+
+        },
+        transport: {
+            type:String
+
+
+        },
+        price: {
+            type:String
+        },
+        mail: {
+            type:String
+        },
+        immatriculation        : {
+            type:String
+        },
+        phone: {
+            type:String
+        },
+
+
 
 
 

@@ -32,7 +32,8 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 
-const stripe = require("stripe")("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")
+// const stripe = require("stripe")("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")
+const stripe = require("stripe")("sk_test_51OdwexAFbclQdyveZsl5yeu71NzncaKS2ZQhGcAWv4CnAvSjwTKvZuLJghLDShCoy0yEe9dlqy0tzszm734dTNTl00Y8ycZsyO")
 const createFacture = async (req, res) => {
     console.log(req.body)
     try {
@@ -214,6 +215,73 @@ const PayeeEnligne = async (req, res)=> {
 
     }
   }
+  const PayeeEnlignePartner = async (req, res) => {
+    const { missionId, partnerId, totalAmmount, freeComment, referenceNumber } = req.body;
+
+    try {
+      // Try to find an existing facture with the given missionId
+      let facture = await factureModel.findOne({ mission: missionId });
+
+      if (facture) {
+        // If a facture exists, update it
+        facture.partner = partnerId;
+        facture.totalAmmount = totalAmmount;
+        facture.freeComment = freeComment;
+        facture.referenceNumber = referenceNumber;
+        // Update other fields as necessary
+      } else {
+        // If no existing facture found, create a new one
+        facture = new factureModel({
+          mission: missionId,
+          partner: partnerId,
+          totalAmmount: totalAmmount,
+          freeComment: freeComment,
+          referenceNumber: referenceNumber,
+          // Set other necessary fields as per your requirements
+          from: "...", // Example placeholder
+          to: "...", // Example placeholder
+          paymentMethod: "Paiement En ligne",
+          payed: false, // This will be updated to true after payment succeeds
+        });
+      }
+console.log(facture)
+      // Save the new or updated facture to the database
+      const savedFacture = await facture.save();
+
+      // Proceed with the payment
+      const payment = await stripe.paymentIntents.create({
+        amount: Math.round(savedFacture.totalAmmount * 100),
+        currency: "EUR",
+        description: "Carvoy company",
+        payment_method: req.body.id, // Assuming payment method ID is passed in request body
+        confirm: true,
+        return_url: "https://convo-1.netlify.app/admin/facture-DriverdetailsPar/65b0ee02787321004ef46553",
+      });
+
+      // Log the successful payment for debugging purposes
+      console.log("Payment", payment);
+
+      // Update the facture as paid
+      savedFacture.payed = true;
+      await savedFacture.save();
+
+      res.json({
+        message: "Payment successful",
+        success: true,
+        factureId: savedFacture._id, // Return the ID of the created or updated facture
+      });
+    } catch (error) {
+      console.log("Error", error);
+      res.status(500).json({
+        message: "Payment failed",
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+
+
+
 
   const tvaRate = 20; // Change this to your actual TVA rate
 
@@ -376,6 +444,7 @@ module.exports = {
     PayeeFactureDriver,
     PayeFactureByPartnerHorLigne,
     PayeeEnligne,
+    PayeeEnlignePartner,
     PayerEnligneDriver
   }
 

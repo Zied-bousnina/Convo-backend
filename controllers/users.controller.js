@@ -103,6 +103,97 @@ const createDemande = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const createDemandeNewVersion = async (req, res) => {
+  console.log(req.body);
+  const { errors, isValid } = validateDemandeInput(req.body);
+  // You would define validateDemandeInput somewhere to validate your inputs
+
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
+  try {
+    const {
+      address,
+      destination,
+      offer,
+      time,
+      comment,
+      postalAddress,
+      postalDestination,
+      distance,
+      dateDepart,
+      driverIsAuto,
+
+      vehicleType,
+      missionType,
+      price,
+      selectedServices,
+      transport,
+      mail
+    } = req.body;
+    console.log(req.body)
+
+    const identityProof = req.files?.identityProof;
+    const vehicleRegistration = req.files?.vehicleRegistration;
+    const uploadFileToCloudinary = async (file, folderName) => {
+      if (file) {
+
+        const result = await cloudinary.uploader.upload(file?.path, {
+          resource_type: 'auto',
+          folder: folderName,
+          public_id: `${folderName}_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        return result.secure_url;
+      }
+      return null;
+    };
+    // Assuming you have two fields 'identityProof' and 'vehicleRegistration' in your form for file upload
+    const identityProofUrl = await uploadFileToCloudinary(identityProof, 'identityProof');
+    const vehicleRegistrationUrl = await uploadFileToCloudinary(vehicleRegistration, 'vehicleRegistration');
+
+    // Create a new demand object
+
+    const newDemande = new demandeModels({
+      user: req.user.id,
+      address,
+      destination,
+      comment,
+      mail,
+      postalAddress,
+      postalDestination,
+      offer,
+      price,
+      distance,
+      dateDepart,
+      driverIsAuto,
+      services:{ ...selectedServices },
+      transport,
+
+      missionType,
+      vehicleType,
+      time,
+      identityProof: identityProofUrl,
+      vehicleRegistration: vehicleRegistrationUrl
+    });
+
+    // Save the new demand
+
+    const createdDemande = await newDemande.save();
+    console.log(createdDemande);
+
+    // Check if driver attribute is not null and send an email
+
+
+    res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
+  } catch (error) {
+    console.error('Error creating demande:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const deleteDemande = async (req, res) => {
   const demandId = req.params.demandId; // Assuming demandId is provided as a route parameter
 
@@ -727,7 +818,59 @@ if (mission?.driver != null && mission.driver != userId) {
   }
 };
 
+const getMissionById = async (req, res) => {
+  try {
+      const missionId = req.params.id; // Assuming you pass the mission ID as a URL parameter
+      const mission = await DemandeModel.findById(missionId)
+          .populate('user') // Add the fields you want to populate here
+          .populate('driver'); // Adjust according to your User schema
 
+      if (!mission) {
+          return res.status(404).json({ message: 'Mission not found' });
+      }
+
+      res.json(mission);
+  } catch (error) {
+      console.error('Error fetching mission:', error);
+      res.status(500).json({ message: 'Error fetching mission' });
+  }
+};
+
+
+const updateFieldsForDevis = async (req, res) => {
+  try {
+    // Assuming the user's ID is passed in the request parameters
+    const user = await userModel.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update the fields if they exist in req.body
+    const fieldsToUpdate = ['VAT', 'name', 'email', 'addressPartner', 'phoneNumber'];
+    fieldsToUpdate.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        user[field] = req.body[field];
+      }
+    });
+
+    // Save the updated user
+    await user.save();
+
+    // Send back a success response
+    res.json({
+      message: 'User details updated successfully',
+      user: user // Or return the updated fields only if you prefer
+    });
+
+  } catch (error) {
+    // If there's an error, send back an error response
+    res.status(500).json({
+      message: 'Error updating user details',
+      error: error.message
+    });
+  }
+};
 
 
 const TermineeMission = async (req, res) => {
@@ -2833,6 +2976,7 @@ module.exports = {
   deblockUser,
   CreateFeedback,
   createDemande,
+  createDemandeNewVersion,
   findDemandsByUserId,
   incrementOffer,
   decreaseOffer,
@@ -2871,6 +3015,8 @@ module.exports = {
   GetFactureById,
   findMissionsAcceptedByUser,
   AccepteMission,
+  getMissionById,
+  updateFieldsForDevis,
   TermineeMission,
   ConfirmeMissionByDriver,
   RefuseMission,

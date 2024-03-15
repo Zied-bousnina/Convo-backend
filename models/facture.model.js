@@ -16,6 +16,16 @@ const FactureSchema = new Schema({
             type: String,
             // required: true
         },
+        referenceNumber: {
+            type: String,
+            // required: true
+
+        },
+        freeComment: {
+            type: String,
+            // required: true
+
+        },
         totalAmmount: {
             type: String,
             // required: true

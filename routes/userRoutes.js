@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -78,7 +78,10 @@ const {
   deleteAllSocketByUser,
   findMissionsConfirmeByUser,
   ValiderDriverAccount,
-  refusDriverAccount
+  refusDriverAccount,
+  createDemandeNewVersion,
+  getMissionById,
+  updateFieldsForDevis
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -104,6 +107,7 @@ router.route('/createReport').post(passport.authenticate('jwt', {session: false}
 router.route('/createSupport').post(passport.authenticate('jwt', {session: false}),CreateSupport)
 router.route('/createFeedback').post(passport.authenticate('jwt', {session: false}),CreateFeedback)
 router.route('/createDemande').post(passport.authenticate('jwt', {session: false}),createDemande)
+router.route('/createDemandeNewVersion').post(passport.authenticate('jwt', {session: false}),createDemandeNewVersion)
 router.route('/findDemandsByUserId').get(passport.authenticate('jwt', {session: false}),findDemandsByUserId)
 router.route('/incrementOffer/:demandId').post(passport.authenticate('jwt', {session: false}),incrementOffer)
 router.route('/AccepteMission/:demandId').post(passport.authenticate('jwt', {session: false}),AccepteMission)
@@ -116,6 +120,7 @@ router.route('/findDemandById/:demandId').get(passport.authenticate('jwt', {sess
 router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)
 router.route('/findAllPartnersAndTheirDemands').get(findAllPartnersAndTheirDemands )
 router.route('/findAllPartnersAndTheirFactures').get(findAllPartnersAndTheirFactures )
+router.route('/getMissionById/:id').get(getMissionById )
 router.route('/findAllDriversAndTheirFactures').get(findAllDriversAndTheirFactures )
 router.route('/mission/deleteMission/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/factureById/:id').get(passport.authenticate('jwt', {session: false}),GetFactureById)
@@ -135,6 +140,7 @@ router.route('/driver/checkDriverDocumentIsCompleted').get(passport.authenticate
 router.route('/driver/deleteAllSocketByUser').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.DRIVER),deleteAllSocketByUser)
 router.route('/driver/finDocByDriver').get(passport.authenticate('jwt', {session: false}),finDocByDriver)
 router.route('/driver/updateDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateDriver)
+router.route('/updateFieldsForDevis').post(passport.authenticate('jwt', {session: false}),updateFieldsForDevis)
 router.route('/UpdatePartner/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updatePartner)
 router.route('/mission/updateMission/:id').post(passport.authenticate('jwt', {session: false}),updateMission)
 router.route('/deleteAccountByAdmin/:id').delete(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),DeleteAccountByAdmin)
@@ -220,6 +226,7 @@ router
   router.route('/facture/fetchAllFacturesByDriver').get(passport.authenticate('jwt', {session: false}),fetchAllFacturesByDriver )
   router.route('/facture/PayeFactureByPartnerHorLigne/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeFactureByPartnerHorLigne )
   router.route('/facture/PayerEnLigne/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeEnligne )
-  router.route('/facture/PayerEnligneDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayerEnligneDriver )
+  router.route('/facture/PayerEnLignePartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeEnlignePartner )
+  router.route('/facture/PayerEnligneDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeFactureDriver )
 
 module.exports = router

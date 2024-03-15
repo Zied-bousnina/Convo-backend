@@ -70,7 +70,13 @@ const userSchema = mongoose.Schema(
                 type:Object
             }
 
-        ]
+        ],
+        VAT:{
+            type:String,
+            // required:true
+
+        },
+
 
 
     },{
