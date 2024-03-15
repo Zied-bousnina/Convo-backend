@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -221,6 +221,7 @@ router
   router.route("/facture/create").post(createFacture)
   router.route('/facture/fetchFactureByPartner').get(passport.authenticate('jwt', {session: false}),fetchFactureByPartner )
   router.route('/facture/findFactureById/:id').get(passport.authenticate('jwt', {session: false}),fetchFactureById )
+  router.route('/facture/fetchFacturePartnerById/:id').get(passport.authenticate('jwt', {session: false}),fetchFacturePartnerById )
   router.route('/facture/fetchFactureByDriver').post(passport.authenticate('jwt', {session: false}),fetchFactureByDriver )
   router.route('/facture/findFactureBydriver').get(passport.authenticate('jwt', {session: false}),fetchFacturesByDriver )
   router.route('/facture/fetchAllFacturesByDriver').get(passport.authenticate('jwt', {session: false}),fetchAllFacturesByDriver )

@@ -32,8 +32,8 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 
-// const stripe = require("stripe")("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")
-const stripe = require("stripe")("sk_test_51OdwexAFbclQdyveZsl5yeu71NzncaKS2ZQhGcAWv4CnAvSjwTKvZuLJghLDShCoy0yEe9dlqy0tzszm734dTNTl00Y8ycZsyO")
+const stripe = require("stripe")("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")
+// const stripe = require("stripe")("sk_test_51OdwexAFbclQdyveZsl5yeu71NzncaKS2ZQhGcAWv4CnAvSjwTKvZuLJghLDShCoy0yEe9dlqy0tzszm734dTNTl00Y8ycZsyO")
 const createFacture = async (req, res) => {
     console.log(req.body)
     try {
@@ -367,7 +367,7 @@ const fetchFactureById = async (req, res)=> {
         if(!facture){
             return res.status(404).json({error: 'Facture not found'});
         }
-        console.log(facture.from)
+        console.log(facture)
         let query = { partner: partner, status: { $in: statusValues  }}
 
         // If fromDate and toDate are provided, add date filter to the query
@@ -398,6 +398,36 @@ const fetchFactureById = async (req, res)=> {
         }catch(e){
         res.status(500).json({error: e.message});
         }
+
+}
+const fetchFacturePartnerById = async (req, res)=> {
+  const id = req.params.id;
+  const partner = req.user.id
+  try{
+    let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée', "Confirmée driver"];
+      const facture = await factureModel.findById(id).populate("partner");
+      if(!facture){
+          return res.status(404).json({error: 'Facture not found'});
+      }
+      console.log(facture)
+      let query = { partner: partner, status: { $in: statusValues  }}
+
+
+
+      const devis = await devisModel
+        .find(query)
+        .populate({
+          path: 'mission',
+          populate: {
+            path: 'driver',
+          },
+        })
+        .populate('categorie');
+
+      res.status(200).json({devis,facture });
+      }catch(e){
+      res.status(500).json({error: e.message});
+      }
 
 }
 const fetchFacturesByDriver = async(req, res)=> {
@@ -437,6 +467,7 @@ module.exports = {
     createFacture,
     fetchFactureByPartner,
     fetchFactureById,
+    fetchFacturePartnerById,
     fetchFacturesByDriver,
     fetchFactureByDriver,
     fetchAllFacturesByDriver,

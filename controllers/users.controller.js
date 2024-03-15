@@ -180,9 +180,19 @@ const createDemandeNewVersion = async (req, res) => {
     });
 
     // Save the new demand
-
+    const taxRate = 0.20; // 20% tax rate for this example
+    const totalTTC = price * (1 + taxRate);
     const createdDemande = await newDemande.save();
-    console.log(createdDemande);
+    const devis = new devisModel({
+      partner: req.user.id,
+      mission: createdDemande._id,
+      status: "Confirmée",
+      montant: Number(totalTTC),
+      distance: distance,
+    });
+    await devis.save();
+
+
 
     // Check if driver attribute is not null and send an email
 
