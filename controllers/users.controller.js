@@ -130,7 +130,8 @@ const createDemandeNewVersion = async (req, res) => {
       price,
       selectedServices,
       transport,
-      mail
+      mail,
+      remunerationAmount
     } = req.body;
     console.log(req.body)
 
@@ -171,6 +172,7 @@ const createDemandeNewVersion = async (req, res) => {
       driverIsAuto,
       services:{ ...selectedServices },
       transport,
+      remunerationAmount,
 
       missionType,
       vehicleType,
@@ -189,6 +191,7 @@ const createDemandeNewVersion = async (req, res) => {
       status: "Confirmée",
       montant: Number(totalTTC),
       distance: distance,
+      remunerationAmount:remunerationAmount
     });
     await devis.save();
 

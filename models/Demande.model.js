@@ -43,6 +43,11 @@ const DeamndeSchema = new Schema({
 
 
     },
+    remunerationAmount:
+    {
+      type: Number,
+
+    },
     distance:
         {
             type:String,
