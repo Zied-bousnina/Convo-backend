@@ -33,70 +33,70 @@ let server = app.listen(PORT, async (req, res) => {
   }
   console.log(`Listening on ${PORT}`);
 });
-cron.schedule('0 * * * *', async () => {
-  // Check and update status for all 'confirmée' missions
-  const confirmeeMissions = await devisModel.find({ status: 'Confirmée' }).populate("mission");
-  const confirmeedevis = await DemandeModel.find({ status: 'Confirmée' });
-  const Affectéeemission = await DemandeModel.find({ status: 'Affectée' }) .populate("driver")
-  const AffectéeDevis = await devisModel.find({ status: 'Affectée' }).populate({
-    path: 'mission',
-    populate: {
-      path: 'driver',
-    }
-  });;
+// cron.schedule('0 * * * *', async () => {
+//   // Check and update status for all 'confirmée' missions
+//   const confirmeeMissions = await devisModel.find({ status: 'Confirmée' }).populate("mission");
+//   const confirmeedevis = await DemandeModel.find({ status: 'Confirmée' });
+//   const Affectéeemission = await DemandeModel.find({ status: 'Affectée' }) .populate("driver")
+//   const AffectéeDevis = await devisModel.find({ status: 'Affectée' }).populate({
+//     path: 'mission',
+//     populate: {
+//       path: 'driver',
+//     }
+//   });;
 
-  confirmeeMissions.forEach(async (mission) => {
-      const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-      const currentTime = new Date();
-      const timeDifference = currentTime - mission.mission.dateDepart;
-      // console.log("timeDifference",timeDifference)
+//   confirmeeMissions.forEach(async (mission) => {
+//       const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+//       const currentTime = new Date();
+//       const timeDifference = currentTime - mission.mission.dateDepart;
+//       // console.log("timeDifference",timeDifference)
 
-      // If more than 2 hours have passed, update the status to 'En retard'
-      if (timeDifference >= twoHoursInMillis) {
-          mission.status = 'En retard';
-          await mission.save();
-      }
-  });
-  AffectéeDevis.forEach(async (mission) => {
-    const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
-    const currentTime = new Date();
-    const timeDifference = currentTime - mission.mission.dateDepart;
+//       // If more than 2 hours have passed, update the status to 'En retard'
+//       if (timeDifference >= twoHoursInMillis) {
+//           mission.status = 'En retard';
+//           await mission.save();
+//       }
+//   });
+//   AffectéeDevis.forEach(async (mission) => {
+//     const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
+//     const currentTime = new Date();
+//     const timeDifference = currentTime - mission.mission.dateDepart;
 
-    // If more than 2 hours have passed, update the status to 'En retard'
-    if (timeDifference >= twoHoursInMillis) {
-      mailer.send({
-        to: ["zbousnina@yahoo.com", mission?.mission?.driver.email],
-        subject: "Important: Mission Delayed Notification",
-        html: generateEmailTemplateMissionDelayed(mission?.mission?.driver?.name,mission?.mission?.postalAddress, mission?.mission?.postalDestination),
-      }, (err) => {});
-    }
-});
-Affectéeemission.forEach(async (mission) => {
-  const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
-  const currentTime = new Date();
-  const timeDifference = currentTime - mission.dateDepart;
+//     // If more than 2 hours have passed, update the status to 'En retard'
+//     if (timeDifference >= twoHoursInMillis) {
+//       mailer.send({
+//         to: ["zbousnina@yahoo.com", mission?.mission?.driver.email],
+//         subject: "Important: Mission Delayed Notification",
+//         html: generateEmailTemplateMissionDelayed(mission?.mission?.driver?.name,mission?.mission?.postalAddress, mission?.mission?.postalDestination),
+//       }, (err) => {});
+//     }
+// });
+// Affectéeemission.forEach(async (mission) => {
+//   const twoHoursInMillis = 24* 60 * 60 * 1000; // 2 hours in milliseconds
+//   const currentTime = new Date();
+//   const timeDifference = currentTime - mission.dateDepart;
 
-  // If more than 2 hours have passed, update the status to 'En retard'
-  if (timeDifference >= twoHoursInMillis) {
-    mailer.send({
-      to: ["zbousnina@yahoo.com", mission?.driver.email],
-      subject: "Important: Mission Delayed Notification",
-      html: generateEmailTemplateMissionDelayed(mission?.driver?.name,mission?.postalAddress, mission?.postalDestination),
-    }, (err) => {});
-  }
-});
-confirmeedevis.forEach(async (mission) => {
-  const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-  const currentTime = new Date();
-  const timeDifference = currentTime - mission.dateDepart;
+//   // If more than 2 hours have passed, update the status to 'En retard'
+//   if (timeDifference >= twoHoursInMillis) {
+//     mailer.send({
+//       to: ["zbousnina@yahoo.com", mission?.driver.email],
+//       subject: "Important: Mission Delayed Notification",
+//       html: generateEmailTemplateMissionDelayed(mission?.driver?.name,mission?.postalAddress, mission?.postalDestination),
+//     }, (err) => {});
+//   }
+// });
+// confirmeedevis.forEach(async (mission) => {
+//   const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+//   const currentTime = new Date();
+//   const timeDifference = currentTime - mission.dateDepart;
 
-  // If more than 2 hours have passed, update the status to 'En retard'
-  if (timeDifference >= twoHoursInMillis) {
-      mission.status = 'En retard';
-      await mission.save();
-  }
-});
-});
+//   // If more than 2 hours have passed, update the status to 'En retard'
+//   if (timeDifference >= twoHoursInMillis) {
+//       mission.status = 'En retard';
+//       await mission.save();
+//   }
+// });
+// });
 const io = socket(server, {
   pingTimeout: 6000,
   cors: {

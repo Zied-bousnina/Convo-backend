@@ -144,7 +144,12 @@ const createDevis = async (req, res) => {
       errors.mission = "There is no mission with this ID";
       return res.status(400).json({ errors });
     }
-
+// Update the mission's price in DemandeModel
+const updatedMission = await DemandeModel.findByIdAndUpdate(mission, { $set: { price: montant } }, { new: true });
+if (!updatedMission) {
+  errors.mission = "Unable to update mission's price";
+  return res.status(400).json({ errors });
+}
     // Create an updated object for the model
     const updatedDevis = {
       categorie,

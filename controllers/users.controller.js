@@ -155,6 +155,8 @@ const createDemandeNewVersion = async (req, res) => {
     const identityProofUrl = await uploadFileToCloudinary(identityProof, 'identityProof');
     const vehicleRegistrationUrl = await uploadFileToCloudinary(vehicleRegistration, 'vehicleRegistration');
 
+    const taxRate = 0.20; // 20% tax rate for this example
+    const totalTTC = price * (1 + taxRate);
     // Create a new demand object
 
     const newDemande = new demandeModels({
@@ -166,7 +168,7 @@ const createDemandeNewVersion = async (req, res) => {
       postalAddress,
       postalDestination,
       offer,
-      price,
+      price:Number(totalTTC),
       distance,
       dateDepart,
       driverIsAuto,
@@ -180,10 +182,9 @@ const createDemandeNewVersion = async (req, res) => {
       identityProof: identityProofUrl,
       vehicleRegistration: vehicleRegistrationUrl
     });
-
+console.log(totalTTC)
+console.log(price)
     // Save the new demand
-    const taxRate = 0.20; // 20% tax rate for this example
-    const totalTTC = price * (1 + taxRate);
     const createdDemande = await newDemande.save();
     const devis = new devisModel({
       partner: req.user.id,
