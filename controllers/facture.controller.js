@@ -32,8 +32,8 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 
-const stripe = require("stripe")("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")
-// const stripe = require("stripe")("sk_test_51OdwexAFbclQdyveZsl5yeu71NzncaKS2ZQhGcAWv4CnAvSjwTKvZuLJghLDShCoy0yEe9dlqy0tzszm734dTNTl00Y8ycZsyO")
+const stripe = require("stripe")("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")
+// const stripe = require("stripe")("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")
 const createFacture = async (req, res) => {
     console.log(req.body)
     try {
@@ -357,6 +357,39 @@ const fetchFactureByPartner = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+const getTotalAmountByPartner = async (req, res) => {
+  try {
+      const partnerId = req.user.id;
+console.log
+      // Use Mongoose to find all Factures for the given partnerId
+      if(!partnerId){
+        return res.status(404).json({error: 'Partner not found'});
+    }
+    if(req.user.role=="ADMIN") {
+
+      var factures = await factureModel.find();
+    }
+    else{
+      var factures = await facture
+      .find
+      ({ partner: partnerId });
+    }
+
+      // Calculate the total amount from all factures
+      const totalAmount = factures.reduce((sum, facture) => {
+          const amount = parseFloat(facture.totalAmmount);
+          return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+
+      // Respond with the total amount
+      res.status(200).json({ totalAmount });
+  } catch (error) {
+      // Handle any errors that occur during the fetch process
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 
 const fetchFactureById = async (req, res)=> {
     const id = req.params.id;
@@ -476,6 +509,7 @@ module.exports = {
     PayeFactureByPartnerHorLigne,
     PayeeEnligne,
     PayeeEnlignePartner,
-    PayerEnligneDriver
+    PayerEnligneDriver,
+    getTotalAmountByPartner
   }
 

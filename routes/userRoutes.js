@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById, getTotalAmountByPartner } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -81,7 +81,8 @@ const {
   refusDriverAccount,
   createDemandeNewVersion,
   getMissionById,
-  updateFieldsForDevis
+  updateFieldsForDevis,
+  findDemandsstatisticsByPartner
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -148,12 +149,14 @@ router.route('/Driver/ValiderDriverAccount/:id').post(passport.authenticate('jwt
 router.route('/Driver/refusDriverAccount/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),refusDriverAccount)
 router.route('/partnerShip/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllPartner)
 router.route('/getMissionsCountByUser').get(passport.authenticate('jwt', {session: false}),getMissionsCountByUser)
+router.route('/getTotalAmountByPartner').get(passport.authenticate('jwt', {session: false}),getTotalAmountByPartner)
 router.route('/driver/fetchAll').get(passport.authenticate('jwt', {session: false}),getAllDriver)
 router.route('/getUsersById').get(passport.authenticate('jwt', {session: false}),getUsersById)
 router.route('/findMissionsByUser').get(passport.authenticate('jwt', {session: false}),findMissionsByUser)
 router.route('/findMissionsConfirmeByUser').get(passport.authenticate('jwt', {session: false}),findMissionsConfirmeByUser)
 router.route('/findLastMissionByUser').get(passport.authenticate('jwt', {session: false}),findLastMissionByUser)
 router.route('/findMissionsTermineeByUser').get(passport.authenticate('jwt', {session: false}),findMissionsTermineeByUser)
+router.route('/findDemandsstatisticsByPartner').get(passport.authenticate('jwt', {session: false}),findDemandsstatisticsByPartner)
 router.route('/findMissionsAcceptedByUser').get(passport.authenticate('jwt', {session: false}),findMissionsAcceptedByUser)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
 router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false}), (req, res) => {

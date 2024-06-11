@@ -501,6 +501,48 @@ const findDemandsCreatedByPartner = async (req, res) => {
   }
 };
 
+const findDemandsstatisticsByPartner = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
+    // Get the first and last day of the current month
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+    // Fetch all demands created within the current month
+    const allDemands = await demandeModels.find({
+      createdAt: {
+        $gte: firstDayOfMonth,
+        $lte: lastDayOfMonth
+      }
+    })
+      .populate('user')
+      .populate('driver') // Populate the 'user' and 'driver' fields to get their details
+      .exec();
+
+    // Filter demands created by users with the role 'partner'
+    const partnerDemands = allDemands.filter(demand => demand.user && demand.user.role === 'PARTNER');
+
+    // Filter demands by status
+    const inProgressDemands = partnerDemands.filter(demand => demand.status === 'in progress');
+    const completedDemands = partnerDemands.filter(demand => demand.status === 'Terminée');
+
+    // Get statistics
+    const statistics = {
+      total: partnerDemands.length,
+      inProgress: inProgressDemands.length,
+      completed: completedDemands.length,
+    };
+
+    res.status(200).json({ demands: partnerDemands, statistics });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+
+
 const checkDriverDocumentIsCompleted = async (req, res) => {
   const userId = req.user.id;
 
@@ -3021,6 +3063,7 @@ module.exports = {
   refusDriverAccount,
   findMissionsTermineeByUser,
   findDemandsCreatedByPartner,
+  findDemandsstatisticsByPartner,
   getMissionsCountByUser,
   findAllPartnersAndTheirDemands,
   findAllPartnersAndTheirFactures,
