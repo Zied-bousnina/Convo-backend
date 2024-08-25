@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById, getTotalAmountByPartner } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById, getTotalAmountByPartner, fetchFactureByMissionId } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -122,6 +122,7 @@ router.route('/findDemandsCreatedByPartner').get(findDemandsCreatedByPartner)
 router.route('/findAllPartnersAndTheirDemands').get(findAllPartnersAndTheirDemands )
 router.route('/findAllPartnersAndTheirFactures').get(findAllPartnersAndTheirFactures )
 router.route('/getMissionById/:id').get(getMissionById )
+router.route('/getFactureByMissionId/:id').get(fetchFactureByMissionId )
 router.route('/findAllDriversAndTheirFactures').get(findAllDriversAndTheirFactures )
 router.route('/mission/deleteMission/:demandId').delete(passport.authenticate('jwt', {session: false}),deleteDemande)
 router.route('/factureById/:id').get(passport.authenticate('jwt', {session: false}),GetFactureById)

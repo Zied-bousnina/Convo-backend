@@ -357,6 +357,21 @@ const fetchFactureByPartner = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+const fetchFactureByMissionId = async (req, res) => {
+  try {
+      const missionId = req.params.id;
+
+      // Use Mongoose to find all Factures for the given missionId
+      const factures = await factureModel.find({ mission: missionId });
+
+      // Respond with the fetched Factures
+      res.status(200).json(factures);
+  } catch (error) {
+      // Handle any errors that occur during the fetch process
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 const getTotalAmountByPartner = async (req, res) => {
   try {
       const partnerId = req.user.id;
@@ -499,6 +514,7 @@ const PayeFactureByPartnerHorLigne = async (req, res)=> {
 module.exports = {
     createFacture,
     fetchFactureByPartner,
+    fetchFactureByMissionId,
     fetchFactureById,
     fetchFacturePartnerById,
     fetchFacturesByDriver,
