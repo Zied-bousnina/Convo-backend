@@ -131,9 +131,10 @@ const createDemandeNewVersion = async (req, res) => {
       selectedServices,
       transport,
       mail,
-      remunerationAmount
+      remunerationAmount,
+      immatriculation
     } = req.body;
-    console.log(req.body)
+    console.log(req.body.immatriculation)
 
     const identityProof = req.files?.identityProof;
     const vehicleRegistration = req.files?.vehicleRegistration;
@@ -175,6 +176,7 @@ const createDemandeNewVersion = async (req, res) => {
       services:{ ...selectedServices },
       transport,
       remunerationAmount,
+      immatriculation,
 
       missionType,
       vehicleType,
