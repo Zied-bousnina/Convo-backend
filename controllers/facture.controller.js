@@ -385,7 +385,7 @@ console.log
       var factures = await factureModel.find();
     }
     else{
-      var factures = await facture
+      var factures = await factureModel
       .find
       ({ partner: partnerId });
     }

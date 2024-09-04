@@ -82,7 +82,8 @@ const {
   createDemandeNewVersion,
   getMissionById,
   updateFieldsForDevis,
-  findDemandsstatisticsByPartner
+  findDemandsstatisticsByPartner,
+  findDemandsstatisticsAdmin
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -158,6 +159,7 @@ router.route('/findMissionsConfirmeByUser').get(passport.authenticate('jwt', {se
 router.route('/findLastMissionByUser').get(passport.authenticate('jwt', {session: false}),findLastMissionByUser)
 router.route('/findMissionsTermineeByUser').get(passport.authenticate('jwt', {session: false}),findMissionsTermineeByUser)
 router.route('/findDemandsstatisticsByPartner').get(passport.authenticate('jwt', {session: false}),findDemandsstatisticsByPartner)
+router.route('/findDemandsstatisticsAdmin').get(passport.authenticate('jwt', {session: false}),findDemandsstatisticsAdmin)
 router.route('/findMissionsAcceptedByUser').get(passport.authenticate('jwt', {session: false}),findMissionsAcceptedByUser)
 router.route('/partnerShip/fetchByID/:id').get(passport.authenticate('jwt', {session: false}),getPartnerById)
 router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false}), (req, res) => {
