@@ -6,13 +6,13 @@ exports.sendError = (res, error, status=401)=> {
 }
 
 
-exports.createRandomBytes =()=> 
+exports.createRandomBytes =()=>
     new Promise((resolve, reject)=>{
         crypto.randomBytes(30, (err, buffer)=>{
             if(err) reject(err);
 
             const token = buffer.toString('hex');
             resolve(token)
-            
+
         })
     })
