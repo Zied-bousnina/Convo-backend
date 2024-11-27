@@ -619,10 +619,11 @@ socket.on("validate_me", async (devis) => {
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
-    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-  });
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS'); // Include OPTIONS for preflight
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With'); // Add X-Requested-With
+  next();
+});
+
   app.use(passport.initialize())
   require('./security/passport')(passport)
   // connectDB();
@@ -652,6 +653,19 @@ app.use('/api', indexRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/basicInfo', BasicInfoRoutes);
 app.use('/api/profile', profileRoutes);
-
+app.get('/send-email-test', (req, res) => {
+  mailer.send({
+    to: ["zbousnina@yahoo.com"], // Example recipient
+    subject: "Test mail",
+    html: "<h1>Test</h1>", // Email content
+  }, (err) => {
+    if (err) {
+      console.error('Error sending email:', err);
+      return res.status(500).json({ success: false, message: 'Email sending failed', error: err });
+    }
+    console.log('Email sent successfully');
+    return res.status(200).json({ success: true, message: 'Email sent successfully' });
+  });
+});
 
 module.exports = app;
