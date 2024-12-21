@@ -1420,10 +1420,11 @@ const registerUser = asyncHandler(async (req, res, next) => {
 const AddPartner = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = PartnerValidationInput(req.body);
   const { kbis } = req.files;
-  console.log(kbis);
+  // console.log(kbis);
 
   try {
     if (!isValid) {
+      console.log(errors);
       return res.status(404).json(errors);
     }
 
@@ -1434,7 +1435,7 @@ const AddPartner = asyncHandler(async (req, res, next) => {
     if (existingEmailUser) {
       errors.email = "Email already exists";
       responseSent = true;
-      return res.status(404).json(errors);
+      return res.status(400).json(errors);
     }
 
     // Check if siret number already exists
@@ -1442,7 +1443,7 @@ const AddPartner = asyncHandler(async (req, res, next) => {
     if (existingSiretUser) {
       errors.siret = 'This SIREN/SIRET already exists';
       responseSent = true;
-      return res.status(404).json(errors);
+      return res.status(400).json(errors);
     }
 
     // Check if phone number already exists
@@ -1450,7 +1451,7 @@ const AddPartner = asyncHandler(async (req, res, next) => {
     if (existingPhoneNumberUser) {
       errors.phoneNumber = 'Phone number already exists';
       responseSent = true;
-      return res.status(404).json(errors);
+      return res.status(400).json(errors);
     }
 
     if (!responseSent) {
@@ -1961,6 +1962,7 @@ const getPartnerById = async (req, res) => {
   try {
       const partner = await User.findById(req.params.id);
       const documents = await DriverDocuments.find({user:req.params.id})
+      console.log(documents)
       res.status(200).json({ partner, documents})
       // return basicInfo;
   } catch (error) {

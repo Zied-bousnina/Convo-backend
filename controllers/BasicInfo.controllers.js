@@ -1,6 +1,6 @@
-const BasicInfo = require("../models/BasicInfo.model")
+const BasicInfo = require("../models/BasicInfo.model.js")
 const validateBasicInfoInput = require("../validations/BasicInfoValidation.js")
-const cloudinary = require('../utils/uploadImage')
+const cloudinary = require('../utils/uploadImage.js')
 const AddBasicInfo = async(req, res)=>{
 
     console.log(req.body)

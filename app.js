@@ -9,6 +9,7 @@ const mongoose = require('mongoose')
 const passport = require('passport');
 const userRoutes = require('./routes/userRoutes.js');
 const profileRoutes = require('./routes/profiles.route.js');
+const chatRoutes = require('./routes/chat.route.js');
 const BasicInfoRoutes = require('./routes/BasicInfo.js');
 const connectDB = require('./config/db.js');
 const formData = require('express-form-data');
@@ -112,6 +113,19 @@ const onlineUsers2 = new Map();
 io.on("connection", (socket) => {
   console.log(`a user connected ${socket}`);
   global.chatSocket = socket;
+
+  socket.on('joinChat', (chatId) => {
+    socket.join(chatId);
+    console.log(`User joined chat: ${chatId}`);
+  });
+
+  socket.on('sendMessage', ({ chatId, message }) => {
+    io.to(chatId).emit('newMessage', message);
+  });
+
+  // socket.on('disconnect', () => {
+  //   console.log('A user disconnected:', socket.id);
+  // });
 
   socket.on("add-user", (userId, currentLocation) => {
     console.log("user id: ", userId, "location ", currentLocation)
@@ -653,6 +667,7 @@ app.use('/api', indexRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/basicInfo', BasicInfoRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/chats', chatRoutes);
 app.get('/send-email-test', (req, res) => {
   mailer.send({
     to: ["zbousnina@yahoo.com"], // Example recipient
