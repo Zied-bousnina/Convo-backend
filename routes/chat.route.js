@@ -1,6 +1,6 @@
 const express = require('express');
 const passport = require('passport');
-const { createChat, addMessage, searchPartners, getChatMessages } = require('../controllers/chat.controller');
+const { createChat, addMessage, searchPartners, getChatMessages, markMessagesAsRead } = require('../controllers/chat.controller');
 // const {
 //   createChat,
 //   getChats,
@@ -29,5 +29,8 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   addMessage
 );
+// Mark messages as read
+router.patch("/:chatId/read",  passport.authenticate('jwt', { session: false }), markMessagesAsRead);
+
 
 module.exports = router;

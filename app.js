@@ -24,8 +24,10 @@ const DemandeModel = require('./models/Demande.model.js');
 const devisModel = require('./models/devis.model.js');
 const cron = require('node-cron');
 const PORT = process.env.PORT || 5001;
+// const PORT = process.env.PORT || 5001;
 var mailer = require('./utils/mailer');
 const { generateEmailTemplatePartnerApproval, generateEmailTemplateMissionDelayed } = require('./utils/mail.js');
+const chatModel = require('./models/chat.model.js');
 let server = app.listen(PORT, async (req, res) => {
   try {
     await connectDB();
@@ -106,6 +108,7 @@ const io = socket(server, {
     // credentials: true,
   },
 });
+app.set("socketio", io);
 
 global.onlineUsers = new Map();
 const onlineUsers2 = new Map();
@@ -114,14 +117,60 @@ io.on("connection", (socket) => {
   console.log(`a user connected ${socket}`);
   global.chatSocket = socket;
 
-  socket.on('joinChat', (chatId) => {
-    socket.join(chatId);
-    console.log(`User joined chat: ${chatId}`);
+
+
+
+    // Join a chat room
+    socket.on("joinChat", (chatId) => {
+      socket.join(chatId);
+      console.log(`User joined chat room: ${chatId}`);
+    });
+
+    // Handle sending a new message
+    socket.on("sendMessage", async ({ chatId, message }) => {
+      try {
+        const chat = await chatModel.findById(chatId);
+        if (chat) {
+          chat.messages.push(message);
+          chat.lastMessage = message.content;
+          chat.lastMessageTimestamp = message.timestamp;
+          await chat.save();
+
+          io.to(chatId).emit("newMessage", message);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
+    });
+
+  socket.on("readMessages", async ({ chatId, userId }) => {
+    console.log(chatId)
+    try {
+      const chat = await chatModel.findById(chatId);
+      if (!chat) {
+        console.error("Chat not found:", chatId);
+        return;
+      }
+
+      let updated = false;
+      chat.messages.forEach((message) => {
+        if (!message.read && message.sender.toString() !== userId) {
+          message.read = true;
+          updated = true;
+        }
+      });
+
+      if (updated) {
+        await chat.save();
+      }
+
+      io.to(chatId).emit("messagesRead", { chatId, reader: userId });
+    } catch (error) {
+      console.error("Failed to mark messages as read:", error);
+    }
   });
 
-  socket.on('sendMessage', ({ chatId, message }) => {
-    io.to(chatId).emit('newMessage', message);
-  });
+
 
   // socket.on('disconnect', () => {
   //   console.log('A user disconnected:', socket.id);

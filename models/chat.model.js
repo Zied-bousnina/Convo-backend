@@ -45,5 +45,6 @@ const chatSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
+chatSchema.index({ admin: 1, partner: 1 });
+chatSchema.index({ "messages.read": 1 });
 module.exports = mongoose.model('Chat', chatSchema);

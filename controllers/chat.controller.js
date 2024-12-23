@@ -145,7 +145,7 @@ exports.getChatMessages = async (req, res) => {
   const { recieverId } = req.params; // Partner or admin ID from the route parameter
 
   try {
-    // Fetch the chat between the current user and the specified receiver
+    // Fetch the chat between the current user and the specified recipient
     const chat = await chatModel.findOne({
       $or: [
         { admin: userId, partner: recieverId },
@@ -159,7 +159,7 @@ exports.getChatMessages = async (req, res) => {
     if (!chat) {
       return res.status(404).json({ message: "Chat not found." });
     }
-console.log("chat",chat)
+
     res.json(chat.messages); // Return only the messages
   } catch (error) {
     console.error("Failed to fetch chat messages:", error);
@@ -168,27 +168,27 @@ console.log("chat",chat)
 };
 
 
+
 // Add a message to a chat
 exports.addMessage = async (req, res) => {
   const { recieverId } = req.params; // Receiver ID from the route
   const { content } = req.body; // Content of the message
   const senderId = req.user.id; // Authenticated user ID
-  const senderRole = req.user.role; // Role of the authenticated user
 
   try {
     // Check if a chat already exists between the sender and receiver
     let chat = await chatModel.findOne({
       $or: [
-        { admin: senderRole === "ADMIN" ? senderId : recieverId, partner: senderRole === "PARTNER" ? senderId : recieverId },
-        { admin: senderRole === "PARTNER" ? recieverId : senderId, partner: senderRole === "ADMIN" ? recieverId : senderId },
+        { admin: senderId, partner: recieverId },
+        { admin: recieverId, partner: senderId },
       ],
     });
 
     if (!chat) {
       // If chat doesn't exist, create a new chat
       chat = new chatModel({
-        admin: senderRole === "ADMIN" ? senderId : recieverId,
-        partner: senderRole === "PARTNER" ? senderId : recieverId,
+        admin: senderId,
+        partner: recieverId,
         messages: [],
         lastMessageTimestamp: Date.now(),
       });
@@ -212,6 +212,14 @@ exports.addMessage = async (req, res) => {
 
     await chat.save();
 
+    // Emit the new message event via Socket.io
+    const io = req.app.get("socketio");
+    if (io) {
+      io.to(chat._id.toString()).emit("newMessage", newMessage);
+    } else {
+      console.error("Socket.io instance not found");
+    }
+
     res.status(201).json({
       message: "Message sent successfully.",
       chatId: chat._id,
@@ -225,3 +233,59 @@ exports.addMessage = async (req, res) => {
 
 
 
+// Mark messages as read
+exports.markMessagesAsRead = async (req, res) => {
+  const { chatId } = req.params;
+  const userId = req.user.id; // Authenticated user ID
+
+  try {
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found." });
+    }
+
+    let updated = false;
+    chat.messages.forEach((message) => {
+      if (!message.read && message.sender.toString() !== userId) {
+        message.read = true;
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      await chat.save();
+    }
+
+    res.status(200).json({ message: "Messages marked as read." });
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    res.status(500).json({ message: "Failed to mark messages as read.", error });
+  }
+};
+
+// Get chats with unread count
+exports.getChatsWithUnreadCount = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const chats = await Chat.find({
+      $or: [{ admin: userId }, { partner: userId }],
+    });
+
+    const result = chats.map((chat) => {
+      const unreadCount = chat.messages.filter(
+        (msg) => !msg.read && msg.sender.toString() !== userId
+      ).length;
+
+      return {
+        ...chat.toObject(),
+        unreadCount,
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching chats with unread count:", error);
+    res.status(500).json({ message: "Failed to fetch chats.", error });
+  }
+};
