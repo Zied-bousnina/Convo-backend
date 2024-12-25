@@ -153,7 +153,7 @@ io.on("connection", (socket) => {
 
           // await chat.save(); // Save the chat with the new message
           // console.log("Chat updated:", chat);
-          socket.broadcast.emit("newMessage", message)
+          socket.broadcast.emit("newMessage", {...message, recieverId})
           // io.to(recieverId).emit("newMessage", message); // Emit the new message event
         } else {
           console.error("Chat not found");
