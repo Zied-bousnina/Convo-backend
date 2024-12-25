@@ -239,7 +239,12 @@ exports.markMessagesAsRead = async (req, res) => {
   const userId = req.user.id; // Authenticated user ID
 
   try {
-    const chat = await Chat.findById(chatId);
+    const chat = await chatModel.findOne({
+      $or: [
+        { admin: userId, partner: chatId },
+        { admin: chatId, partner: userId },
+      ],
+    });
     if (!chat) {
       return res.status(404).json({ message: "Chat not found." });
     }
@@ -268,7 +273,7 @@ exports.getChatsWithUnreadCount = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const chats = await Chat.find({
+    const chats = await chatModel.find({
       $or: [{ admin: userId }, { partner: userId }],
     });
 

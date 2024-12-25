@@ -127,28 +127,54 @@ io.on("connection", (socket) => {
     });
 
     // Handle sending a new message
-    socket.on("sendMessage", async ({ chatId, message }) => {
-      try {
-        const chat = await chatModel.findById(chatId);
-        if (chat) {
-          chat.messages.push(message);
-          chat.lastMessage = message.content;
-          chat.lastMessageTimestamp = message.timestamp;
-          await chat.save();
+    socket.on("sendMessage", async ({ recieverId, userId, content }) => {
+      console.log(
+        userId,
+        content,
 
-          io.to(chatId).emit("newMessage", message);
+      )
+      try {
+        const message =content
+
+        const chat = await chatModel.findOne({
+          $or: [
+            { admin: userId, partner: recieverId },
+            { admin: recieverId, partner: userId },
+          ],
+        }).populate([
+          { path: "admin", select: "name email" },
+          { path: "partner", select: "name email" },
+        ]);
+
+        if (chat) {
+          // chat.messages.push(message); // Add the new message
+          // chat.lastMessage = message.content; // Update the last message
+          // chat.lastMessageTimestamp = message.timestamp; // Update the timestamp
+
+          // await chat.save(); // Save the chat with the new message
+          // console.log("Chat updated:", chat);
+          socket.broadcast.emit("newMessage", message)
+          // io.to(recieverId).emit("newMessage", message); // Emit the new message event
+        } else {
+          console.error("Chat not found");
         }
       } catch (error) {
         console.error("Error sending message:", error);
       }
     });
 
-  socket.on("readMessages", async ({ chatId, userId }) => {
-    console.log(chatId)
+
+  socket.on("readMessages", async ({ recieverId, userId }) => {
+    console.log(recieverId)
     try {
-      const chat = await chatModel.findById(chatId);
+      const chat = await chatModel.findOne({
+        $or: [
+          { admin: userId, partner: recieverId },
+          { admin: recieverId, partner: userId },
+        ],
+      });
       if (!chat) {
-        console.error("Chat not found:", chatId);
+        console.error("Chat not found:", recieverId);
         return;
       }
 
@@ -164,7 +190,7 @@ io.on("connection", (socket) => {
         await chat.save();
       }
 
-      io.to(chatId).emit("messagesRead", { chatId, reader: userId });
+      io.to(recieverId).emit("messagesRead", { recieverId, reader: userId });
     } catch (error) {
       console.error("Failed to mark messages as read:", error);
     }
