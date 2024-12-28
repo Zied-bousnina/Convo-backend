@@ -133,6 +133,37 @@ const fetchAllFacturesByDriver = async (req, res) => {
 
 };
 
+const fetchStatistiquesByPartner = async (req, res) => {
+  try {
+    const partnerId = req.user.id; // Ensure you have authentication middleware setting req.user
+
+    // Fetch Factures statistics
+    const facturesPayees = await factureModel.countDocuments({ partner: partnerId, payed: true });
+    const facturesNonPayees = await factureModel.countDocuments({ partner: partnerId, payed: false });
+
+    // Fetch Deamnde statistics
+    const missionsAccomplies = await DemandeModel.countDocuments({ driver: partnerId, status: 'completed' });
+    const missionsRejetees = await DemandeModel.countDocuments({ driver: partnerId, status: 'rejected' });
+
+    // Construct the response
+    const statistiques = {
+      factures: {
+        payees: facturesPayees,
+        nonPayees: facturesNonPayees,
+      },
+      missions: {
+        accomplies: missionsAccomplies,
+        rejetees: missionsRejetees,
+      },
+    };
+
+    return res.status(200).json(statistiques);
+  } catch (error) {
+    console.error('Error fetching statistiques:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+};
+
 const PayeeFacture = async (req, res)=> {
     const id = req.params.id;
     const partner = req.user.id
@@ -526,6 +557,7 @@ module.exports = {
     PayeeEnligne,
     PayeeEnlignePartner,
     PayerEnligneDriver,
-    getTotalAmountByPartner
+    getTotalAmountByPartner,
+    fetchStatistiquesByPartner
   }
 
