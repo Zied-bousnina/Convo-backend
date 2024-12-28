@@ -11,6 +11,7 @@ const userRoutes = require('./routes/userRoutes.js');
 const profileRoutes = require('./routes/profiles.route.js');
 const chatRoutes = require('./routes/chat.route.js');
 const BasicInfoRoutes = require('./routes/BasicInfo.js');
+const Todo = require('./routes/calendar.Routes.js');
 const connectDB = require('./config/db.js');
 const formData = require('express-form-data');
 const morgan = require('morgan');
@@ -741,6 +742,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api', indexRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/basicInfo', BasicInfoRoutes);
+app.use('/api/Todo', Todo);
 app.use('/api/profile', profileRoutes);
 app.use('/api/chats', chatRoutes);
 app.get('/send-email-test', (req, res) => {
