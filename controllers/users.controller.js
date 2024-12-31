@@ -132,7 +132,8 @@ const createDemandeNewVersion = async (req, res) => {
       transport,
       mail,
       remunerationAmount,
-      immatriculation
+      immatriculation,
+      vehicleData
     } = req.body;
     console.log(req.body.immatriculation)
 
@@ -176,18 +177,20 @@ const createDemandeNewVersion = async (req, res) => {
       services:{ ...selectedServices },
       transport,
       remunerationAmount,
-      immatriculation,
+      immatriculation: vehicleData.immat,
 
       missionType,
       vehicleType,
       time,
       identityProof: identityProofUrl,
-      vehicleRegistration: vehicleRegistrationUrl
+      vehicleRegistration: vehicleRegistrationUrl,
+      vehicleData
     });
 console.log(totalTTC)
 console.log(price)
     // Save the new demand
     const createdDemande = await newDemande.save();
+    console.log(createdDemande)
     const devis = new devisModel({
       partner: req.user.id,
       mission: createdDemande._id,

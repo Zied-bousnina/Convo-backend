@@ -152,6 +152,10 @@ const DeamndeSchema = new Schema({
         phone: {
             type:String
         },
+        vehicleData: {
+            type: Object, // This allows you to store any object
+            default: {}, // Optional: Default to an empty object if no data is provided
+          },
 
 
 
