@@ -1829,45 +1829,114 @@ const DeleteAccountByAdmin = async (req, res) => {
 // @desc    Forgot password
 // @route   POST /api/users/forgotpassword
 // @access  Public
+// const forgotPassword = async (req, res) => {
+//   console.log(req.body)
+//   const { email } = req.body;
+//   console.log(email)
+//   if (!email) {
+//     return sendError(res, 'Please provide a valid email!');
+//   }
+
+//   const user = await User.findOne({ email });
+//   console.log(user)
+//   if (!user) {
+//     return sendError(res, 'Sorry! User not found!');
+//   }
+
+//   const token = await resetTokenModels.findOne({ owner: user._id });
+//   if (token ) {
+//     return sendError(res, 'You can request a new token after one hour!');
+//   }
+
+//   const resetToken = await createRandomBytes();
+//   // const resetTokenExpire = Date.now() + 3600000;
+
+//   const newToken = new resetTokenModels({
+//     owner: user._id,
+//     token: resetToken
+
+
+//   });
+
+//   await newToken.save();
+
+//   mailer.send({
+//     to: ["zbousnina@yahoo.com",user.email ],
+//     subject: "Verification code",
+//     html: generatePasswordResetTemplate(`https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`)
+//   }, (err)=>{
+//     console.log("Email SEnt ",err)
+//   })
+
+//   res.status(200).json({ message: 'Reset password link has been sent to your email!' });
+// };
 const forgotPassword = async (req, res) => {
-  console.log(req.body.email)
-  const { email } = req.body;
-  if (!email) {
-    return sendError(res, 'Please provide a valid email!');
+  try {
+    console.log("Request received:", req.body);
+
+    const { email } = req.body;
+
+    // Validate email existence
+    if (!email) {
+      return res.status(400).json({ error: "Veuillez fournir une adresse e-mail valide !" });
+    }
+
+    console.log("Email received:", email);
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("User not found for email:", email);
+      return res.status(404).json({ error: "Désolé ! Utilisateur non trouvé !" });
+    }
+
+    console.log("User found:", user);
+
+    // Check if a token already exists for the user
+    const existingToken = await resetTokenModels.findOne({ owner: user._id });
+    if (existingToken) {
+      console.log("Token already exists for user:", user._id);
+      return res.status(429).json({ error: "Vous avez déjà demandé un code de réinitialisation. Veuillez patienter une heure avant de pouvoir en demander un nouveau." });
+    }
+
+    // Generate a new token
+    const resetToken = await createRandomBytes();
+
+    // Save the token in the database
+    const newToken = new resetTokenModels({
+      owner: user._id,
+      token: resetToken,
+    });
+
+    await newToken.save();
+
+    console.log("New token created and saved:", resetToken);
+
+    // Send the reset email
+    const resetLink = `https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`;
+    mailer.send(
+      {
+        to: ["zbousnina@yahoo.com", user.email], // Use only the user's email
+        subject: "Demande de réinitialisation de mot de passe",
+        html: generatePasswordResetTemplate(resetLink),
+      },
+      (err) => {
+        if (err) {
+          console.error("Error sending email:", err);
+          return res.status(500).json({ error: "Échec de l'envoi de l'e-mail de réinitialisation. Veuillez réessayer plus tard." });
+        }
+        console.log("Reset email sent to:", user.email);
+      }
+    );
+
+    // Respond to the user
+    return res.status(200).json({ message: "Le lien de réinitialisation du mot de passe a été envoyé à votre adresse e-mail !" });
+  } catch (error) {
+    console.error("Error in forgotPassword handler:", error);
+    return res.status(500).json({ error: "Une erreur interne est survenue. Veuillez réessayer plus tard." });
   }
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    return sendError(res, 'Sorry! User not found!');
-  }
-
-  const token = await resetTokenModels.findOne({ owner: user._id });
-  if (token ) {
-    return sendError(res, 'You can request a new token after one hour!');
-  }
-
-  const resetToken = await createRandomBytes();
-  // const resetTokenExpire = Date.now() + 3600000;
-
-  const newToken = new resetTokenModels({
-    owner: user._id,
-    token: resetToken
-
-
-  });
-
-  await newToken.save();
-
-  mailer.send({
-    to: ["zbousnina@yahoo.com",user.email ],
-    subject: "Verification code",
-    html: generatePasswordResetTemplate(`https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`)
-  }, (err)=>{
-    console.log(err)
-  })
-
-  res.status(200).json({ message: 'Reset password link has been sent to your email!' });
 };
+
 
 
 // @desc    Reset password
