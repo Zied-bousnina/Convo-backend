@@ -40,7 +40,7 @@ module.exports = passport => {
           {
             clientID: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: "/api/users/google/callback",
+            callbackURL: "https://convoyage.onrender.com/api/users/google/callback",
           },
           async (accessToken, refreshToken, profile, done) => {
 console.log(profile);
