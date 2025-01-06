@@ -34,6 +34,7 @@ const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 const driverDocumentsModel = require('../models/driverDocuments.model.js');
 const { update } = require('lodash');
+const partnerCompleteProfileValidation = require('../validations/partnerCompleteProfileValidation.js');
 
 
 
@@ -1235,6 +1236,7 @@ const authUser = async (req, res) => {
       }
       const isMatch = await bcrypt.compare(req.body.password, user.password);
       if (isMatch) {
+        console.log("isMatch")
         const token = jwt.sign(
           {
             id: user._id,
@@ -1247,6 +1249,7 @@ const authUser = async (req, res) => {
             onligne:user.onligne,
             firstLogin:user.firstLogin,
             driverIsVerified:user.driverIsVerified,
+            firstLoginByThirdParty:user.firstLoginByThirdParty,
             // siret:user.siret,
             // newsocket:user.Newsocket ? user.Newsocket : [],
 
@@ -1276,6 +1279,39 @@ const authUser = async (req, res) => {
   }
 
 }
+const refreshAuthToken = (req, res) => {
+  try {
+    // Extract the user object from the authenticated request
+    const user = req.user;
+    console.log(user)
+
+    // Generate a new token with user details
+    const newToken = jwt.sign(
+      {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        verified: user.verified,
+        profile: user.profile,
+        isBlocked: user.isBlocked,
+        onligne: user.onligne,
+        firstLogin: user.firstLogin,
+        driverIsVerified: user.driverIsVerified,
+        firstLoginByThirdParty: user.firstLoginByThirdParty,
+      },
+      process.env.SECRET_KEY,
+      { expiresIn: Number.MAX_SAFE_INTEGER} // Set a reasonable expiration time
+    );
+
+    // Send the new token to the client
+    return res.status(200).json({ success: true, token: "Bearer " + newToken });
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 const updatePassword = async (req, res) => {
   let responseSent = false;
   const { errors, isValid } = changePasswordValidation(req.body);
@@ -1504,6 +1540,169 @@ const AddPartner = asyncHandler(async (req, res, next) => {
     res.status(500).json({ message: error.message });
   }
 });
+const Register = asyncHandler(async (req, res, next) => {
+  const { errors, isValid } = PartnerValidationInput(req.body);
+  const { kbis } = req.files;
+  console.log(req.body);
+
+  try {
+    if (!isValid) {
+      console.log(errors);
+      return res.status(404).json(errors);
+    }
+
+    let responseSent = false;
+
+    // Vérifier si l'email existe déjà
+    const existingEmailUser = await User.findOne({ email: req.body.email });
+    if (existingEmailUser) {
+      errors.email = "Cet email existe déjà.";
+      responseSent = true;
+      return res.status(400).json(errors);
+    }
+
+    // Vérifier si le numéro SIRET existe déjà
+    const existingSiretUser = await User.findOne({ siret: req.body.siret });
+    if (existingSiretUser) {
+      errors.siret = "Ce numéro SIRET/SIREN existe déjà.";
+      responseSent = true;
+      return res.status(400).json(errors);
+    }
+
+    // Vérifier si le numéro de téléphone existe déjà
+    const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber });
+    if (existingPhoneNumberUser) {
+      errors.phoneNumber = "Ce numéro de téléphone existe déjà.";
+      responseSent = true;
+      return res.status(400).json(errors);
+    }
+
+    if (!responseSent) {
+      if (kbis) {
+        const result = await cloudinary.uploader.upload(kbis.path, {
+          resource_type: "auto",
+          folder: "pdf_uploads",
+          public_id: `kbis_${Date.now()}`,
+          overwrite: true,
+        });
+        console.log(result);
+        req.body.kbis = result.secure_url;
+      }
+
+      const user = new User({
+        name: req.body.name,
+        addressPartner: req.body.addressPartner,
+        contactName: req.body.contactName,
+        email: req.body.email,
+        phoneNumber: req.body.phoneNumber,
+        password: bcrypt.hashSync(req.body.password, 10), // Use password sent from the front end
+        role: "PARTNER",
+        verified: true,
+        siret: req.body.siret,
+        kbis: req.body.kbis,
+        firstLogin: true,
+      });
+
+      mailer.send(
+        {
+          to: ["zbousnina@yahoo.com", user.email],
+          subject: "Bienvenue chez Convoyage ! Détails de votre compte à l'intérieur",
+          html: generateEmailTemplatePartner(
+            user.contactName,
+            user.name,
+            user.email,
+            user.role !== "PARTNER" ? req.body.password : "" // Exclude password if role is "PARTNER"
+          ),
+        },
+        (err) => {
+          if (err) console.error("Erreur d'envoi de l'email :", err);
+        }
+      );
+
+      user
+        .save()
+        .then((savedUser) => {
+          res.status(200).json({
+            success: true,
+            user: savedUser,
+            msg: "Un email a été envoyé à votre adresse email enregistrée.",
+          });
+        })
+        .catch((err) => {
+          console.error(err);
+          res.status(500).json({ success: false, message: "Erreur interne." });
+        });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Une erreur interne est survenue." });
+  }
+});
+const CompletePartnerProfile = asyncHandler(async (req, res, next) => {
+  const { errors, isValid } = partnerCompleteProfileValidation(req.body);
+  const { kbis } = req.files || {};
+  const userId = req.user.id; // Assuming the authenticated user's ID is available in `req.user` from Passport.
+
+  try {
+    if (!isValid) {
+      console.log(errors);
+      return res.status(404).json(errors);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+
+
+    const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber, _id: { $ne: userId } });
+    if (existingPhoneNumberUser) {
+      errors.phoneNumber = "Ce numéro de téléphone est déjà utilisé.";
+      return res.status(400).json(errors);
+    }
+
+    const existingSiretUser = await User.findOne({ siret: req.body.siret, _id: { $ne: userId } });
+    if (existingSiretUser) {
+      errors.siret = "Ce numéro SIRET/SIREN est déjà utilisé.";
+      return res.status(400).json(errors);
+    }
+
+    // Upload KBIS if provided
+    if (kbis) {
+      const result = await cloudinary.uploader.upload(kbis.path, {
+        resource_type: "auto",
+        folder: "pdf_uploads",
+        public_id: `kbis_${Date.now()}`,
+        overwrite: true,
+      });
+      req.body.kbis = result.secure_url;
+    }
+
+    // Update partner profile
+    user.name = req.body.name || user.name;
+    user.contactName = req.body.contactName || user.contactName;
+    user.addressPartner = req.body.addressPartner || user.addressPartner;
+    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+    user.siret = req.body.siret || user.siret;
+    user.kbis = req.body.kbis || user.kbis;
+    user.firstLoginByThirdParty= false;
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      success: true,
+      user: updatedUser,
+      msg: "Profil mis à jour avec succès.",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Une erreur interne est survenue." });
+  }
+});
+
+
+
 
 
 
@@ -3128,7 +3327,9 @@ const findMissionById = async (req, res) => {
 
 module.exports = {
   authUser,
+  refreshAuthToken,
   registerUser,
+  CompletePartnerProfile,
   getUserByEmail,
   getUsers,
   deleteUser,
@@ -3158,6 +3359,7 @@ module.exports = {
   findDemandById,
   SetUserStatus,
   AddPartner,
+  Register,
   getAllPartner,
   getPartnerById,
   updatePartner,

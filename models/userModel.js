@@ -24,10 +24,18 @@ const userSchema = mongoose.Schema(
             default: false,
             required: true
         },
+        firstLoginByThirdParty: {
+            type: Boolean,
+            default: false
+        },
         googleId: {
             type: String,
-            default: null
-        },
+            default: null,
+          },
+          linkedinId: {
+            type: String,
+            default: null,
+          },
         address:
         {
             latitude: String,

@@ -12,7 +12,7 @@ const profileSchema = new Schema({
     tel:{
         type:String,
         // required:true,
-        unique:true
+
     },
     avatar: String,
     address:"string",

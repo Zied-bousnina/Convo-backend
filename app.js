@@ -16,7 +16,7 @@ const connectDB = require('./config/db.js');
 const formData = require('express-form-data');
 const morgan = require('morgan');
 var app = express();
-
+const session = require('express-session');
 const http = require('http');
 const socket = require('socket.io');
 const userModel = require('./models/userModel.js');
@@ -713,8 +713,14 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With'); // Add X-Requested-With
   next();
 });
-
+app.use(session({
+  secret: process.env.SECRET_KEY, // Changez ceci par une valeur secrète
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Réglez `secure: true` si vous utilisez HTTPS
+}));
   app.use(passport.initialize())
+  app.use(passport.session());
   require('./security/passport')(passport)
   // connectDB();
 

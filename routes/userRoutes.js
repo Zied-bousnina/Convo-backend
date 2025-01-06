@@ -2,6 +2,8 @@ const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByD
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
+const jwt = require('jsonwebtoken');
+
 const {
   authUser,
   registerUser,
@@ -83,7 +85,10 @@ const {
   getMissionById,
   updateFieldsForDevis,
   findDemandsstatisticsByPartner,
-  findDemandsstatisticsAdmin
+  findDemandsstatisticsAdmin,
+  Register,
+  CompletePartnerProfile,
+  refreshAuthToken
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -104,7 +109,46 @@ const fileFilter = (req, file, cb) => {
 };
 const uploads = multer({ storage, fileFilter });
 router.route('/').post(registerUser)
+// Google Login
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/" }),
+  (req, res) => {
+    console.log(req.user)
+    const token = jwt.sign(
+      { id: req.user._id, email: req.user.email, role: req.user.role,
+        firstLoginByThirdParty:req.user.firstLoginByThirdParty,
+
+
+       },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+    res.redirect(`${process.env.NEXT_APP_API_URL}?token=${token}`);
+  }
+);
+
+// LinkedIn Login
+router.get("/linkedin", passport.authenticate("linkedin"));
+
+router.get(
+  "/linkedin/callback",
+  passport.authenticate("linkedin", { failureRedirect: "/" }),
+  (req, res) => {
+    const token = jwt.sign(
+      { id: req.user._id, email: req.user.email, role: req.user.role },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+    res.redirect(`${process.env.NEXT_APP_API_URL}?token=${token}`);
+  }
+);
+
 router.route('/login').post(authUser)
+router.route('/Register').post(Register)
+router.route('/refreshAuthToken').get(passport.authenticate('jwt', {session: false}),refreshAuthToken)
+router.route('/CompletePartnerProfile').post(passport.authenticate('jwt', {session: false}),CompletePartnerProfile)
 router.route('/createReport').post(passport.authenticate('jwt', {session: false}),CreateReportOnuser)
 router.route('/createSupport').post(passport.authenticate('jwt', {session: false}),CreateSupport)
 router.route('/createFeedback').post(passport.authenticate('jwt', {session: false}),CreateFeedback)
@@ -138,6 +182,7 @@ router.route("/getPartnerCounts").get(getPartnerCount)
 router.route("/getDemandeCounts").get(getTotalDemandesCount)
 router.route('/AddAddress').post(passport.authenticate('jwt', {session: false}),addAddress)
 router.route('/AddPartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddPartner)
+
 router.route('/driver/AddDriver').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),AddDriver)
 router.route('/driver/UpdateDocDriver').post(passport.authenticate('jwt', {session: false}),AddDriverDoc_DriverLicence)
 router.route('/driver/checkDriverDocumentIsCompleted').get(passport.authenticate('jwt', {session: false}),isRole(ROLES.DRIVER),checkDriverDocumentIsCompleted)
