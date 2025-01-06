@@ -90,20 +90,38 @@ console.log(profile);
       {
         clientID: process.env.LINKEDIN_CLIENT_ID,
         clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-        callbackURL: "/auth/linkedin/callback",
-        scope: ["r_emailaddress", "r_liteprofile"],
+        callbackURL: process.env.LINKEDIN_CALLBACK_URL,
+        scope:["profile", "email"],
+
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          let user = await usersModels.findOne({ linkedinId: profile.id });
-          if (!user) {
+          console.log(profile);
+          let user = await usersModels.findOne({ email: profile.emails[0].value });
+          if (user) {
+            // Si l'utilisateur existe mais n'a pas de `googleId`, associez-le
+            if (!user.googleId) {
+              user.googleId = profile.id;
+              user.avatar = profile.photos[0].value;
+              await user.save();
+            }
+          } else {
+            // Créez un nouvel utilisateur si aucun n'existe
             user = await usersModels.create({
               linkedinId: profile.id,
               name: profile.displayName,
               email: profile.emails[0].value,
               avatar: profile.photos[0].value,
               verified: true,
+              role: "PARTNER",
+              firstLoginByThirdParty: true,
             });
+            console.log(user);
+            await profileModels.create({
+                user: user._id,
+                avatar: profile.photos[0].value, // Use the avatar from Google
+                tel: undefined,
+              });
           }
           return done(null, user);
         } catch (err) {
