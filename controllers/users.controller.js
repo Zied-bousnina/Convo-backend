@@ -546,45 +546,106 @@ const findDemandsstatisticsByPartner = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+// const findDemandsstatisticsAdmin = async (req, res) => {
+//   try {
+//     // Get the current date
+//     const currentDate = new Date();
+//     // Get the first and last day of the current month
+//     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+//     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+//     // Fetch all demands created within the current month
+//     const allDemands = await demandeModels.find({
+//       // createdAt: {
+//       //   $gte: firstDayOfMonth,
+//       //   $lte: lastDayOfMonth
+//       // }
+//     })
+//       .populate('user')
+//       .populate('driver') // Populate the 'user' and 'driver' fields to get their details
+//       .exec();
+
+//     // Filter demands created by users with the role 'partner'
+//     // const partnerDemands = allDemands.filter(demand => demand.user && demand.user.role === 'PARTNER');
+
+//     // Filter demands by status
+//     const inProgressDemands = allDemands.filter(demand => demand.status === 'in progress');
+//     const completedDemands = allDemands.filter(demand => demand.status === 'Terminée');
+
+//     // Get statistics
+//     const statistics = {
+//       total: allDemands.length,
+//       inProgress: inProgressDemands.length,
+//       completed: completedDemands.length,
+//     };
+
+//     res.status(200).json({ demands: allDemands, statistics });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Internal Server Error' });
+//   }
+// };
 const findDemandsstatisticsAdmin = async (req, res) => {
   try {
-    // Get the current date
-    const currentDate = new Date();
-    // Get the first and last day of the current month
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    // Extract filter parameters from the query string
+    const { startDate, endDate, status } = req.query;
 
-    // Fetch all demands created within the current month
-    const allDemands = await demandeModels.find({
-      // createdAt: {
-      //   $gte: firstDayOfMonth,
-      //   $lte: lastDayOfMonth
-      // }
-    })
-      .populate('user')
-      .populate('driver') // Populate the 'user' and 'driver' fields to get their details
+    // Initialize filters object
+    const filters = {};
+
+    // Validate dates and apply date filter only if valid dates are provided
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (!isNaN(start) && !isNaN(end)) {
+      filters.createdAt = {
+        $gte: start,
+        $lte: end,
+      };
+    }
+
+    // Apply status filter if provided
+    if (status) {
+      filters.status = status;
+    }
+
+    // Fetch demands based on filters
+    const allDemands = await demandeModels
+      .find(filters)
+      .populate("user")
+      .populate("driver") // Populate 'user' and 'driver' fields
       .exec();
 
-    // Filter demands created by users with the role 'partner'
-    // const partnerDemands = allDemands.filter(demand => demand.user && demand.user.role === 'PARTNER');
+    // Filter demands by status for additional statistics
+    const inProgressCount = await demandeModels.countDocuments({
+      ...filters,
+      status: "in progress",
+    });
 
-    // Filter demands by status
-    const inProgressDemands = allDemands.filter(demand => demand.status === 'in progress');
-    const completedDemands = allDemands.filter(demand => demand.status === 'Terminée');
+    const completedCount = await demandeModels.countDocuments({
+      ...filters,
+      status: "Terminée",
+    });
 
-    // Get statistics
+    // Prepare statistics
     const statistics = {
       total: allDemands.length,
-      inProgress: inProgressDemands.length,
-      completed: completedDemands.length,
+      inProgress: inProgressCount,
+      completed: completedCount,
     };
 
+
+    console.log("Statistics:", allDemands);
+
+    // Send response
     res.status(200).json({ demands: allDemands, statistics });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Error fetching demand statistics:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
 
 
 const checkDriverDocumentIsCompleted = async (req, res) => {

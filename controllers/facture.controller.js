@@ -136,14 +136,47 @@ const fetchAllFacturesByDriver = async (req, res) => {
 const fetchStatistiquesByPartner = async (req, res) => {
   try {
     const partnerId = req.user.id; // Ensure you have authentication middleware setting req.user
+    const { startDate, endDate } = req.query;
+
+    // Helper function to validate date strings
+    const isValidDate = (date) => {
+      return !isNaN(new Date(date).getTime());
+    };
+
+    // Validate and initialize the date filter
+    const dateFilter = {};
+    if (isValidDate(startDate) && isValidDate(endDate)) {
+      dateFilter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
 
     // Fetch Factures statistics
-    const facturesPayees = await factureModel.countDocuments({ partner: partnerId, payed: true });
-    const facturesNonPayees = await factureModel.countDocuments({ partner: partnerId, payed: false });
+    const facturesPayees = await factureModel.countDocuments({
+      partner: partnerId,
+      payed: true,
+      ...dateFilter,
+    });
 
-    // Fetch Deamnde statistics
-    const missionsAccomplies = await DemandeModel.countDocuments({ driver: partnerId, status: 'completed' });
-    const missionsRejetees = await DemandeModel.countDocuments({ driver: partnerId, status: 'rejected' });
+    const facturesNonPayees = await factureModel.countDocuments({
+      partner: partnerId,
+      payed: false,
+      ...dateFilter,
+    });
+
+    // Fetch Demande statistics
+    const missionsAccomplies = await DemandeModel.countDocuments({
+      driver: partnerId,
+      status: "completed",
+      ...dateFilter,
+    });
+
+    const missionsRejetees = await DemandeModel.countDocuments({
+      driver: partnerId,
+      status: "rejected",
+      ...dateFilter,
+    });
 
     // Construct the response
     const statistiques = {
@@ -159,10 +192,14 @@ const fetchStatistiquesByPartner = async (req, res) => {
 
     return res.status(200).json(statistiques);
   } catch (error) {
-    console.error('Error fetching statistiques:', error);
-    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    console.error("Error fetching statistiques:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
+
+
 
 const PayeeFacture = async (req, res)=> {
     const id = req.params.id;
@@ -405,36 +442,56 @@ const fetchFactureByMissionId = async (req, res) => {
 };
 const getTotalAmountByPartner = async (req, res) => {
   try {
-      const partnerId = req.user.id;
-console.log
-      // Use Mongoose to find all Factures for the given partnerId
-      if(!partnerId){
-        return res.status(404).json({error: 'Partner not found'});
-    }
-    if(req.user.role=="ADMIN") {
+    const { startDate, endDate, status } = req.query; // Extract filters from the query string
+    const partnerId = req.user.id;
 
-      var factures = await factureModel.find();
-    }
-    else{
-      var factures = await factureModel
-      .find
-      ({ partner: partnerId });
+    // Check if the partner exists
+    if (!partnerId) {
+      return res.status(404).json({ error: "Partner not found" });
     }
 
-      // Calculate the total amount from all factures
-      const totalAmount = factures.reduce((sum, facture) => {
-          const amount = parseFloat(facture.totalAmmount);
-          return sum + (isNaN(amount) ? 0 : amount);
-      }, 0);
+    // Build the filter object
+    const filters = {};
 
-      // Respond with the total amount
-      res.status(200).json({ totalAmount });
+    if (req.user.role !== "ADMIN") {
+      filters.partner = partnerId; // Filter by partner ID for non-admin users
+    }
+
+    // Validate dates and apply date filter only if valid dates are provided
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (!isNaN(start) && !isNaN(end)) {
+      filters.createdAt = { $gte: start, $lte: end };
+    }
+
+    // Apply status filter if provided
+    if (status) {
+      filters.status = status;
+    }
+
+    console.log("Filters applied:", filters);
+
+    // Fetch factures based on the filters
+    const factures = await factureModel.find(filters);
+
+    // Calculate the total amount
+    const totalAmount = factures.reduce((sum, facture) => {
+      const amount = parseFloat(facture.totalAmmount);
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+
+    // Respond with the total amount
+    res.status(200).json({ totalAmount });
   } catch (error) {
-      // Handle any errors that occur during the fetch process
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+    // Handle errors
+    console.error("Error in getTotalAmountByPartner:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+
 
 
 const fetchFactureById = async (req, res)=> {
