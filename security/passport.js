@@ -91,7 +91,7 @@ console.log(profile);
         clientID: process.env.LINKEDIN_CLIENT_ID,
         clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
         callbackURL: process.env.LINKEDIN_CALLBACK_URL,
-        scope:['email','profile','openid'],
+        scope:["r_liteprofile", "r_emailaddress"] ,
 
       },
       async (accessToken, refreshToken, profile, done) => {
