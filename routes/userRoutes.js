@@ -137,7 +137,11 @@ router.get(
   passport.authenticate("linkedin", { failureRedirect: "/" }),
   (req, res) => {
     const token = jwt.sign(
-      { id: req.user._id, email: req.user.email, role: req.user.role },
+      { id: req.user._id, email: req.user.email, role: req.user.role,
+        firstLoginByThirdParty:req.user.firstLoginByThirdParty,
+
+
+       },
       process.env.SECRET_KEY,
       { expiresIn: "1h" }
     );
