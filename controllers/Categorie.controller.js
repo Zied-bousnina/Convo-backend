@@ -33,6 +33,7 @@ const validateUpdateCategorie = require('../validations/validateUpdateCategorie.
 
 const createCategorie = async (req, res) => {
     const { errors, isValid } = validateCategorieInput(req.body);
+    console.log("body : ", req.body,errors)
 
     try {
       if (isValid) {
@@ -69,7 +70,9 @@ const createCategorie = async (req, res) => {
 
         res.status(201).json({ message: 'Categorie created successfully', categorie: createdCategorie });
       } else {
+        console.log(errors)
         return res.status(400).json(errors);
+
       }
     } catch (error) {
       res.status(500).json({ message: error.message });

@@ -134,7 +134,8 @@ const createDemandeNewVersion = async (req, res) => {
       mail,
       remunerationAmount,
       immatriculation,
-      vehicleData
+      vehicleData,
+      phone
     } = req.body;
     console.log(req.body.immatriculation)
 
@@ -179,7 +180,7 @@ const createDemandeNewVersion = async (req, res) => {
       transport,
       remunerationAmount,
       immatriculation: vehicleData.immat,
-
+phone,
       missionType,
       vehicleType,
       time,

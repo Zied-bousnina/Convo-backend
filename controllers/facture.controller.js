@@ -545,10 +545,17 @@ const fetchFacturePartnerById = async (req, res)=> {
       if(!facture){
           return res.status(404).json({error: 'Facture not found'});
       }
-      console.log(facture)
+      console.log("facture,,,,,,",facture)
       let query = { partner: partner, status: { $in: statusValues  }}
+      if (facture?.from && facture?.to && facture?.from !== 'Invalid Date' && facture?.to !== 'Invalid Date') {
+        // const from = new Date(facture?.from);
+        // const to = new Date(facture?.to);
+        const from = new Date(facture?.from).toISOString();
+        const to = new Date(facture?.to).toISOString();
+        query.createdAt = { $gte: new Date(from), $lte: new Date(to) };
+        console.log("frommmmmm", from, to)
 
-
+      }
 
       const devis = await devisModel
         .find(query)
@@ -558,7 +565,9 @@ const fetchFacturePartnerById = async (req, res)=> {
             path: 'driver',
           },
         })
-        .populate('categorie');
+        .populate('categorie')
+        console.log(devis)
+
 
       res.status(200).json({devis,facture });
       }catch(e){

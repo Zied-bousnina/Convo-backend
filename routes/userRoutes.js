@@ -286,4 +286,6 @@ router
   router.route('/facture/PayerEnLignePartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeEnlignePartner )
   router.route('/facture/PayerEnligneDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeFactureDriver )
 
+
+
 module.exports = router
