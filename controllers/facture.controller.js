@@ -31,8 +31,9 @@ const DemandeModel = require('../models/Demande.model');
 const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
+const { getStripe } = require('../config/stripe.js');
 
-const stripe = require("stripe")("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")
+// const stripe = require("stripe")("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")
 // const stripe = require("stripe")("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")
 const createFacture = async (req, res) => {
     console.log(req.body)
@@ -253,7 +254,7 @@ const PayeeEnligne = async (req, res)=> {
 
     let {id } = req.body
     try {
-
+      const stripe = await getStripe();
       const facture = await factureModel.findById(factureId);
       if(!facture){
           return res.status(404).json({error: 'Facture not found'});
@@ -289,7 +290,7 @@ const PayeeEnligne = async (req, res)=> {
     try {
       // Try to find an existing facture with the given missionId
       let facture = await factureModel.findOne({ mission: missionId });
-
+      const stripe = await getStripe();
       if (facture) {
         // If a facture exists, update it
         facture.partner = partnerId;
@@ -376,6 +377,7 @@ console.log(facture)
       if(!facture){
           return res.status(404).json({error: 'Facture not found'});
       }
+      const stripe = await getStripe();
       const payment = await stripe.paymentIntents.create({
         amount:  Math.round(calculateTVA(Number(facture.totalAmmount), tvaRate).montantTTC * 100),
         currency: "EUR",

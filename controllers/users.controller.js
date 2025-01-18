@@ -778,6 +778,7 @@ const findDevisByPartnerId = async (req, res) => {
 
     if (devis.length > 0) {
       res.status(200).json({ devis });
+
     } else {
       res.status(404).json({ message: "Aucun devis trouvé pour l'utilisateur dans la plage de dates spécifiée." });
     }

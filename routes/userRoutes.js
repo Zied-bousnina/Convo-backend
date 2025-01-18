@@ -265,6 +265,9 @@ router
 
   /* ---------------------------- */
   const { createDevis, UpdateDevis, getAllDevisByPartner } = require('../controllers/Devis.controller');
+const { saveStripeConfig, getStripeConfig } = require('../controllers/StripeConfig.controller.js');
+const { getStripe } = require('../config/stripe.js');
+const { getSocialLoginConfig, updateSocialLoginConfig } = require('../controllers/SocialLoginConfig.controller.js');
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
@@ -285,6 +288,16 @@ router
   router.route('/facture/PayerEnLigne/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeEnligne )
   router.route('/facture/PayerEnLignePartner').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeEnlignePartner )
   router.route('/facture/PayerEnligneDriver/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN, ROLES.PARTNER),PayeeFactureDriver )
+
+  // Payment Gateway
+  router.route('/payment-gateway').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),saveStripeConfig)
+  router.route('/get-payment-gateway').post(passport.authenticate('jwt', {session: false}),getStripeConfig)
+
+
+  // SocialLoginConfig
+
+  router.route('/getsocial-login-config').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getSocialLoginConfig)
+  router.route('/social-login-config').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateSocialLoginConfig)
 
 
 
