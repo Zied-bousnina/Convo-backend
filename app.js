@@ -26,6 +26,7 @@ const devisModel = require('./models/devis.model.js');
 const cron = require('node-cron');
 const PORT = process.env.PORT || 5001;
 // const PORT = process.env.PORT || 5001;
+const cors = require('cors');
 var mailer = require('./utils/mailer');
 const { generateEmailTemplatePartnerApproval, generateEmailTemplateMissionDelayed } = require('./utils/mail.js');
 const chatModel = require('./models/chat.model.js');
@@ -707,12 +708,11 @@ socket.on("validate_me", async (devis) => {
 
 // io.listen(  "https://convoyage.onrender.com")
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
-  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS'); // Include OPTIONS for preflight
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With'); // Add X-Requested-With
-  next();
-});
+app.use(cors({
+  origin: '*', // Allow all origins; specify 'https://carvoy-7.vercel.app' in production
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(session({
   secret: process.env.SECRET_KEY, // Changez ceci par une valeur secrète
   resave: false,
