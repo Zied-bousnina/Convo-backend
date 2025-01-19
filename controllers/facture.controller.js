@@ -286,7 +286,7 @@ const PayeeEnligne = async (req, res)=> {
   }
   const PayeeEnlignePartner = async (req, res) => {
     const { missionId, partnerId, totalAmmount, freeComment, referenceNumber } = req.body;
-
+console.log("body :",req.body)
     try {
       // Try to find an existing facture with the given missionId
       let facture = await factureModel.findOne({ mission: missionId });
@@ -319,7 +319,7 @@ console.log(facture)
 
       // Proceed with the payment
       const payment = await stripe.paymentIntents.create({
-        amount: Math.round(savedFacture.totalAmmount * 100),
+        amount: Math.round(totalAmmount * 100),
         currency: "EUR",
         description: "Carvoy company",
         payment_method: req.body.id, // Assuming payment method ID is passed in request body
