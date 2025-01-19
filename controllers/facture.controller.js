@@ -538,41 +538,60 @@ const fetchFactureById = async (req, res)=> {
         }
 
 }
+function isNotValidDate(value) {
+  const date = new Date(value);
+  return isNaN(date.getTime()); // Returns true if not a valid date
+}
 const fetchFacturePartnerById = async (req, res)=> {
   const id = req.params.id;
   const partner = req.user.id
+
   try{
     let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée', "Confirmée driver"];
-      const facture = await factureModel.findById(id).populate("partner");
+    const facture = await factureModel.findById(id).populate("partner").populate("mission");
+
       if(!facture){
           return res.status(404).json({error: 'Facture not found'});
       }
-      console.log("facture,,,,,,",facture)
+      // console.log("facture,,,,,,",facture)
       let query = { partner: partner, status: { $in: statusValues  }}
-      if (facture?.from && facture?.to && facture?.from !== 'Invalid Date' && facture?.to !== 'Invalid Date') {
+      if (facture?.from && facture?.to && facture?.from !== 'Invalid Date' && facture?.to !== 'Invalid Date' && !facture.from =='...' ) {
         // const from = new Date(facture?.from);
         // const to = new Date(facture?.to);
+        console.log("from and  to :", facture?.from)
         const from = new Date(facture?.from).toISOString();
         const to = new Date(facture?.to).toISOString();
         query.createdAt = { $gte: new Date(from), $lte: new Date(to) };
         console.log("frommmmmm", from, to)
 
       }
+      console.log("+++++++++++++++++++++++",isNotValidDate(facture.from))
 
-      const devis = await devisModel
-        .find(query)
-        .populate({
-          path: 'mission',
-          populate: {
-            path: 'driver',
-          },
-        })
-        .populate('categorie')
-        console.log(devis)
+if(!isNotValidDate(facture.from)){
+  console.log("+++++++++++++++++++++++",isNotValidDate(facture.from))
 
+  const devis = await devisModel
+  .find(query)
+  .populate({
+    path: 'mission',
+    populate: {
+      path: 'driver',
+    },
+  })
+  .populate('categorie')
+  console.log(devis)
+  res.status(200).json({devis,facture });
 
-      res.status(200).json({devis,facture });
+}else{
+  console.log("+++++++++++++++++++++++",isNotValidDate(facture.from))
+
+  const devis = [{mission:facture.mission}]
+
+console.log(devis)
+  res.status(200).json({devis,facture });
+}
       }catch(e){
+        console.log(e)
       res.status(500).json({error: e.message});
       }
 
