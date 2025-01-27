@@ -88,21 +88,29 @@ exports.searchPartners = async (req, res) => {
         : 0;
 
       // Enrich admin details
-      result = [{
-        ...admin.toObject(),
-        basicInfo: null, // Assuming admins don't have basicInfo
-        chat: chat
-          ? {
-              lastMessage: chat.lastMessage,
-              lastMessageTimestamp: chat.lastMessageTimestamp,
-              unreadCount,
-            }
-          : null,
-      }];
+      result = [
+        {
+          ...admin.toObject(),
+          basicInfo: null, // Assuming admins don't have basicInfo
+          chat: chat
+            ? {
+                lastMessage: chat.lastMessage,
+                lastMessageTimestamp: chat.lastMessageTimestamp,
+                unreadCount,
+              }
+            : null,
+        },
+      ];
     } else {
       return res.status(403).json({ message: "Access denied" });
     }
-    console.log(result)
+
+    // Sort the result by lastMessageTimestamp (newest first)
+    result.sort((a, b) => {
+      const timestampA = a.chat?.lastMessageTimestamp || 0;
+      const timestampB = b.chat?.lastMessageTimestamp || 0;
+      return timestampB - timestampA; // Newest messages first
+    });
 
     res.json(result);
   } catch (error) {
@@ -110,6 +118,7 @@ exports.searchPartners = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch partners or admin", error });
   }
 };
+
 
 
 
