@@ -1569,7 +1569,7 @@ const AddPartner = asyncHandler(async (req, res, next) => {
       }
 
       const GeneratedPassword = generateRandomPassword();
-      const user = new User({
+      const user = await new User({
         name: req.body.name,
         addressPartner: req.body.addressPartner,
         contactName: req.body.contactName,
@@ -1582,6 +1582,11 @@ const AddPartner = asyncHandler(async (req, res, next) => {
         kbis: req.body.kbis,
         firstLogin:true
       });
+      await profileModels.create({
+        user: user._id,
+        // avatar: profile.picture,
+        tel:  req.body.phoneNumber,
+    });
 
       mailer.send({
         to: ["zbousnina@yahoo.com", user.email],
@@ -1652,7 +1657,7 @@ const Register = asyncHandler(async (req, res, next) => {
         req.body.kbis = result.secure_url;
       }
 
-      const user = new User({
+      const user = await new User({
         name: req.body.name,
         addressPartner: req.body.addressPartner,
         contactName: req.body.contactName,
@@ -1665,6 +1670,11 @@ const Register = asyncHandler(async (req, res, next) => {
         kbis: req.body.kbis,
         firstLogin: true,
       });
+      await profileModels.create({
+        user: user._id,
+        // avatar: profile.picture,
+        tel:  req.body.phoneNumber,
+    });
 
       mailer.send(
         {
