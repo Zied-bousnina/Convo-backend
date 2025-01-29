@@ -3,12 +3,11 @@ const validateBasicInfoInput = require("../validations/BasicInfoValidation.js")
 const cloudinary = require('../utils/uploadImage.js')
 const AddBasicInfo = async(req, res)=>{
 
-    console.log(req.body)
     const {isValid, errors} = validateBasicInfoInput(req.body)
 
     try {
         if(!isValid) {
-            console.log("error is here")
+
             res.status(404).json(errors)
         } else {
             if(req.files?.avatar?.size > 0){
@@ -18,11 +17,11 @@ const AddBasicInfo = async(req, res)=>{
                     height: 500,
                     crop: 'fill',
                 });
-                console.log(result)
+
                 req.body.avatar = result.secure_url
             }
 
-            console.log(req.body)
+
             const profile = await BasicInfo.findOne({user: req.user.id})
             if(!profile){
                 const emailExist = await BasicInfo.findOne({email: req.body.email})
@@ -66,7 +65,7 @@ const AddBasicInfo = async(req, res)=>{
 }
 
 const findBasicInfoByUserId = async (req, res) => {
-    console.log(req.user.id)
+
     try {
         const basicInfo = await BasicInfo.findOne({ user: req.user.id });
         res.status(200).json({ basicInfo})
@@ -106,11 +105,11 @@ const findBasicInfoByUserId = async (req, res) => {
 // const AddProfile = async(req, res)=>{
 
 //     const {isValid, errors} = profileInputValidator(req.body)
-//     console.log(req.body)
+
 
 //     try {
 //         if(!isValid) {
-//             console.log("error is here")
+//
 //             res.status(404).json(errors)
 //         } else {
 //             if(req.files?.avatar?.size > 0){
@@ -120,11 +119,11 @@ const findBasicInfoByUserId = async (req, res) => {
 //                     height: 500,
 //                     crop: 'fill',
 //                 });
-//                 console.log(result)
+//
 //                 req.body.avatar = result.secure_url
 //             }
 
-//             console.log(req.body)
+//
 //             const profile = await profileModels.findOne({user: req.user.id})
 //             if(!profile){
 //                 const telExist = await profileModels.findOne({tel: req.body.tel})
@@ -168,8 +167,7 @@ const findBasicInfoByUserId = async (req, res) => {
 // }
 
 // const EditProfile = async (req, res) => {
-//     // console.log(req.body)
-//     // console.log(req.files?.avatar?.size)
+
 //     try {
 //       const profile = await profileModels.findOne({ user: req.user.id });
 //       if (!profile) {
@@ -193,7 +191,7 @@ const findBasicInfoByUserId = async (req, res) => {
 //             height: 500,
 //             crop: 'fill',
 //         });
-//         // console.log(result)
+
 //         profile.avatar = result.secure_url
 //     }
 
@@ -218,7 +216,7 @@ const findBasicInfoByUserId = async (req, res) => {
 //       }
 
 //       const updatedProfile = await profile.save();
-//       console.log(updatedProfile)
+
 
 //       res.status(200).json(updatedProfile);
 //     } catch (error) {
@@ -230,9 +228,9 @@ const findBasicInfoByUserId = async (req, res) => {
 
 //     const {isValid, errors} = profileInputValidator(req.body)
 //     const telExist = await profileModels.find({tel: req.body.tel})
-//     // console.log(req)
 
-// // console.log("result", result)
+
+
 //    try {
 //     if(!isValid) {
 //         res.status(404).json(errors)
@@ -247,7 +245,7 @@ const findBasicInfoByUserId = async (req, res) => {
 //             });
 //             req.body.avatar = result.secure_url
 //         }
-//         console.log(req.body)
+
 
 
 //         profileModels.findOne({user: req.user.id})
@@ -276,8 +274,7 @@ const findBasicInfoByUserId = async (req, res) => {
 //                             res.status(200).json(result)
 //                         }).catch(async (err)=>{
 //                             const telExist1 = await profileModels.find({tel: req.body.tel})
-//                             console.log(telExist1)
-//                             console.log(req.body.tel)
+
 //                             if(telExist1[0]?.tel === req.body.tel) {
 //                                 errors.tel = "tel already exist"
 //                                 res.status(404).json(errors)
@@ -308,7 +305,7 @@ const findBasicInfoByUserId = async (req, res) => {
 //     if(!isValid) {
 //         res.status(404).json(errors)
 //     }else{
-//         // console.log(req.body)
+
 //         const telExist = await profileModels.find({tel: req.body.tel})
 
 //         profileModels.findOne({user: req.user.id})
@@ -335,8 +332,7 @@ const findBasicInfoByUserId = async (req, res) => {
 //                             res.status(200).json(result)
 //                         }).catch(async (err)=>{
 //                             const telExist1 = await profileModels.find({tel: req.body.tel})
-//                             console.log(telExist1)
-//                             console.log(req.body.tel)
+
 //                             if(telExist1[0]?.tel === req.body.tel) {
 //                                 errors.tel = "tel already exist"
 //                                 res.status(404).json(errors)

@@ -46,7 +46,7 @@ const getSocialLoginConfig = async (req, res) => {
       await config.save();
       res.status(200).json({ message: `${platform} configuration updated successfully.` });
     } catch (error) {
-        console.log(error);
+
       res.status(500).json({ message: 'Error updating configuration.', error: error.message });
     }
   };

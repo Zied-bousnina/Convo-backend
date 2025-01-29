@@ -34,9 +34,9 @@ let server = app.listen(PORT, async (req, res) => {
   try {
     await connectDB();
   } catch (err) {
-    console.log(err.message);
+
   }
-  console.log(`Listening on ${PORT}`);
+
 });
 // cron.schedule('0 * * * *', async () => {
 //   // Check and update status for all 'confirmée' missions
@@ -54,7 +54,7 @@ let server = app.listen(PORT, async (req, res) => {
 //       const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 //       const currentTime = new Date();
 //       const timeDifference = currentTime - mission.mission.dateDepart;
-//       // console.log("timeDifference",timeDifference)
+//
 
 //       // If more than 2 hours have passed, update the status to 'En retard'
 //       if (timeDifference >= twoHoursInMillis) {
@@ -116,7 +116,7 @@ global.onlineUsers = new Map();
 const onlineUsers2 = new Map();
 
 io.on("connection", (socket) => {
-  console.log(`a user connected ${socket}`);
+
   global.chatSocket = socket;
 
 
@@ -125,16 +125,12 @@ io.on("connection", (socket) => {
     // Join a chat room
     socket.on("joinChat", (chatId) => {
       socket.join(chatId);
-      console.log(`User joined chat room: ${chatId}`);
+
     });
 
     // Handle sending a new message
     socket.on("sendMessage", async ({ recieverId, userId, content }) => {
-      console.log(
-        userId,
-        content,
 
-      )
       try {
         const message =content
 
@@ -154,7 +150,7 @@ io.on("connection", (socket) => {
           // chat.lastMessageTimestamp = message.timestamp; // Update the timestamp
 
           // await chat.save(); // Save the chat with the new message
-          // console.log("Chat updated:", chat);
+
           socket.broadcast.emit("newMessage", {...message, recieverId})
           // io.to(recieverId).emit("newMessage", message); // Emit the new message event
         } else {
@@ -167,7 +163,7 @@ io.on("connection", (socket) => {
 
 
   socket.on("readMessages", async ({ recieverId, userId }) => {
-    console.log(recieverId)
+
     try {
       const chat = await chatModel.findOne({
         $or: [
@@ -201,11 +197,11 @@ io.on("connection", (socket) => {
 
 
   // socket.on('disconnect', () => {
-  //   console.log('A user disconnected:', socket.id);
+
   // });
 
   socket.on("add-user", (userId, currentLocation) => {
-    console.log("user id: ", userId, "location ", currentLocation)
+
     if (onlineUsers2.has(userId)) {
         // User already exists, delete the existing entry
         onlineUsers2.delete(userId);
@@ -217,19 +213,19 @@ io.on("connection", (socket) => {
       location: currentLocation
   };
   onlineUsers2.forEach((userData, userId) => {
-    console.log('vvvvvvvvvvv', userData)
+
     socket.broadcast.emit('newLocation', {
         userId: userId,
         location: {latitude: userData.location?.latitude, longitude: userData.location?.longitude}
     });
 });
-    console.log("-------",onlineUsers2.get("659aea02d1eb35004e61c65a"))
+
 });
 
 socket.on("getOnlineUserss",(data)=> {
-  console.log("onlineUsers2",data)
+
   onlineUsers2.forEach((userData, userId) => {
-    console.log('vvvvvvvvvvv', userData)
+
     socket.broadcast.emit("getonline")
 
     socket.broadcast.emit('newLocation', {
@@ -240,24 +236,24 @@ socket.on("getOnlineUserss",(data)=> {
 });
 
   socket.on("offline_client", (userIDD) => {
-    // console.log("user disconnected ID",userIDD);
+
     socket.broadcast.emit('offline', userIDD);
   }
   );
   socket.on("enRoute", (userId)=> {
-    console.log("enRoute_on",userId)
+
     const user = onlineUsers2.get(userId.userId);
     // if (user) {
     //   user.enRoute = true; // Assuming you have an enRoute property in the user object
     //   onlineUsers2.set(userId.userId, user);
     // }
 
-    console.log(userId)
+
     // Broadcast the enRoute status to all connected clients
     socket.broadcast.emit('userEnRoute', { userId: userId.userId, enRoute: userId.enRoute });
   })
   socket.on('locationUpdate', async(location) => {
-    console.log('Received location update:', location);
+
 
     // Update the location in the onlineUsers2 Map
     const user = onlineUsers2.get(location.userId);
@@ -265,13 +261,13 @@ socket.on("getOnlineUserss",(data)=> {
       user.location = location;
       onlineUsers2.set(location.userId, user);
     }
-    console.log(onlineUsers2)
-console.log("location",location)
+
+
     socket.broadcast.emit('newLocation', location);
   });
   let userid;
   socket.on("clientData",async (userId) => {
-    console.log("data",userId)
+
     userid=userId;
     userid = userId?.user;
     try {
@@ -296,11 +292,10 @@ console.log("location",location)
     }
   });
   socket.on("clientData2", (userId) => {
-    console.log("data2",userId)
+
   });
   socket.on('disconnect', async() => {
-    console.log('User disconnected');
-    console.log("userConnected_id", userid)
+
     socket.broadcast.emit('offline', userid);
     if(!userid){return;}
     try {
@@ -327,11 +322,10 @@ console.log("location",location)
     onlineUsers2.forEach((userData, userId) => {
       if (userData.socketId === socket.id) {
         onlineUsers2.delete(userId);
-        console.log(`User ${userId} disconnected`);
-        console.log("map",onlineUsers2)
+
       }
     });
-    // console.log("data disconnected",userId)
+
   });
 
   socket.on("setup", (userData) => {
@@ -345,7 +339,7 @@ console.log("location",location)
 });
 socket.on("new message", async (devis) => {
   try {
-      console.log("devis", devis);
+
       var data = devis.data;
       let cat ;
       if(data?.categorie) {
@@ -370,7 +364,7 @@ socket.on("new message", async (devis) => {
     select: '_id description unitPrice'
   });
 
-      // console.log(devis1)
+
       if (!data.partner) {
           if(missio?.driverIsAuto) {
             const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
@@ -406,17 +400,17 @@ socket.on("new message", async (devis) => {
       });
       await user.save();
       socket.broadcast.emit("message recieved", devis1);
-      console.log(socket)
+
     } catch (error) {
       console.error("Error handling new message:", error);
     }
 });
 
 socket.on("new mission", async (mission) => {
-console.log("New mission ",  mission)
+
   try {
       const data = mission;
-      console.log(data?.demande)
+
       // const doc = { ...data, newMissionPartner: true };
       const missio = await DemandeModel.findById(data?.demande?._id)
           .populate("categorie")
@@ -439,7 +433,7 @@ console.log("New mission ",  mission)
       // Broadcast to users who are not PARTNER
       // const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER"] } });
       // usersToBroadcast.forEach((user) => {
-      //     console.log("mission_doc", doc);
+
       //     user.Newsocket.push({ ...doc });
       //     user.save();
       // });
@@ -457,7 +451,7 @@ console.log("New mission ",  mission)
           return;
       }
 
-      console.log("mission_doc", doc);
+
       user.Newsocket.push({ ...doc });
       await user.save();
       socket.broadcast.emit("message received", missio?._doc);
@@ -465,7 +459,7 @@ console.log("New mission ",  mission)
       // Broadcast to the partner
       const partnerUser = await userModel.findById(data.partner);
       if (partnerUser) {
-          console.log("mission_doc", doc);
+
           partnerUser.Newsocket.push({ ...doc });
           await partnerUser.save();
           socket.in(data.partner).emit("message received", missio);
@@ -519,7 +513,7 @@ socket.on("refuse devis", async (devis) => {
       // Broadcast to users who are not PARTNER
       // const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER"] } });
       // usersToBroadcast.forEach((user) => {
-      //     console.log("devis_doc", doc);
+
       //     user.Newsocket.push({ ...doc });
       //     user.save();
       // });
@@ -531,14 +525,14 @@ socket.on("refuse devis", async (devis) => {
               { role: "ADMIN" }
           ]
       });
-      console.log(user)
+
 
       if (!user) {
           console.error("User not found");
           return;
       }
 
-      // console.log("devis_doc", doc);
+
       user.Newsocket.push({ ...doc });
       await user.save();
       socket.broadcast.emit("message received", devis1);
@@ -546,7 +540,7 @@ socket.on("refuse devis", async (devis) => {
       // Broadcast to the partner
       const partnerUser = await userModel.findById(data.partner);
       if (partnerUser) {
-          console.log("devis_doc", doc);
+
           partnerUser.Newsocket.push({ ...doc });
           await partnerUser.save();
           socket.in(data.partner).emit("message received", devis1);
@@ -558,9 +552,7 @@ socket.on("refuse devis", async (devis) => {
 });
 
 socket.on("accept devis", async (devis) => {
-  console.log("-----------------------------------------------------------------------------------")
-  console.log(devis)
-  console.log("-----------------------------------------------------------------------------------")
+
     // await handleDevisStatusChange(devis, "Accepted");
     try {
       const data = devis;
@@ -605,7 +597,7 @@ socket.on("accept devis", async (devis) => {
       // Broadcast to users who are not PARTNER
       // const usersToBroadcast = await userModel.find({ role: { $nin: ["PARTNER", "ADMIN"] } });
       // usersToBroadcast.forEach((user) => {
-      //     console.log("devis_doc", doc);
+
       //     user.Newsocket.push({ ...doc });
       //     user.save();
       // });
@@ -623,7 +615,7 @@ socket.on("accept devis", async (devis) => {
           return;
       }
 
-      console.log("devis_doc", doc);
+
       user.Newsocket.push({ ...doc });
       socket.broadcast.emit("message received", devis1);
       await user.save();
@@ -631,7 +623,7 @@ socket.on("accept devis", async (devis) => {
       // Broadcast to the partner
       const partnerUser = await userModel.findById(data.partner);
       if (partnerUser) {
-          console.log("devis_doc", doc);
+
           partnerUser.Newsocket.push({ ...doc });
           await partnerUser.save();
           socket.in(data.partner).emit("message received", devis1);
@@ -643,9 +635,7 @@ socket.on("accept devis", async (devis) => {
 });
 
 socket.on("validate_me", async (devis) => {
-  console.log("-----------------------------------------------------------------------------------")
-  console.log(devis)
-  console.log("-----------------------------------------------------------------------------------")
+
   // output
 //   -----------------------------------------------------------------------------------
 // { userId: '659aea02d1eb35004e61c65a', role: 'ADMIN' }
@@ -684,7 +674,7 @@ socket.on("validate_me", async (devis) => {
 
         );
       await admin.save();
-      console.log(user)
+
 
   } catch (error) {
       console.error("Error handling new message:", error);
@@ -695,7 +685,7 @@ socket.on("validate_me", async (devis) => {
     socket.join(room);
   });
   socket.on("MissionAccepted",()=> {
-    console.log("MissionAccepted")
+
     socket.broadcast.emit("MissionAccepted")
   })
 
@@ -761,7 +751,7 @@ app.get('/send-email-test', (req, res) => {
       console.error('Error sending email:', err);
       return res.status(500).json({ success: false, message: 'Email sending failed', error: err });
     }
-    console.log('Email sent successfully');
+
     return res.status(200).json({ success: true, message: 'Email sent successfully' });
   });
 });

@@ -50,7 +50,7 @@ module.exports = passport => {
                     tokenURL: 'https://accounts.google.com/o/oauth2/token',
                 },
                 async (accessToken, refreshToken, profile, done) => {
-                    console.log(profile);
+
                     try {
                         let user = await usersModels.findOne({ email: profile.emails[0].value });
 
@@ -100,7 +100,7 @@ module.exports = passport => {
                 },
                 async (accessToken, refreshToken, profile, done) => {
                     try {
-                        console.log(profile);
+
                         let user = await usersModels.findOne({ email: profile.email });
                         if (user) {
                             if (!user.linkedinId) {

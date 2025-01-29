@@ -38,11 +38,11 @@ const saveStripeConfig = async (req, res) => {
 };
 
 const getStripeConfig = async (req, res) => {
-    console.log("getStripeConfig");
+
   try {
-    console.log("getStripeConfig");
+
     const config = await StripconfigModel.findOne();
-    console.log("config", config);
+
     if (!config) {
       return res.status(404).json({ message: "Stripe configuration not found." });
     }

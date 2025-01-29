@@ -33,12 +33,12 @@ const FindAllProfile = async(req, res)=>{
 }
 const AddProfile = async(req, res)=>{
 
-    console.log(req.files.avatar.path)
+
     const {isValid, errors} = profileInputValidator(req.body)
 
     try {
         if(!isValid) {
-            console.log("error is here")
+
             res.status(404).json(errors)
         } else {
             if(req.files?.avatar?.size > 0){
@@ -48,11 +48,11 @@ const AddProfile = async(req, res)=>{
                     height: 500,
                     crop: 'fill',
                 });
-                console.log(result)
+
                 req.body.avatar = result.secure_url
             }
 
-            console.log(req.body)
+
             const profile = await profileModels.findOne({user: req.user.id})
             if(!profile){
                 const telExist = await profileModels.findOne({tel: req.body.tel})
@@ -96,8 +96,8 @@ const AddProfile = async(req, res)=>{
 }
 
 const EditProfile = async (req, res) => {
-    // console.log(req.body)
-    // console.log(req.files?.avatar?.size)
+
+
     try {
       const profile = await profileModels.findOne({ user: req.user.id });
       if (!profile) {
@@ -121,7 +121,8 @@ const EditProfile = async (req, res) => {
             height: 500,
             crop: 'fill',
         });
-        // console.log(result)
+
+
         profile.avatar = result.secure_url
     }
 
@@ -146,7 +147,7 @@ const EditProfile = async (req, res) => {
       }
 
       const updatedProfile = await profile.save();
-      console.log(updatedProfile)
+
 
       res.status(200).json(updatedProfile);
     } catch (error) {
@@ -154,8 +155,8 @@ const EditProfile = async (req, res) => {
     }
   };
   const EditProfileV_WEB = async (req, res) => {
-    console.log(req.user.id)
-    // console.log(req.files?.avatar?.size)
+console.log(req.body)
+
     try {
       let profile = await profileModels.findOne({ user: req.user.id });
 
@@ -163,7 +164,7 @@ const EditProfile = async (req, res) => {
       if (!profile) {
         profile = new profileModels({ user: req.user.id });
     }
-    // console.log('prrr', profile)
+
 
       const { tel, address, city, country, postalCode, name, email } = req.body;
       if (name) {
@@ -218,7 +219,7 @@ const EditProfile = async (req, res) => {
             height: 500,
             crop: 'fill',
         });
-        // console.log(result)
+
         profile.avatar = result.secure_url
     }
 
@@ -241,10 +242,11 @@ const EditProfile = async (req, res) => {
 
 
       const updatedProfile = await profile.save();
-      console.log(updatedProfile)
+
 
       res.status(200).json(updatedProfile);
     } catch (error) {
+      consolelog(error)
       res.status(500).json({ error: "Internal ddServer Error", error2: error.message });
     }
   };
@@ -253,9 +255,9 @@ const EditProfile = async (req, res) => {
 
 //     const {isValid, errors} = profileInputValidator(req.body)
 //     const telExist = await profileModels.find({tel: req.body.tel})
-//     // console.log(req)
 
-// // console.log("result", result)
+
+
 //    try {
 //     if(!isValid) {
 //         res.status(404).json(errors)
@@ -270,7 +272,7 @@ const EditProfile = async (req, res) => {
 //             });
 //             req.body.avatar = result.secure_url
 //         }
-//         console.log(req.body)
+//
 
 
 //         profileModels.findOne({user: req.user.id})
@@ -299,8 +301,8 @@ const EditProfile = async (req, res) => {
 //                             res.status(200).json(result)
 //                         }).catch(async (err)=>{
 //                             const telExist1 = await profileModels.find({tel: req.body.tel})
-//                             console.log(telExist1)
-//                             console.log(req.body.tel)
+//
+//
 //                             if(telExist1[0]?.tel === req.body.tel) {
 //                                 errors.tel = "tel already exist"
 //                                 res.status(404).json(errors)
@@ -331,7 +333,7 @@ const EditProfile = async (req, res) => {
 //     if(!isValid) {
 //         res.status(404).json(errors)
 //     }else{
-//         // console.log(req.body)
+//
 //         const telExist = await profileModels.find({tel: req.body.tel})
 
 //         profileModels.findOne({user: req.user.id})
@@ -358,8 +360,7 @@ const EditProfile = async (req, res) => {
 //                             res.status(200).json(result)
 //                         }).catch(async (err)=>{
 //                             const telExist1 = await profileModels.find({tel: req.body.tel})
-//                             console.log(telExist1)
-//                             console.log(req.body.tel)
+//
 //                             if(telExist1[0]?.tel === req.body.tel) {
 //                                 errors.tel = "tel already exist"
 //                                 res.status(404).json(errors)

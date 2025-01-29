@@ -7,7 +7,7 @@ const SupportModel = require("../models/Support.model");
 
 
 const CreateReportOnuser = async (req, res) => {
-  console.log(req?.files?.image?.path)
+
     const { isValid, errors } = validateReportUserInput(req.body);
     try {
       if (!isValid) {
@@ -20,7 +20,8 @@ const CreateReportOnuser = async (req, res) => {
               height: 500,
               crop: 'fill',
           });
-          console.log(result)
+
+
           req.body.image = result.secure_url
       }
 
@@ -38,7 +39,7 @@ const CreateReportOnuser = async (req, res) => {
   };
 
   const CreateSupport = async (req, res) => {
-    console.log(req?.files?.image?.path)
+
       const { isValid, errors } = validateSupportInput(req.body);
       try {
         if (!isValid) {
@@ -51,7 +52,7 @@ const CreateReportOnuser = async (req, res) => {
                 height: 500,
                 crop: 'fill',
             });
-            console.log(result)
+
             req.body.image = result.secure_url
         }
 

@@ -53,7 +53,7 @@ const fetchCurrentUser = async(req, res)=> {
 }
 const createDemande = async (req, res) => {
   // const userId = req.body.userId; // Assuming userId is provided in the request body
-  console.log(req.body)
+
   const { errors, isValid } = validateDemandeInput(req.body);
   try {
     if (isValid) {
@@ -78,7 +78,7 @@ const createDemande = async (req, res) => {
 
     // Save the new demand
     const createdDemande = await newDemande.save();
-    console.log(createdDemande)
+
      // Check if driver attribute is not null
      if (driver) {
       // Find the user with the specified driver ID
@@ -105,7 +105,7 @@ const createDemande = async (req, res) => {
   }
 };
 const createDemandeNewVersion = async (req, res) => {
-  console.log(req.body);
+
   const { errors, isValid } = validateDemandeInput(req.body);
   // You would define validateDemandeInput somewhere to validate your inputs
 
@@ -137,7 +137,7 @@ const createDemandeNewVersion = async (req, res) => {
       vehicleData,
       phone
     } = req.body;
-    console.log(req.body.immatriculation)
+
 
     const identityProof = req.files?.identityProof;
     const vehicleRegistration = req.files?.vehicleRegistration;
@@ -150,7 +150,7 @@ const createDemandeNewVersion = async (req, res) => {
           public_id: `${folderName}_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         return result.secure_url;
       }
       return null;
@@ -188,11 +188,11 @@ phone,
       vehicleRegistration: vehicleRegistrationUrl,
       vehicleData
     });
-console.log(totalTTC)
-console.log(price)
+
+
     // Save the new demand
     const createdDemande = await newDemande.save();
-    console.log(createdDemande)
+
     const devis = new devisModel({
       partner: req.user.id,
       mission: createdDemande._id,
@@ -242,7 +242,7 @@ const deleteDemande = async (req, res) => {
 const deleteSocket = async (req, res) => {
 
   const userId = req.params.id;
-  console.log(userId)
+
 
   try {
       // Find the user by ID
@@ -636,7 +636,7 @@ const findDemandsstatisticsAdmin = async (req, res) => {
     };
 
 
-    console.log("Statistics:", allDemands);
+
 
     // Send response
     res.status(200).json({ demands: allDemands, statistics });
@@ -774,7 +774,7 @@ const findDevisByPartnerId = async (req, res) => {
         },
       })
       .populate('categorie');
-      console.log(devis)
+
 
     if (devis.length > 0) {
       res.status(200).json({ devis });
@@ -902,18 +902,18 @@ const AccepteMission = async (req, res) => {
     // Find the demand by ID and user ID
     const demand = await devisModel.findOne({ _id: demandId});
     const mission = await demandeModels.findOne({ _id: demand.mission._id })
-    console.log("mission",mission) // Assuming you pass the demandId in the request parameters
+
      // Check if there's already a mission with status "Démarrée"
      const existingStartedMission = await demandeModels.findOne({ driver: userId, status: 'Démarrée' });
  // Check if the mission is already taken
 // Check if the mission is already taken
-console.log("mission?.driver !== null && mission.driver !== userId",mission?.driver ,userId)
+
 if (mission?.driver != null && mission.driver != userId) {
-  console.log("mission déjà prise un autre");
+
   return res.status(400).json({ message: 'mission déjà prise un autre' });
 }
      if (existingStartedMission) {
-      console.log("Vous avez déjà une mission en cours.")
+
        return res.status(400).json({ message: 'Vous avez déjà une mission en cours.' });
      }
 
@@ -934,7 +934,7 @@ if (mission?.driver != null && mission.driver != userId) {
           public_id: `${folderName}_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         return result.secure_url;
       }
       return null;
@@ -958,7 +958,7 @@ if (mission?.driver != null && mission.driver != userId) {
     demand.status = "Démarrée";
     mission.status="Démarrée"
     if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url == 'string')) {
-      console.log("bien")
+
       mission.demareeMissionImages = imagesUploaded;
   } else {
       console.error('Invalid image data format');
@@ -972,7 +972,7 @@ if (mission?.driver != null && mission.driver != userId) {
     // Save the updated demand
     const updatedDemand = await demand.save();
     const updatedMission = await mission.save();
-    console.log(updatedMission)
+
 
     res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
   } catch (error) {
@@ -1063,7 +1063,7 @@ const TermineeMission = async (req, res) => {
           public_id: `${folderName}_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         return result.secure_url;
       }
       return null;
@@ -1093,7 +1093,7 @@ const TermineeMission = async (req, res) => {
 
     });
     if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url == 'string')) {
-      console.log("bien")
+
       mission.termineemissionImages = imagesUploaded;
   } else {
       console.error('Invalid image data format');
@@ -1113,7 +1113,7 @@ const TermineeMission = async (req, res) => {
     // Save the updated demand
     const updatedDemand = await demand.save();
     const updatedMission = await mission.save();
-console.log(updatedMission)
+
     res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
   } catch (error) {
     console.error(error);
@@ -1238,8 +1238,8 @@ const addAddress = async (req, res) => {
 
     // Call the addAddress method to update the user's address
     const u =await user.addAddress(address);
-    // console.log(u)
-    // console.log("address--------",address)
+
+
 
     res.json({ message: 'Address updated successfully.', user:u });
   } catch (error) {
@@ -1291,7 +1291,7 @@ const authUser = async (req, res) => {
                 return res.status(400).json(errors);
               }
 
-      console.log(user)
+
       if (!user) {
         errors.email = "Email not found";
         responseSent = true;
@@ -1299,7 +1299,7 @@ const authUser = async (req, res) => {
       }
       const isMatch = await bcrypt.compare(req.body.password, user.password);
       if (isMatch) {
-        console.log("isMatch")
+
         const token = jwt.sign(
           {
             id: user._id,
@@ -1335,8 +1335,7 @@ const authUser = async (req, res) => {
   } catch (error) {
     if (!responseSent) {
       responseSent = true;
-      console.log(error);
-      console.log("hi")
+
       return res.status(500).json({success:false, message: "error" });
     }
   }
@@ -1346,7 +1345,7 @@ const refreshAuthToken = (req, res) => {
   try {
     // Extract the user object from the authenticated request
     const user = req.user;
-    console.log(user)
+
 
     // Generate a new token with user details
     const newToken = jwt.sign(
@@ -1414,7 +1413,7 @@ const updatePassword = async (req, res) => {
   } catch (error) {
     if (!responseSent) {
       responseSent = true;
-      console.log(error);
+
       return res.status(500).json({ success: false, message: "error" });
     }
   }
@@ -1431,11 +1430,11 @@ const updatePassword = async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = asyncHandler(async (req, res, next) => {
-  console.log(req.body)
+
   const { errors, isValid } = validateRegisterInput(req.body)
   const {avatar} = req.body;
 
-  console.log(avatar)
+
 
   try {
     if (!isValid) {
@@ -1464,10 +1463,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
             })
             await verificationToken.save()
               .then(token => {
-                console.log(token)
+
               })
               .catch(err => {
-                console.log(err)
+
               })
 
             mailer.send({
@@ -1475,13 +1474,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
               subject: "Verification code",
               html: generateEmailTemplate(OTP)
             }, (err)=>{
-              console.log(err)
+
             })
 
             user.save()
               .then(user => {
                 if(req.body.role==="MUNICIPAL" || req.body.role=== "PRIVATE_COMPANY"){
-                  console.log("municipal")
+
                   const token = jwt.sign(
                     {
                       id: user._id,
@@ -1502,7 +1501,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
                 }
               })
               .catch(err => {
-                console.log(err)
+
                 res.status(500).json({ success:false, message: "error" })
               })
 
@@ -1514,7 +1513,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
   } catch (error) {
     res.status(500).json({ message: error })
-    console.log(error)
+
 
   }
 })
@@ -1522,11 +1521,11 @@ const registerUser = asyncHandler(async (req, res, next) => {
 const AddPartner = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = PartnerValidationInput(req.body);
   const { kbis } = req.files;
-  // console.log(kbis);
+
 
   try {
     if (!isValid) {
-      console.log(errors);
+
       return res.status(404).json(errors);
     }
 
@@ -1564,7 +1563,7 @@ const AddPartner = asyncHandler(async (req, res, next) => {
           public_id: `kbis_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         req.body.kbis = result.secure_url;
       }
 
@@ -1611,11 +1610,11 @@ const AddPartner = asyncHandler(async (req, res, next) => {
 const Register = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = PartnerValidationInput(req.body);
   const { kbis } = req.files;
-  console.log(req.body);
+
 
   try {
     if (!isValid) {
-      console.log(errors);
+
       return res.status(404).json(errors);
     }
 
@@ -1653,7 +1652,7 @@ const Register = asyncHandler(async (req, res, next) => {
           public_id: `kbis_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         req.body.kbis = result.secure_url;
       }
 
@@ -1718,7 +1717,7 @@ const CompletePartnerProfile = asyncHandler(async (req, res, next) => {
 
   try {
     if (!isValid) {
-      console.log(errors);
+
       return res.status(404).json(errors);
     }
 
@@ -1912,7 +1911,7 @@ const resendOTP = async (req, res, next) => {
         },
         (err) => {
           if (err) {
-            console.log(err);
+
             return res.status(500).json({ OTP: {success:false ,message: "Error sending OTP email" }});
           }
         }
@@ -1920,7 +1919,7 @@ const resendOTP = async (req, res, next) => {
         res.status(200).json({ OTP: {success:true ,message: "OTP sent" }});
     }
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({ OTP: {success:false ,message: "Error sending OTP email" }});
   }
 };
@@ -1951,7 +1950,7 @@ const resendOTPDeleteAccount = async (req, res, next) => {
         },
         (err) => {
           if (err) {
-            console.log(err);
+
             return res.status(500).json({ OTP: {success:false ,message: "Error sending OTP email" }});
           }
         }
@@ -1959,7 +1958,7 @@ const resendOTPDeleteAccount = async (req, res, next) => {
         res.status(200).json({ OTP: {success:true ,message: "OTP sent" }});
     }
   } catch (error) {
-    console.log(error);
+
     return res.status(500).json({ OTP: {success:false ,message: "Error sending OTP email" }});
   }
 };
@@ -1969,7 +1968,7 @@ const resendOTPDeleteAccount = async (req, res, next) => {
 // @access  Public
 const verifyEmail = async (req, res) => {
   const { userId, otp } = req.body;
-  console.log(userId, otp)
+
   if (!userId || !otp.trim()) {
     return sendError(res, 'Invalid request, missing parameters!');
   }
@@ -2009,7 +2008,7 @@ const verifyEmail = async (req, res) => {
         "Your email has been verified successfully!"
       )
       }, (err)=>{
-        console.log(err)
+
       })
 
   res.status(200).json({success:true, message: "Email verified successfully" });
@@ -2018,8 +2017,7 @@ const verifyEmail = async (req, res) => {
 const DeleteAccount = async (req, res) => {
   const {  otp } = req.body;
   const userId = req.user.id
-  // console.log(userId, otp)
-  console.log(req.body)
+
 
   if (!userId || !otp.trim()) {
     return sendError(res, 'Invalid request, missing parameters!');
@@ -2041,7 +2039,7 @@ const DeleteAccount = async (req, res) => {
 
   const isMatched = await token.compareToken(otp);
   if (!isMatched) {
-    // console.log(res.statusCode)
+
     return sendError(res, 'Please provide a valid token!');
   }
 
@@ -2055,7 +2053,7 @@ const DeleteAccount = async (req, res) => {
         "Your account has been deleted successfully!"
       )
       }, (err)=>{
-        console.log(err)
+
       })
 
   res.status(200).json({success:true, message: "Account deleted successfully" });
@@ -2102,15 +2100,15 @@ const DeleteAccountByAdmin = async (req, res) => {
 // @route   POST /api/users/forgotpassword
 // @access  Public
 // const forgotPassword = async (req, res) => {
-//   console.log(req.body)
+
 //   const { email } = req.body;
-//   console.log(email)
+
 //   if (!email) {
 //     return sendError(res, 'Please provide a valid email!');
 //   }
 
 //   const user = await User.findOne({ email });
-//   console.log(user)
+
 //   if (!user) {
 //     return sendError(res, 'Sorry! User not found!');
 //   }
@@ -2137,14 +2135,14 @@ const DeleteAccountByAdmin = async (req, res) => {
 //     subject: "Verification code",
 //     html: generatePasswordResetTemplate(`https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`)
 //   }, (err)=>{
-//     console.log("Email SEnt ",err)
+//
 //   })
 
 //   res.status(200).json({ message: 'Reset password link has been sent to your email!' });
 // };
 const forgotPassword = async (req, res) => {
   try {
-    console.log("Request received:", req.body);
+
 
     const { email } = req.body;
 
@@ -2153,21 +2151,21 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ error: "Veuillez fournir une adresse e-mail valide !" });
     }
 
-    console.log("Email received:", email);
+
 
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      console.log("User not found for email:", email);
+
       return res.status(404).json({ error: "Désolé ! Utilisateur non trouvé !" });
     }
 
-    console.log("User found:", user);
+
 
     // Check if a token already exists for the user
     const existingToken = await resetTokenModels.findOne({ owner: user._id });
     if (existingToken) {
-      console.log("Token already exists for user:", user._id);
+
       return res.status(429).json({ error: "Vous avez déjà demandé un code de réinitialisation. Veuillez patienter une heure avant de pouvoir en demander un nouveau." });
     }
 
@@ -2182,7 +2180,7 @@ const forgotPassword = async (req, res) => {
 
     await newToken.save();
 
-    console.log("New token created and saved:", resetToken);
+
 
     // Send the reset email
     const resetLink = `https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`;
@@ -2197,7 +2195,7 @@ const forgotPassword = async (req, res) => {
           console.error("Error sending email:", err);
           return res.status(500).json({ error: "Échec de l'envoi de l'e-mail de réinitialisation. Veuillez réessayer plus tard." });
         }
-        console.log("Reset email sent to:", user.email);
+
       }
     );
 
@@ -2245,7 +2243,7 @@ const resetPassword = async (req, res) => {
     },
     (err) => {
       if (err) {
-        console.log(err);
+
       }
     }
   );
@@ -2254,7 +2252,7 @@ const resetPassword = async (req, res) => {
     subject: "Verification code",
     html: plainEmailTemplate('Password reset successfully', 'Your password has been reset successfully!'),
   }, (err)=>{
-    console.log(err)
+
   })
 
   res.status(200).json({ message: 'Password reset successfully', success:true });
@@ -2262,7 +2260,7 @@ const resetPassword = async (req, res) => {
 
 
 const getUsers = async (req, res) => {
-  // console.log(req.user.id)
+
   try {
       const basicInfo = await User.find({ onligne: true });
       res.status(200).json({ users:basicInfo})
@@ -2272,7 +2270,7 @@ const getUsers = async (req, res) => {
   }
 };
 const getUsersById = async (req, res) => {
-  // console.log(req.user.id)
+
   try {
       const basicInfo = await User.findById(req.user.id);
       res.status(200).json({ user:basicInfo})
@@ -2282,7 +2280,7 @@ const getUsersById = async (req, res) => {
   }
 };
 const getAllPartner = async (req, res) => {
-  // console.log(req.user.id)
+
   try {
       const partner = await User.find({ role: "PARTNER" });
       res.status(200).json({ partner})
@@ -2292,7 +2290,7 @@ const getAllPartner = async (req, res) => {
   }
 };
 const getAllDriver = async (req, res) => {
-  // console.log(req.user.id)
+
   try {
       const driver = await User.find({ role: "DRIVER",verified: true });
       res.status(200).json({ driver})
@@ -2302,11 +2300,11 @@ const getAllDriver = async (req, res) => {
   }
 };
 const getPartnerById = async (req, res) => {
-  // console.log(req.user.id)
+
   try {
       const partner = await User.findById(req.params.id);
       const documents = await DriverDocuments.find({user:req.params.id})
-      console.log(documents)
+
       res.status(200).json({ partner, documents})
       // return basicInfo;
   } catch (error) {
@@ -2378,7 +2376,7 @@ const getUserByEmail = async (req, res) => {
 
     res.status(200).json(user)
   } catch (error) {
-    console.log(error)
+
     res.status(500).json({ message: 'Server error' })
   }
 }
@@ -2450,7 +2448,7 @@ const reportUser = async (req, res)=> {
 
 const CreateFeedback = async (req, res)=> {
   const { isValid, errors } = validateFeedbackInput(req.body);
-  console.log(req.body);
+
 
 
 
@@ -2713,7 +2711,7 @@ const getTotalDemandesCount = async (req, res) => {
 // })
 const AddDriver = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = DriverValidationInput(req.body);
-  console.log(req.body)
+
   const {
     assurance,
     CinfrontCard,
@@ -2755,7 +2753,7 @@ const AddDriver = asyncHandler(async (req, res, next) => {
           public_id: `${folderName}_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         return result.secure_url;
       }
       return null;
@@ -2793,7 +2791,7 @@ const AddDriver = asyncHandler(async (req, res, next) => {
   }
 });
 const AddDriverDoc_DriverLicence = asyncHandler(async (req, res, next) => {
-  console.log(req.body)
+
   const {
     assurance,
     CinfrontCard,
@@ -2813,7 +2811,7 @@ const AddDriverDoc_DriverLicence = asyncHandler(async (req, res, next) => {
           public_id: `${folderName}_${Date.now()}`,
           overwrite: true,
         });
-        console.log(result);
+
         return result.secure_url;
       }
       return null;
@@ -2911,9 +2909,9 @@ const updateDriver = asyncHandler(async (req, res, next) => {
         existingDriver.password = bcrypt.hashSync(newGeneratedPassword, 10);
 
         // Save the updated Driver if the new email is unique
-        console.log("before")
+
         const updatedDriver = await existingDriver.save();
-        console.log("after")
+
 
         // Send an email with the new password
         mailer.send({
@@ -3100,7 +3098,7 @@ const findMissionsConfirmeByUser = async (req, res) => {
       .sort({ 'mission.dateDepart': -1, 'status': -1 })// Sort by the datedepart property in descending order
 
       const missions = missionss.filter(item => item.mission.driver == id);
-      console.log(id)
+
     // Fetch profiles for partners and create a modified response
     const missionsWithProfiles = await Promise.all(missions.map(async (mission) => {
       let missionWithProfile = { ...mission.toObject() }; // Create a shallow copy of the mission object
@@ -3263,19 +3261,19 @@ const findLastMissionByUser = async (req, res) => {
         if (partnerProfile) {
           const plainProfile = partnerProfile.toObject();
           responseMission.profile = plainProfile;
-          console.log("partner", partnerProfile);
+
         }
       } else if (lastMission.mission && lastMission.mission.user) {
         const partnerProfile = await profileModels.findOne({ user: lastMission.mission.user });
         if (partnerProfile) {
           const plainProfile = partnerProfile.toObject();
           responseMission.profile = plainProfile;
-          console.log("admin", partnerProfile);
+
         }
       }
 
       // Send the response with the profile information
-      console.log("responseMission", responseMission);
+
       res.status(200).json(responseMission);
     } else {
       // Handle the case where no lastMission is found

@@ -115,7 +115,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
-    console.log(req.user)
+
     const token = jwt.sign(
       { id: req.user._id, email: req.user.email, role: req.user.role,
         firstLoginByThirdParty:req.user.firstLoginByThirdParty,
@@ -268,6 +268,7 @@ router
 const { saveStripeConfig, getStripeConfig } = require('../controllers/StripeConfig.controller.js');
 const { getStripe } = require('../config/stripe.js');
 const { getSocialLoginConfig, updateSocialLoginConfig } = require('../controllers/SocialLoginConfig.controller.js');
+const { default: axios } = require('axios');
   router.route('/devis/create').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),createDevis)
   router.route('/devis/UpdateDevis/:id').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),UpdateDevis)
   router.route('/devis/getAllDevisByPartner/:id').get(getAllDevisByPartner)
@@ -298,6 +299,16 @@ const { getSocialLoginConfig, updateSocialLoginConfig } = require('../controller
 
   router.route('/getsocial-login-config').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getSocialLoginConfig)
   router.route('/social-login-config').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateSocialLoginConfig)
+  router.get('/proxy-image', async (req, res) => {
+    const imageUrl = req.query.url; // LinkedIn image URL
+    try {
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        res.set('Content-Type', 'image/jpeg');
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).send('Error fetching image');
+    }
+});
 
 
 

@@ -10,14 +10,14 @@ const initializeStripe = async () => {
   try {
     const config = await StripconfigModel.findOne();
     const secretKey = config ? config.secretKey : process.env.STRIPE_SECRET_KEY;
-    console.log('Initializing Stripe with secret key:', secretKey);
+
 
     if (!secretKey) {
       throw new Error('Stripe secret key not found in the database or .env file.');
     }
 
     stripeInstance = stripe(secretKey);
-    console.log('Stripe initialized successfully.');
+
   } catch (error) {
     console.error('Error initializing Stripe:', error.message);
     throw error;

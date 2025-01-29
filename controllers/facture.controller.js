@@ -36,7 +36,7 @@ const { getStripe } = require('../config/stripe.js');
 // const stripe = require("stripe")("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")
 // const stripe = require("stripe")("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")
 const createFacture = async (req, res) => {
-    console.log(req.body)
+
     try {
         // Extract data from the request body
         const { partner, from, to, totalAmount } = req.body;
@@ -76,7 +76,7 @@ const fetchFactureByDriver = async (req, res) => {
   const partner = req.user.id;
   let { from, to } = req.body; // Use let instead of const
   try {
-    console.log(from, to);
+
     let query = { partner: partner };
 
     // If fromDate and toDate are provided, add date filter to the query
@@ -267,7 +267,8 @@ const PayeeEnligne = async (req, res)=> {
         confirm: true,
         return_url: "https://convo-1.netlify.app/admin/facture-DriverdetailsPar/65b0ee02787321004ef46553"
       })
-      console.log("Payment", payment)
+
+
     facture.paymentMethod = "Paiement En ligne"
     facture.payed = true
     await facture.save()
@@ -276,7 +277,7 @@ const PayeeEnligne = async (req, res)=> {
         success: true
       })
     } catch (error) {
-      console.log("Error", error)
+
       res.json({
         message: "Payment failed",
         success: false
@@ -286,7 +287,7 @@ const PayeeEnligne = async (req, res)=> {
   }
   const PayeeEnlignePartner = async (req, res) => {
     const { missionId, partnerId, totalAmmount, freeComment, referenceNumber } = req.body;
-console.log("body :",req.body)
+
     try {
       // Try to find an existing facture with the given missionId
       let facture = await factureModel.findOne({ mission: missionId });
@@ -313,7 +314,7 @@ console.log("body :",req.body)
           payed: false, // This will be updated to true after payment succeeds
         });
       }
-console.log(facture)
+
       // Save the new or updated facture to the database
       const savedFacture = await facture.save();
 
@@ -328,7 +329,7 @@ console.log(facture)
       });
 
       // Log the successful payment for debugging purposes
-      console.log("Payment", payment);
+
 
       // Update the facture as paid
       savedFacture.payed = true;
@@ -340,7 +341,7 @@ console.log(facture)
         factureId: savedFacture._id, // Return the ID of the created or updated facture
       });
     } catch (error) {
-      console.log("Error", error);
+
       res.status(500).json({
         message: "Payment failed",
         success: false,
@@ -386,17 +387,17 @@ console.log(facture)
         confirm: true,
         return_url: "https://convo-1.netlify.app/admin/facture-DriverdetailsPar/65b0ee02787321004ef46553"
       })
-      console.log("Payment", payment)
+
     // facture.paymentMethod = "Paiement En ligne"
     facture.payed = true
     await facture.save()
-    console.log(facture)
+
       res.json({
         message: "Payment successful",
         success: true
       })
     } catch (error) {
-      console.log("Error", error)
+
       res.json({
         message: "Payment failed",
         success: false
@@ -472,7 +473,7 @@ const getTotalAmountByPartner = async (req, res) => {
       filters.status = status;
     }
 
-    console.log("Filters applied:", filters);
+
 
     // Fetch factures based on the filters
     const factures = await factureModel.find(filters);
@@ -505,7 +506,7 @@ const fetchFactureById = async (req, res)=> {
         if(!facture){
             return res.status(404).json({error: 'Facture not found'});
         }
-        console.log(facture)
+
         let query = { partner: partner, status: { $in: statusValues  }}
 
         // If fromDate and toDate are provided, add date filter to the query
@@ -553,22 +554,22 @@ const fetchFacturePartnerById = async (req, res)=> {
       if(!facture){
           return res.status(404).json({error: 'Facture not found'});
       }
-      // console.log("facture,,,,,,",facture)
+
       let query = { partner: partner, status: { $in: statusValues  }}
       if (facture?.from && facture?.to && facture?.from !== 'Invalid Date' && facture?.to !== 'Invalid Date' && !facture.from =='...' ) {
         // const from = new Date(facture?.from);
         // const to = new Date(facture?.to);
-        console.log("from and  to :", facture?.from)
+
         const from = new Date(facture?.from).toISOString();
         const to = new Date(facture?.to).toISOString();
         query.createdAt = { $gte: new Date(from), $lte: new Date(to) };
-        console.log("frommmmmm", from, to)
+
 
       }
-      console.log("+++++++++++++++++++++++",isNotValidDate(facture.from))
+
 
 if(!isNotValidDate(facture.from)){
-  console.log("+++++++++++++++++++++++",isNotValidDate(facture.from))
+
 
   const devis = await devisModel
   .find(query)
@@ -579,19 +580,19 @@ if(!isNotValidDate(facture.from)){
     },
   })
   .populate('categorie')
-  console.log(devis)
+
   res.status(200).json({devis,facture });
 
 }else{
-  console.log("+++++++++++++++++++++++",isNotValidDate(facture.from))
+
 
   const devis = [{mission:facture.mission}]
 
-console.log(devis)
+
   res.status(200).json({devis,facture });
 }
       }catch(e){
-        console.log(e)
+
       res.status(500).json({error: e.message});
       }
 

@@ -203,9 +203,9 @@ exports.addMessage = async (req, res) => {
       });
 
       await chat.save();
-      console.log("New chat created:", chat._id);
+
     } else {
-      console.log("Existing chat found:", chat._id);
+
     }
 
     // Add the new message to the chat

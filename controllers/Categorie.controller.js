@@ -33,7 +33,7 @@ const validateUpdateCategorie = require('../validations/validateUpdateCategorie.
 
 const createCategorie = async (req, res) => {
     const { errors, isValid } = validateCategorieInput(req.body);
-    console.log("body : ", req.body,errors)
+
 
     try {
       if (isValid) {
@@ -70,7 +70,7 @@ const createCategorie = async (req, res) => {
 
         res.status(201).json({ message: 'Categorie created successfully', categorie: createdCategorie });
       } else {
-        console.log(errors)
+
         return res.status(400).json(errors);
 
       }
@@ -79,7 +79,7 @@ const createCategorie = async (req, res) => {
     }
   };
   const getAllCategorie= async (req, res) => {
-    // console.log(req.user.id)
+
     try {
         const categorie = await categorieModel.find({});
         res.status(200).json({ categorie})
@@ -90,7 +90,7 @@ const createCategorie = async (req, res) => {
   };
 
   const FindCategorieByid = async (req, res)=> {
-    console.log(req.params.id)
+
     try {
       const categorie = await categorieModel.findById(req.params.id);
       if (!categorie) {

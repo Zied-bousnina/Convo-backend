@@ -88,7 +88,7 @@ const createDevis = async (req, res) => {
                   return res.status(400).json({ message: 'There is no partner with this id' });
               } else {
                   newDevis.partner = partner;
-                  console.log(existingMission);
+
                   // Adjust mailer logic accordingly, as "categorie" is no longer available
                   // ...
 
@@ -187,7 +187,7 @@ if (!updatedMission) {
 
 
   const getAllCategorie= async (req, res) => {
-    // console.log(req.user.id)
+
     try {
         const categorie = await categorieModel.find({});
         res.status(200).json({ categorie})
@@ -197,7 +197,7 @@ if (!updatedMission) {
     }
   };
   const getAllDevisByPartner= async (req, res) => {
-    // console.log(req.user.id)
+
     try {
         const Devis = await devisModel.find({partner:req.params.id});
         // const categorie = await categorieModel.findById({req.parms.id});

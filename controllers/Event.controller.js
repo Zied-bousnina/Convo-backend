@@ -5,7 +5,7 @@ const userModel = require("../models/userModel");
 exports.createEvent = async (req, res) => {
   try {
     const { title, start, end, allDay = false, partner = null } = req.body;
-    console.log(req.body);
+
 
     // Validate required fields
     if (!title || !start || !end) {
@@ -26,7 +26,7 @@ exports.createEvent = async (req, res) => {
     await event.save();
     res.status(201).json(event);
   } catch (err) {
-    console.log(err);
+
     res.status(400).json({ error: err.message });
   }
 };
@@ -64,7 +64,7 @@ exports.updateEvent = async (req, res) => {
 
     res.json(updatedEvent);
   } catch (err) {
-    console.log(err);
+
     res.status(400).json({ error: err.message });
   }
 };
