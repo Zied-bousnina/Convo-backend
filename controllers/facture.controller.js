@@ -32,6 +32,7 @@ const devisModel = require('../models/devis.model.js');
 const factureModel = require('../models/facture.model.js');
 const DriverFactureModel = require('../models/DriverFacture.model.js');
 const { getStripe } = require('../config/stripe.js');
+const businessDetailsModel = require('../models/businessDetails.model.js');
 
 // const stripe = require("stripe")("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")
 // const stripe = require("stripe")("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")
@@ -639,9 +640,63 @@ const PayeFactureByPartnerHorLigne = async (req, res)=> {
         }
 }
 
+const saveOrUpdateBusinessDetails = async (req, res) => {
+  const { address, city, phone, siret } = req.body;
+console.log(req.body)
+  try {
+    let businessDetails = await businessDetailsModel.findOne();
 
+    if (businessDetails) {
+      // Update existing details
+      businessDetails.address = address;
+      businessDetails.city = city;
+      businessDetails.phone = phone;
+      businessDetails.siret = siret;
+    } else {
+      // Create new details
+      businessDetails = new businessDetailsModel({ address, city, phone, siret });
+    }
+
+    await businessDetails.save();
+    res.status(200).json({ success: true, businessDetails });
+  } catch (error) {
+    console.error("Error saving business details:", error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
+// 🔹 Get Business Details
+const getBusinessDetails = async (req, res) => {
+  try {
+    const businessDetails = await businessDetailsModel.findOne();
+    if (!businessDetails) {
+      return res.status(404).json({ success: false, message: "No details found" });
+    }
+    res.status(200).json({ success: true, businessDetails });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
+
+// 🔹 Delete Business Details
+const deleteBusinessDetails = async (req, res) => {
+  try {
+    const businessDetails = await businessDetailsModel.findOne();
+    if (!businessDetails) {
+      return res.status(404).json({ success: false, message: "No details found" });
+    }
+
+    await businessDetailsModel.deleteOne();
+    res.status(200).json({ success: true, message: "Business details deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+};
 
 module.exports = {
+  saveOrUpdateBusinessDetails,
+  deleteBusinessDetails,
+  getBusinessDetails,
     createFacture,
     fetchFactureByPartner,
     fetchFactureByMissionId,

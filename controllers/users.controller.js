@@ -293,6 +293,32 @@ const EmptySocket = async(req, res)=> {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+
+// Function to Generate Unique ID from `contactName`
+const generateUniqueId = async (contactName) => {
+  if (!contactName) return null;
+
+  const parts = contactName.toLowerCase().split(" ");
+  const initials = parts.map((word) => word.slice(0, 2)).join(""); // Take first 2 letters
+  let baseId = initials.charAt(0).toUpperCase() + initials.slice(1); // Capitalize first letter
+
+  let uniqueId = baseId;
+  let counter = 1;
+
+  // Ensure the uniqueId is not duplicated
+  while (await User.findOne({ uniqueId })) {
+    uniqueId = `${baseId}${counter}`;
+    counter++;
+  }
+
+  return uniqueId;
+};
+
+
+
+
+
 const RemoveSocketById = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -3520,6 +3546,7 @@ module.exports = {
   RejeteDevis,
   AccepteDevis,
   checkDriverDocumentIsCompleted,
-  deleteAllSocketByUser
+  deleteAllSocketByUser,
+
 
 }

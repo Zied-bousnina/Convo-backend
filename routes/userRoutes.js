@@ -1,4 +1,4 @@
-const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById, getTotalAmountByPartner, fetchFactureByMissionId, fetchStatistiquesByPartner } = require('../controllers/facture.controller.js');
+const { createFacture, fetchFactureByPartner, fetchFactureById, fetchFacturesByDriver, fetchFactureByDriver, fetchAllFacturesByDriver, PayeeFacture, PayeeFactureDriver, PayeFactureByPartnerHorLigne, PayeeEnligne, PayerEnligneDriver, PayeeEnlignePartner, fetchFacturePartnerById, getTotalAmountByPartner, fetchFactureByMissionId, fetchStatistiquesByPartner, getBusinessDetails, saveOrUpdateBusinessDetails, deleteBusinessDetails } = require('../controllers/facture.controller.js');
 const express = require('express');
 const { ROLES, isRole, isResetTokenValid } = require('../security/Rolemiddleware');
 const router = express.Router()
@@ -89,7 +89,8 @@ const {
   Register,
   CompletePartnerProfile,
   refreshAuthToken,
-  updateTrancheConfiguration
+  updateTrancheConfiguration,
+
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -218,6 +219,10 @@ router.get('/checkTokenValidity', passport.authenticate('jwt', {session: false})
   // If the control reaches here, the token is valid
   res.status(200).json({ message: 'Token is valid' });
 });
+router.route('/business/fetch').get(passport.authenticate('jwt', {session: false}),getBusinessDetails)
+router.route('/business/save').post(passport.authenticate('jwt', {session: false}),saveOrUpdateBusinessDetails)
+router.route('/business/delete').delete(passport.authenticate('jwt', {session: false}),deleteBusinessDetails)
+
 
 
 router.route('/getUsers').get(getUsers)

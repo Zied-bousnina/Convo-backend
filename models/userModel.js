@@ -10,6 +10,11 @@ const userSchema = mongoose.Schema(
             unique: true,
             // required: true,
         },
+        uniqueId: {
+            type: String,
+            unique: true,
+            required: true,
+          },
         password: String,
         contactName:String,
         addressPartner:String,
@@ -91,7 +96,34 @@ const userSchema = mongoose.Schema(
         timestamps: true
     }
 )
+// 🔹 Function to Generate Unique ID from `contactName` or `name`
+const generateUniqueId = async function (contactName, name) {
+    let baseName = contactName || name; // Use contactName if available, otherwise use name
+    if (!baseName) return null; // If both are null, return null
 
+    const parts = baseName.toLowerCase().split(" "); // Split words
+    const initials = parts.map((word) => word.slice(0, 2)).join(""); // Take first 2 letters of each part
+    let baseId = initials.charAt(0).toUpperCase() + initials.slice(1); // Capitalize first letter
+
+    let uniqueId = baseId;
+    let counter = 1;
+
+    // Check if ID exists and increment if needed
+    while (await mongoose.model("User").findOne({ uniqueId })) {
+        uniqueId = `${baseId}${counter}`;
+        counter++;
+    }
+
+    return uniqueId;
+};
+
+// 🔹 Middleware: Auto-generate `uniqueId` before saving
+userSchema.pre("save", async function (next) {
+    if (!this.uniqueId) {  // Generate uniqueId only if missing
+        this.uniqueId = await generateUniqueId(this.contactName || this.name);
+    }
+    next();
+});
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password)

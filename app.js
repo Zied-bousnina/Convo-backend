@@ -30,6 +30,7 @@ const cors = require('cors');
 var mailer = require('./utils/mailer');
 const { generateEmailTemplatePartnerApproval, generateEmailTemplateMissionDelayed } = require('./utils/mail.js');
 const chatModel = require('./models/chat.model.js');
+const { updateAllUsersUniqueId } = require('./controllers/users.controller.js');
 let server = app.listen(PORT, async (req, res) => {
   try {
     await connectDB();
@@ -733,7 +734,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // connect to db =
 mongoose.connect(process.env.MONGO_URI)
-.then(()=>console.log("connected to db"))
+.then(()=>{console.log("connected to db")
+
+
+})
 .catch(err=>console.log(err))
 app.use('/api', indexRouter);
 app.use('/api/users', userRoutes);
