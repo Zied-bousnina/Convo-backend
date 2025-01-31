@@ -53,6 +53,10 @@ const FactureSchema = new Schema({
             // required: true
 
         },
+        missions: [{
+            type: Schema.Types.ObjectId,
+            ref: 'Devis',
+        }],
 
 
 }, {timestamps:true})
@@ -71,6 +75,22 @@ FactureSchema.pre('save', async function (next) {
     } catch (error) {
         next(error);
     }
+});
+FactureSchema.methods.markMissionsAsIncluded = async function () {
+    try {
+        await mongoose.model('Devis').updateMany(
+            { _id: { $in: this.missions } },
+            { $set: { factureIncluded: true } }
+        );
+    } catch (error) {
+        console.error("Error updating missions:", error);
+    }
+};
+
+// Middleware to mark missions as factureIncluded after saving a facture
+FactureSchema.post('save', async function (doc, next) {
+    await doc.markMissionsAsIncluded();
+    next();
 });
 
 

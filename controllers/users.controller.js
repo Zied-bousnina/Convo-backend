@@ -749,7 +749,7 @@ const findDevisByPartnerId = async (req, res) => {
 
   try {
     let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée',"Confirmée driver"];
-    let query = { partner: userId, status: { $in: statusValues } };
+    let query = { partner: userId, status: { $in: statusValues },  $or: [{ factureIncluded: false }, { factureIncluded: { $exists: false } }]  };
 
     // If fromDate and toDate are provided, add date filter to the query
     if (fromDate && toDate && fromDate !== 'Invalid Date' && toDate !== 'Invalid Date') {
@@ -769,6 +769,7 @@ const findDevisByPartnerId = async (req, res) => {
       .find(query)
       .populate({
         path: 'mission',
+
         populate: {
           path: 'driver',
         },
@@ -1710,6 +1711,49 @@ const Register = asyncHandler(async (req, res, next) => {
     res.status(500).json({ message: "Une erreur interne est survenue." });
   }
 });
+const updateTrancheConfiguration = async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { tranches, price } = req.body;
+
+      // Find the mission request
+      let demande = await DemandeModel.findById(id);
+      if (!demande) {
+          return res.status(404).json({ message: "Mission request not found" });
+      }
+
+      // Update price and factureIncluded fields
+      demande.price = price;
+
+
+      // Update tranches if provided
+      if (tranches && Array.isArray(tranches)) {
+          demande.tranches = tranches;
+      }
+
+      // Recalculate remuneration based on distance and new tranches
+      if (demande.distance && !isNaN(demande.distance)) {
+          const distance = Number(demande.distance);
+
+          if (demande.tranches.length > 0) {
+              const matchingTranche = demande.tranches.find(tranche =>
+                  distance >= tranche.min && distance <= tranche.max
+              );
+
+              demande.remunerationAmount = matchingTranche ? matchingTranche.remuneration : 0;
+          } else {
+              demande.remunerationAmount = demande.price; // Default to fixed price if no tranches
+          }
+      }
+
+      // Save the updated mission request
+      await demande.save();
+      return res.status(200).json({ message: "Tranche configuration updated", demande });
+  } catch (error) {
+      console.error("Error updating tranche configuration:", error);
+      return res.status(500).json({ message: "Server error" });
+  }
+};
 const CompletePartnerProfile = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = partnerCompleteProfileValidation(req.body);
   const { kbis } = req.files || {};
@@ -3397,6 +3441,7 @@ const findMissionById = async (req, res) => {
 
 
 module.exports = {
+  updateTrancheConfiguration,
   authUser,
   refreshAuthToken,
   registerUser,

@@ -44,7 +44,10 @@ const DevisSchema = new Schema({
 
         },
 
-
+        factureIncluded: {
+          type: Boolean,
+          default: false,
+      },
 
 
 }, {timestamps:true})

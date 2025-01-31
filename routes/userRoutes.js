@@ -88,7 +88,8 @@ const {
   findDemandsstatisticsAdmin,
   Register,
   CompletePartnerProfile,
-  refreshAuthToken
+  refreshAuthToken,
+  updateTrancheConfiguration
 } = require('../controllers/users.controller');
 const passport = require('passport');
 const protect = require('../middleware/authMiddleware.js');
@@ -153,6 +154,7 @@ router.route('/login').post(authUser)
 router.route('/Register').post(Register)
 router.route('/refreshAuthToken').get(passport.authenticate('jwt', {session: false}),refreshAuthToken)
 router.route('/CompletePartnerProfile').post(passport.authenticate('jwt', {session: false}),CompletePartnerProfile)
+router.route('/updateTrancheConfiguration/:id').post(passport.authenticate('jwt', {session: false}),updateTrancheConfiguration)
 router.route('/createReport').post(passport.authenticate('jwt', {session: false}),CreateReportOnuser)
 router.route('/createSupport').post(passport.authenticate('jwt', {session: false}),CreateSupport)
 router.route('/createFeedback').post(passport.authenticate('jwt', {session: false}),CreateFeedback)

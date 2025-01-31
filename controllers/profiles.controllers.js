@@ -390,7 +390,7 @@ const findSingleProfile = async(req, res)=>{
     var userId = req.query.id;
 
     try {
-       const data = await profileModels.find({user: req.user.id}).populate('user', ['name', 'email', 'role'])
+       const data = await profileModels.find({user: req.user.id}).populate('user')
        res.status(200).json(...data)
 
     } catch (error) {

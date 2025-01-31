@@ -36,31 +36,30 @@ const { getStripe } = require('../config/stripe.js');
 // const stripe = require("stripe")("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")
 // const stripe = require("stripe")("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")
 const createFacture = async (req, res) => {
+  console.log(req.body)
+  try {
+      const { partner, from, to, totalAmount, missions } = req.body;
 
-    try {
-        // Extract data from the request body
-        const { partner, from, to, totalAmount } = req.body;
+      if (!missions || missions.length === 0) {
+          return res.status(400).json({ error: "No missions selected" });
+      }
 
+      const newFacture = new factureModel({
+          partner,
+          from,
+          to,
+          totalAmount,
+          missions, // Store selected missions
+      });
 
-        // Create a new Facture instance
-        const newFacture = new factureModel({
-            partner,
-            from,
-            to,
-            totalAmmount: totalAmount
-        });
-
-        // Save the Facture to the database
-        const savedFacture = await newFacture.save();
-
-        // Respond with the saved Facture
-        res.status(201).json(savedFacture);
-    } catch (error) {
-        // Handle any errors that occur during the creation process
-        console.error(error);
-        res.status(500).json({ error5: 'Internal Server Error' });
-    }
+      const savedFacture = await newFacture.save();
+      res.status(201).json(savedFacture);
+  } catch (error) {
+      console.error("Error creating facture:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+  }
 };
+
 const calculateTotalAmmount = (devisArray) => {
   // Assuming each devis has a 'totalAmmount' field
   let totalAmmount = 0;
@@ -543,60 +542,72 @@ function isNotValidDate(value) {
   const date = new Date(value);
   return isNaN(date.getTime()); // Returns true if not a valid date
 }
-const fetchFacturePartnerById = async (req, res)=> {
+const fetchFacturePartnerById = async (req, res) => {
   const id = req.params.id;
-  const partner = req.user.id
+  const partner = req.user.id;
 
-  try{
+  try {
     let statusValues = ['Confirmée', 'Affectée', 'En retard', 'Démarrée', 'Terminée', "Confirmée driver"];
-    const facture = await factureModel.findById(id).populate("partner").populate("mission");
 
-      if(!facture){
-          return res.status(404).json({error: 'Facture not found'});
-      }
+    // ✅ Populate the entire array of 'missions' instead of a single 'mission'
+    const facture = await factureModel
+      .findById(id)
+      .populate("partner")
+      .populate({
+        path: "mission", // Populate the array of missions
+        populate: {
+          path: "driver", // Populate 'driver' inside each mission
+        },
+      })
+      facture.missions = await Promise.all(
+        facture.missions.map(async (missionId) => {
+console.log('missionId',missionId)
+          return await devisModel.findById(missionId).populate("mission");
+        })
+      );
+console.log(facture)
+    if (!facture) {
+      return res.status(404).json({ error: 'Facture not found' });
+    }
 
-      let query = { partner: partner, status: { $in: statusValues  }}
-      if (facture?.from && facture?.to && facture?.from !== 'Invalid Date' && facture?.to !== 'Invalid Date' && !facture.from =='...' ) {
-        // const from = new Date(facture?.from);
-        // const to = new Date(facture?.to);
+    let query = { partner: partner, status: { $in: statusValues } };
 
-        const from = new Date(facture?.from).toISOString();
-        const to = new Date(facture?.to).toISOString();
-        query.createdAt = { $gte: new Date(from), $lte: new Date(to) };
+    if (
+      facture?.from &&
+      facture?.to &&
+      facture?.from !== 'Invalid Date' &&
+      facture?.to !== 'Invalid Date' &&
+      facture.from !== '...'
+    ) {
+      const from = new Date(facture?.from).toISOString();
+      const to = new Date(facture?.to).toISOString();
+      query.createdAt = { $gte: new Date(from), $lte: new Date(to) };
+    }
 
+    if (!isNotValidDate(facture.from)) {
+      // ✅ Find and populate all missions inside devis
+      const devis = await devisModel
+        .find(query)
+        .populate({
+          path: 'mission',
+          populate: {
+            path: 'driver',
+          },
+        })
+        .populate('categorie');
 
-      }
+      res.status(200).json({ devis: facture.missions, facture });
 
+    } else {
+      // ✅ If there's only one mission, return it in an array
+      const devis = [{ mission: facture.missions }];
+      res.status(200).json({ devis, facture });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
 
-if(!isNotValidDate(facture.from)){
-
-
-  const devis = await devisModel
-  .find(query)
-  .populate({
-    path: 'mission',
-    populate: {
-      path: 'driver',
-    },
-  })
-  .populate('categorie')
-
-  res.status(200).json({devis,facture });
-
-}else{
-
-
-  const devis = [{mission:facture.mission}]
-
-
-  res.status(200).json({devis,facture });
-}
-      }catch(e){
-
-      res.status(500).json({error: e.message});
-      }
-
-}
 const fetchFacturesByDriver = async(req, res)=> {
     const driver = req.user.id
     try{

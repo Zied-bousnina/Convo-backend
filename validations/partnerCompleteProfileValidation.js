@@ -12,7 +12,7 @@ module.exports = function partnerCompleteProfileValidation(data) {
     data.addressPartner = !isEmpty(data.addressPartner) ? data.addressPartner : ""
     data.contactName = !isEmpty(data.contactName) ? data.contactName : ""
     data.phoneNumber = !isEmpty(data.phoneNumber) ? data.phoneNumber : ""
-    data.name = !isEmpty(data.name) ? data.name : ""
+
 
 
     // if (!validator.isLength(data.name, { min: 2, max: 30 })) {
@@ -29,9 +29,7 @@ module.exports = function partnerCompleteProfileValidation(data) {
     if (validator.isEmpty(data.phoneNumber)) {
         errors.phoneNumber = "phoneNumber field is required"
     }
-    if (validator.isEmpty(data.name)) {
-        errors.name = "name field is required"
-    }
+
 
 
     // if (errors.length > 0) {

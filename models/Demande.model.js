@@ -1,6 +1,10 @@
 const mongoose = require('mongoose')
 const { Schema } = mongoose
-
+const TrancheSchema = new Schema({
+    min: { type: Number, required: true },
+    max: { type: Number, required: true },
+    remuneration: { type: Number, required: true }
+});
 const DeamndeSchema = new Schema({
     user:{
         type:Schema.Types.ObjectId,
@@ -156,6 +160,8 @@ const DeamndeSchema = new Schema({
             type: Object, // This allows you to store any object
             default: {}, // Optional: Default to an empty object if no data is provided
           },
+          tranches: [TrancheSchema], // Store dynamic pricing tranches
+    factureIncluded: { type: Boolean, default: false }, // Whether to include in invoice
 
 
 
@@ -165,19 +171,43 @@ const DeamndeSchema = new Schema({
 }, {timestamps:true})
 
 // Middleware to check and update status after 2 hours
-DeamndeSchema.pre('save', function (next) {
-    // Only perform this check if the status is 'confirmée'
-    if (this.status === 'Confirmée') {
-        const twoHoursInMillis = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-        const currentTime = new Date();
-        const timeDifference = currentTime - this.createdAt;
+DeamndeSchema.methods.calculateRemuneration = function () {
+    if (!this.distance || isNaN(this.distance)) return;
 
-        // If more than 2 hours have passed, update the status to 'En retard'
-        if (timeDifference >= twoHoursInMillis) {
-            this.status = 'En retard';
-        }
+    const distance = Number(this.distance);
+
+    if (this.tranches.length > 0) {
+        // Find the matching tranche
+        const tranche = this.tranches.find(t => distance >= t.min && distance <= t.max);
+        this.remunerationAmount = tranche ? tranche.remuneration : this.price; // Default to price if no match
+    } else {
+        this.remunerationAmount = this.price; // If no tranches, use fixed price
+    }
+};
+
+/**
+ * Static function to update pricing dynamically
+ */
+DeamndeSchema.statics.updatePricing = async function (id, price, tranches, factureIncluded) {
+    const demande = await this.findById(id);
+    if (!demande) throw new Error("Mission request not found");
+
+    // Update price, tranches, and invoice inclusion
+    demande.price = price;
+    demande.factureIncluded = factureIncluded;
+
+    if (tranches && Array.isArray(tranches)) {
+        demande.tranches = tranches;
     }
 
+    // Recalculate remuneration
+    demande.calculateRemuneration();
+    return demande.save();
+};
+
+// Middleware to update remuneration before saving
+DeamndeSchema.pre('save', function (next) {
+    this.calculateRemuneration();
     next();
 });
 
