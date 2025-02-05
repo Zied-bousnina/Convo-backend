@@ -12,8 +12,8 @@ const userSchema = mongoose.Schema(
         },
         uniqueId: {
             type: String,
-            unique: true,
-            required: true,
+
+
           },
         password: String,
         contactName:String,
