@@ -1803,12 +1803,15 @@ const CompletePartnerProfile = asyncHandler(async (req, res, next) => {
       errors.phoneNumber = "Ce numéro de téléphone est déjà utilisé.";
       return res.status(400).json(errors);
     }
+console.log( req.body.siret)
+if(req.body.siret){
 
-    const existingSiretUser = await User.findOne({ siret: req.body.siret, _id: { $ne: userId } });
-    if (existingSiretUser) {
-      errors.siret = "Ce numéro SIRET/SIREN est déjà utilisé.";
-      return res.status(400).json(errors);
-    }
+  const existingSiretUser = await User.findOne({ siret: req.body.siret, _id: { $ne: userId } });
+  if (existingSiretUser) {
+    errors.siret = "Ce numéro SIRET/SIREN est déjà utilisé.";
+    return res.status(400).json(errors);
+  }
+}
 
     // Upload KBIS if provided
     if (kbis) {
