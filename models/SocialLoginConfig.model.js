@@ -21,6 +21,23 @@ const SocialLoginConfigSchema = new mongoose.Schema(
         type: String,
 
       },
+
+    },
+    googleMaps: {
+      apiKey:{
+        type: String,
+
+      }, // Add Google Maps API Key field
+    },
+    immatApi: {
+      apiKey: {
+        type: String,
+      }, // Vehicle Registration API Key
+      provider: {
+        type: String,
+        enum: ["apiplaqueimmatriculation", "someOtherProvider"], // Specify provider name(s)
+        default: "apiplaqueimmatriculation",
+      },
     },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
