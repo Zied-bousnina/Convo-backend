@@ -304,8 +304,8 @@ const { default: axios } = require('axios');
 
   // SocialLoginConfig
 
-  router.route('/getsocial-login-config').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),getSocialLoginConfig)
-  router.route('/social-login-config').post(passport.authenticate('jwt', {session: false}),isRole(ROLES.ADMIN),updateSocialLoginConfig)
+  router.route('/getsocial-login-config').post(passport.authenticate('jwt', {session: false}),getSocialLoginConfig)
+  router.route('/social-login-config').post(passport.authenticate('jwt', {session: false}),updateSocialLoginConfig)
   router.get('/proxy-image', async (req, res) => {
     const imageUrl = req.query.url; // LinkedIn image URL
     try {
