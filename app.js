@@ -699,11 +699,28 @@ socket.on("validate_me", async (devis) => {
 
 // io.listen(  "https://convoyage.onrender.com")
 
-app.use(cors({
-  origin: '*', // Allow all origins; specify 'https://carvoy-7.vercel.app' in production
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+const corsOptions = {
+  origin: 'https://carvoy-7.vercel.app', // Allow only your frontend
+  methods: 'GET,POST,PUT,DELETE,OPTIONS',
+  allowedHeaders: 'Content-Type,Authorization,X-Requested-With',
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Allow preflight requests
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://carvoy-7.vercel.app"); // Set allowed origin
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+  res.header("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 app.use(session({
   secret: process.env.SECRET_KEY, // Changez ceci par une valeur secrète
   resave: false,
