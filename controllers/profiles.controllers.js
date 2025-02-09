@@ -2,6 +2,7 @@ const profileModels = require("../models/profile.models")
 const profileInputValidator = require("../validations/profile2")
 const cloudinary = require('../utils/uploadImage');
 const userModel = require("../models/userModel");
+const logActivity = require("../utils/logger"); // Import logger
 
 const skipProfile = async (req, res) => {
   try {
@@ -31,225 +32,232 @@ const FindAllProfile = async(req, res)=>{
 
     }
 }
-const AddProfile = async(req, res)=>{
+const AddProfile = async (req, res) => {
+  const { isValid, errors } = profileInputValidator(req.body);
 
+  try {
+      if (!isValid) {
+          await logActivity("Failed to Add Profile", req.user.id, { reason: "Validation failed", errors });
+          res.status(404).json(errors);
+      } else {
+          if (req.files?.avatar?.size > 0) {
+              const result = await cloudinary.uploader.upload(req.files.avatar.path, {
+                  public_id: `${req.user.id}_profile`,
+                  width: 500,
+                  height: 500,
+                  crop: 'fill',
+              });
 
-    const {isValid, errors} = profileInputValidator(req.body)
+              req.body.avatar = result.secure_url;
+          }
 
-    try {
-        if(!isValid) {
+          const profile = await profileModels.findOne({ user: req.user.id });
 
-            res.status(404).json(errors)
-        } else {
-            if(req.files?.avatar?.size > 0){
-                const result = await cloudinary.uploader.upload(req.files.avatar.path, {
-                    public_id: `${req.user.id}_profile`,
-                    width: 500,
-                    height: 500,
-                    crop: 'fill',
-                });
+          if (!profile) {
+              const telExist = await profileModels.findOne({ tel: req.body.tel });
 
-                req.body.avatar = result.secure_url
-            }
+              if (telExist) {
+                  errors.tel = "Tel already exists";
+                  await logActivity("Failed to Add Profile", req.user.id, { reason: "Tel already exists", tel: req.body.tel });
+                  res.status(404).json(errors);
+              } else {
+                  req.body.user = req.user.id;
+                  const data = await profileModels.create(req.body);
 
+                  await logActivity("Created Profile", req.user.id, req.body);
+                  res.status(200).json({ data, success: true });
+              }
+          } else {
+              if (profile.tel !== req.body.tel) {
+                  const telExist = await profileModels.findOne({ tel: req.body.tel });
 
-            const profile = await profileModels.findOne({user: req.user.id})
-            if(!profile){
-                const telExist = await profileModels.findOne({tel: req.body.tel})
-                if(telExist){
-                    errors.tel = "tel already exist"
-                    res.status(404).json(errors)
-                } else {
-                    req.body.user = req.user.id
-                    const data = await profileModels.create(req.body)
-                    res.status(200).json( {data,success: true})
-                }
-            } else {
-                if(profile.tel !== req.body.tel) {
-                    const telExist = await profileModels.findOne({tel: req.body.tel})
-                    if(telExist){
-                        errors.tel = "tel already exist"
-                        res.status(404).json(errors)
-                    } else {
-                        const result = await profileModels.findOneAndUpdate(
-                            {user: req.user.id},
-                            req.body,
-                            {new: true}
-                        )
-                        var tel = result.tel
-                        res.status(200).json(result)
-                    }
-                } else {
-                    const result = await profileModels.findOneAndUpdate(
-                        {user: req.user.id},
-                        req.body,
-                        {new: true}
-                    )
-                    var tel = result.tel
-                    res.status(200).json(result)
-                }
-            }
-        }
-    } catch (error) {
-        res.status(500).json({message1: "error2", message: error.message})
-    }
-}
+                  if (telExist) {
+                      errors.tel = "Tel already exists";
+                      await logActivity("Failed to Update Profile", req.user.id, { reason: "Tel already exists", tel: req.body.tel });
+                      res.status(404).json(errors);
+                  } else {
+                      const result = await profileModels.findOneAndUpdate(
+                          { user: req.user.id },
+                          req.body,
+                          { new: true }
+                      );
+
+                      await logActivity("Updated Profile", req.user.id, req.body);
+                      res.status(200).json(result);
+                  }
+              } else {
+                  const result = await profileModels.findOneAndUpdate(
+                      { user: req.user.id },
+                      req.body,
+                      { new: true }
+                  );
+
+                  await logActivity("Updated Profile", req.user.id, req.body);
+                  res.status(200).json(result);
+              }
+          }
+      }
+  } catch (error) {
+      await logActivity("Error in AddProfile", req.user.id, { error: error.message });
+      res.status(500).json({ message1: "error2", message: error.message });
+  }
+};
 
 const EditProfile = async (req, res) => {
-
-
-    try {
+  try {
       const profile = await profileModels.findOne({ user: req.user.id });
+
       if (!profile) {
-        return res.status(404).json({ error: "Profile not found" });
+          await logActivity("Failed to Edit Profile", req.user.id, { reason: "Profile not found" });
+          return res.status(404).json({ error: "Profile not found" });
       }
 
       const { tel, avatar, address, city, country, postalCode, bio } = req.body;
 
       if (tel) {
-        const telExist = await profileModels.findOne({ tel });
-        if (telExist && telExist.user.toString() !== req.user.id) {
-          return res.status(404).json({ error: "Tel already exists" });
-        }
-        profile.tel = tel;
+          const telExist = await profileModels.findOne({ tel });
+          if (telExist && telExist.user.toString() !== req.user.id) {
+              await logActivity("Failed to Edit Profile", req.user.id, { reason: "Tel already exists", tel });
+              return res.status(404).json({ error: "Tel already exists" });
+          }
+          profile.tel = tel;
       }
 
-      if(req.files?.avatar?.size > 0){
-        const result = await cloudinary.uploader.upload(req.files.avatar.path, {
-            public_id: `${req.user.id}_profile`,
-            width: 500,
-            height: 500,
-            crop: 'fill',
-        });
+      if (req.files?.avatar?.size > 0) {
+          const result = await cloudinary.uploader.upload(req.files.avatar.path, {
+              public_id: `${req.user.id}_profile`,
+              width: 500,
+              height: 500,
+              crop: 'fill',
+          });
 
-
-        profile.avatar = result.secure_url
-    }
-
-      if (address) {
-        profile.address = address;
+          profile.avatar = result.secure_url;
       }
 
-      if (city) {
-        profile.city = city;
-      }
-
-      if (country) {
-        profile.country = country;
-      }
-
-      if (postalCode) {
-        profile.postalCode = postalCode;
-      }
-
-      if (bio) {
-        profile.bio = bio;
-      }
+      if (address) profile.address = address;
+      if (city) profile.city = city;
+      if (country) profile.country = country;
+      if (postalCode) profile.postalCode = postalCode;
+      if (bio) profile.bio = bio;
 
       const updatedProfile = await profile.save();
 
+      await logActivity("Updated Profile", req.user.id, {
+          tel,
+          address,
+          city,
+          country,
+          postalCode,
+          bio,
+          avatar: profile.avatar
+      });
 
       res.status(200).json(updatedProfile);
-    } catch (error) {
+  } catch (error) {
+      await logActivity("Error in EditProfile", req.user.id, { error: error.message });
       res.status(500).json({ error: "Internal Server Error" });
-    }
-  };
-  const EditProfileV_WEB = async (req, res) => {
-console.log(req.body)
+  }
+};
+const EditProfileV_WEB = async (req, res) => {
+  console.log(req.body);
 
-    try {
+  try {
       let profile = await profileModels.findOne({ user: req.user.id });
 
-
       if (!profile) {
-        profile = new profileModels({ user: req.user.id });
-    }
-
+          profile = new profileModels({ user: req.user.id });
+      }
 
       const { tel, address, city, country, postalCode, name, email } = req.body;
+
       if (name) {
-        try {
-            const user = await userModel.findById(req.user.id);
-            if (!user) {
-                return res.status(404).json({ error: "User not found" });
-            }
+          try {
+              const user = await userModel.findById(req.user.id);
+              if (!user) {
+                  await logActivity("Failed to Edit Profile", req.user.id, { reason: "User not found" });
+                  return res.status(404).json({ error: "User not found" });
+              }
 
-            user.name = name;
-            await user.save();
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal Server Error" });
-        }
-    }
-    if (email) {
-        try {
-            const emailExist = await userModel.findOne({ email });
+              user.name = name;
+              await user.save();
+          } catch (error) {
+              console.error(error);
+              await logActivity("Error in EditProfileV_WEB", req.user.id, { error: error.message });
+              return res.status(500).json({ error: "Internal Server Error" });
+          }
+      }
 
-            if (emailExist && emailExist._id.toString() !== req.user.id) {
-                return res.status(400).json({ error: "Email already exists" });
-            } else {
-                // Only update the userModel email if it doesn't exist in another account
-                const user = await userModel.findById(req.user.id);
+      if (email) {
+          try {
+              const emailExist = await userModel.findOne({ email });
 
-                if (!user) {
-                    return res.status(404).json({ error: "User not found" });
-                }
+              if (emailExist && emailExist._id.toString() !== req.user.id) {
+                  await logActivity("Failed to Edit Profile", req.user.id, { reason: "Email already exists", email });
+                  return res.status(400).json({ error: "Email already exists" });
+              } else {
+                  const user = await userModel.findById(req.user.id);
 
-                user.email = email;
-                await user.save();
-            }
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal Server Error" });
-        }
-    }
+                  if (!user) {
+                      await logActivity("Failed to Edit Profile", req.user.id, { reason: "User not found" });
+                      return res.status(404).json({ error: "User not found" });
+                  }
+
+                  user.email = email;
+                  await user.save();
+              }
+          } catch (error) {
+              console.error(error);
+              await logActivity("Error in EditProfileV_WEB", req.user.id, { error: error.message });
+              return res.status(500).json({ error: "Internal Server Error" });
+          }
+      }
 
       if (tel) {
-        const telExist = await profileModels.findOne({ tel });
-        if (telExist && telExist.user.toString() !== req.user.id) {
-          return res.status(404).json({ error: "Tel already exists" });
-        }
-        profile.tel = tel;
+          const telExist = await profileModels.findOne({ tel });
+          if (telExist && telExist.user.toString() !== req.user.id) {
+              await logActivity("Failed to Edit Profile", req.user.id, { reason: "Tel already exists", tel });
+              return res.status(404).json({ error: "Tel already exists" });
+          }
+          profile.tel = tel;
       }
 
-      if(req.files?.avatar?.size > 0){
-        const result = await cloudinary.uploader.upload(req.files.avatar.path, {
-            public_id: `${req.user.id}_profile`,
-            width: 500,
-            height: 500,
-            crop: 'fill',
-        });
+      if (req.files?.avatar?.size > 0) {
+          const result = await cloudinary.uploader.upload(req.files.avatar.path, {
+              public_id: `${req.user.id}_profile`,
+              width: 500,
+              height: 500,
+              crop: 'fill',
+          });
 
-        profile.avatar = result.secure_url
-    }
-
-      if (address) {
-        profile.address = address;
+          profile.avatar = result.secure_url;
       }
 
-      if (city) {
-        profile.city = city;
-      }
-
-      if (country) {
-        profile.country = country;
-      }
-
-      if (postalCode) {
-        profile.postalCode = postalCode;
-      }
-
-
+      if (address) profile.address = address;
+      if (city) profile.city = city;
+      if (country) profile.country = country;
+      if (postalCode) profile.postalCode = postalCode;
 
       const updatedProfile = await profile.save();
 
+      await logActivity("Updated Profile - Web", req.user.id, {
+          name,
+          email,
+          tel,
+          address,
+          city,
+          country,
+          postalCode,
+          avatar: profile.avatar
+      });
 
       res.status(200).json(updatedProfile);
-    } catch (error) {
-      consolelog(error)
-      res.status(500).json({ error: "Internal ddServer Error", error2: error.message });
-    }
-  };
+  } catch (error) {
+      console.error(error);
+      await logActivity("Error in EditProfileV_WEB", req.user.id, { error: error.message });
+
+      res.status(500).json({ error: "Internal Server Error", error2: error.message });
+  }
+};
 
 // const AddProfile = async(req, res)=>{
 
@@ -399,23 +407,25 @@ const findSingleProfile = async(req, res)=>{
     }
 }
 
-const DeleteProfile = async(req, res)=>{
-   try {
-    const userId = req.params.id;
-    const deleteProfile = await profileModels.findByIdAndDelete(userId);
-    if(!deleteProfile){
-        res.status(404).json({message: "profile not found"})
-    }else{
+const DeleteProfile = async (req, res) => {
+  try {
+      const userId = req.params.id;
+      const deleteProfile = await profileModels.findByIdAndDelete(userId);
 
-        res. status(200).json({message: "profile deleted successfully"})
-    }
+      if (!deleteProfile) {
+          await logActivity("Failed to Delete Profile", req.user.id, { reason: "Profile not found", userId });
+          return res.status(404).json({ message: "Profile not found" });
+      }
 
-   } catch (error) {
-    res.status(500).send('error server')
+      await logActivity("Deleted Profile", req.user.id, { userId });
 
+      res.status(200).json({ message: "Profile deleted successfully" });
+  } catch (error) {
+      await logActivity("Error in DeleteProfile", req.user.id, { error: error.message });
 
-   }
-}
+      res.status(500).send("Server error");
+  }
+};
 
 module.exports = {
     FindAllProfile,

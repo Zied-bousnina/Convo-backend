@@ -90,6 +90,7 @@ const {
   CompletePartnerProfile,
   refreshAuthToken,
   updateTrancheConfiguration,
+  findUserActivity,
 
 } = require('../controllers/users.controller');
 const passport = require('passport');
@@ -150,6 +151,8 @@ router.get(
     res.redirect(`${process.env.NEXT_APP_API_URL}?token=${token}`);
   }
 );
+// router.get("/activity", passport.authenticate("jwt", { session: false }), findUserActivity);
+router.route('/activity').get(passport.authenticate('jwt', {session: false}),findUserActivity)
 
 router.route('/login').post(authUser)
 router.route('/Register').post(Register)

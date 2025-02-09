@@ -35,6 +35,8 @@ const DriverFactureModel = require('../models/DriverFacture.model.js');
 const driverDocumentsModel = require('../models/driverDocuments.model.js');
 const { update } = require('lodash');
 const partnerCompleteProfileValidation = require('../validations/partnerCompleteProfileValidation.js');
+const logActivity = require("../utils/logger");
+const ActivityLog = require('../models/ActivityLog.model.js');
 
 
 
@@ -52,166 +54,195 @@ const fetchCurrentUser = async(req, res)=> {
   }
 }
 const createDemande = async (req, res) => {
-  // const userId = req.body.userId; // Assuming userId is provided in the request body
-
   const { errors, isValid } = validateDemandeInput(req.body);
+
   try {
-    if (isValid) {
-      const { address, destination, offer,time,comment, postalAddress, postalDestination, distance,dateDepart,driverIsAuto,driver,vehicleType,missionType } = req.body;
-    // Create a new demand object
-    const newDemande = new demandeModels({
-      user: req.user.id,
-      address,
-      destination,
-      comment,
-      postalAddress,
-      postalDestination,
-      offer,
-      distance,
-      dateDepart,
-      driverIsAuto,
-      driver,
-      missionType,
-      vehicleType,
-      time
-    });
+      if (isValid) {
+          const {
+              address,
+              destination,
+              offer,
+              time,
+              comment,
+              postalAddress,
+              postalDestination,
+              distance,
+              dateDepart,
+              driverIsAuto,
+              driver,
+              vehicleType,
+              missionType
+          } = req.body;
 
-    // Save the new demand
-    const createdDemande = await newDemande.save();
+          // Create a new demand object
+          const newDemande = new demandeModels({
+              user: req.user.id,
+              address,
+              destination,
+              comment,
+              postalAddress,
+              postalDestination,
+              offer,
+              distance,
+              dateDepart,
+              driverIsAuto,
+              driver,
+              missionType,
+              vehicleType,
+              time
+          });
 
-     // Check if driver attribute is not null
-     if (driver) {
-      // Find the user with the specified driver ID
-      const driverUser = await User.findById(driver);
+          // Save the new demand
+          const createdDemande = await newDemande.save();
 
-      // Send an email to the driverUser (you need to implement this function)
-      // For example, you can use a hypothetical sendEmail function
-      mailer.send({
-        to: ["zbousnina@yahoo.com", driverUser.email],
-        subject: "Convoyage Mission Affectation Notification",
-        html: generateEmailTemplateAffectation(driverUser.name, newDemande),
-      }, (err) => {});
+          // Check if driver attribute is not null
+          if (driver) {
+              // Find the user with the specified driver ID
+              const driverUser = await User.findById(driver);
 
-      // You may also want to handle errors or log the result of sending the email
-    }
+              if (driverUser) {
+                  // Send an email to the driverUser
+                  mailer.send({
+                      to: ["zbousnina@yahoo.com", driverUser.email],
+                      subject: "Convoyage Mission Affectation Notification",
+                      html: generateEmailTemplateAffectation(driverUser.name, newDemande),
+                  }, (err) => {});
 
-    res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
-  } else {
-    responseSent = true;
-    return res.status(404).json(errors);
-  }
+                  await logActivity("Created Demande with Driver", req.user.id, {
+                      demandeId: createdDemande._id,
+                      driverId: driver,
+                      driverEmail: driverUser.email
+                  });
+              }
+          } else {
+              await logActivity("Created Demande without Driver", req.user.id, {
+                  demandeId: createdDemande._id
+              });
+          }
+
+          res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
+      } else {
+          await logActivity("Failed to Create Demande", req.user.id, { reason: "Validation failed", errors });
+
+          return res.status(404).json(errors);
+      }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+      await logActivity("Error in createDemande", req.user.id, { error: error.message });
+
+      res.status(500).json({ message: error.message });
   }
 };
 const createDemandeNewVersion = async (req, res) => {
-
   const { errors, isValid } = validateDemandeInput(req.body);
-  // You would define validateDemandeInput somewhere to validate your inputs
 
   if (!isValid) {
-    return res.status(400).json(errors);
+      await logActivity("Failed to Create Demande", req.user.id, { reason: "Validation failed", errors });
+      return res.status(400).json(errors);
   }
 
   try {
-    const {
-      address,
-      destination,
-      offer,
-      time,
-      comment,
-      postalAddress,
-      postalDestination,
-      distance,
-      dateDepart,
-      driverIsAuto,
+      const {
+          address,
+          destination,
+          offer,
+          time,
+          comment,
+          postalAddress,
+          postalDestination,
+          distance,
+          dateDepart,
+          driverIsAuto,
+          vehicleType,
+          missionType,
+          price,
+          selectedServices,
+          transport,
+          mail,
+          remunerationAmount,
+          immatriculation,
+          vehicleData,
+          phone
+      } = req.body;
 
-      vehicleType,
-      missionType,
-      price,
-      selectedServices,
-      transport,
-      mail,
-      remunerationAmount,
-      immatriculation,
-      vehicleData,
-      phone
-    } = req.body;
+      const identityProof = req.files?.identityProof;
+      const vehicleRegistration = req.files?.vehicleRegistration;
 
+      const uploadFileToCloudinary = async (file, folderName) => {
+          if (file) {
+              const result = await cloudinary.uploader.upload(file?.path, {
+                  resource_type: 'auto',
+                  folder: folderName,
+                  public_id: `${folderName}_${Date.now()}`,
+                  overwrite: true,
+              });
 
-    const identityProof = req.files?.identityProof;
-    const vehicleRegistration = req.files?.vehicleRegistration;
-    const uploadFileToCloudinary = async (file, folderName) => {
-      if (file) {
+              return result.secure_url;
+          }
+          return null;
+      };
 
-        const result = await cloudinary.uploader.upload(file?.path, {
-          resource_type: 'auto',
-          folder: folderName,
-          public_id: `${folderName}_${Date.now()}`,
-          overwrite: true,
-        });
+      // Upload files
+      const identityProofUrl = await uploadFileToCloudinary(identityProof, 'identityProof');
+      const vehicleRegistrationUrl = await uploadFileToCloudinary(vehicleRegistration, 'vehicleRegistration');
 
-        return result.secure_url;
-      }
-      return null;
-    };
-    // Assuming you have two fields 'identityProof' and 'vehicleRegistration' in your form for file upload
-    const identityProofUrl = await uploadFileToCloudinary(identityProof, 'identityProof');
-    const vehicleRegistrationUrl = await uploadFileToCloudinary(vehicleRegistration, 'vehicleRegistration');
+      const taxRate = 0.20; // 20% tax rate
+      const totalTTC = price * (1 + taxRate);
 
-    const taxRate = 0.20; // 20% tax rate for this example
-    const totalTTC = price * (1 + taxRate);
-    // Create a new demand object
+      // Create a new demand object
+      const newDemande = new demandeModels({
+          user: req.user.id,
+          address,
+          destination,
+          comment,
+          mail,
+          postalAddress,
+          postalDestination,
+          offer,
+          price: Number(totalTTC),
+          distance,
+          dateDepart,
+          driverIsAuto,
+          services: { ...selectedServices },
+          transport,
+          remunerationAmount,
+          immatriculation: vehicleData.immat,
+          phone,
+          missionType,
+          vehicleType,
+          time,
+          identityProof: identityProofUrl,
+          vehicleRegistration: vehicleRegistrationUrl,
+          vehicleData
+      });
 
-    const newDemande = new demandeModels({
-      user: req.user.id,
-      address,
-      destination,
-      comment,
-      mail,
-      postalAddress,
-      postalDestination,
-      offer,
-      price:Number(totalTTC),
-      distance,
-      dateDepart,
-      driverIsAuto,
-      services:{ ...selectedServices },
-      transport,
-      remunerationAmount,
-      immatriculation: vehicleData.immat,
-phone,
-      missionType,
-      vehicleType,
-      time,
-      identityProof: identityProofUrl,
-      vehicleRegistration: vehicleRegistrationUrl,
-      vehicleData
-    });
+      // Save the new demand
+      const createdDemande = await newDemande.save();
 
+      const devis = new devisModel({
+          partner: req.user.id,
+          mission: createdDemande._id,
+          status: "Confirmée",
+          montant: Number(totalTTC),
+          distance: distance,
+          remunerationAmount: remunerationAmount
+      });
+      await devis.save();
 
-    // Save the new demand
-    const createdDemande = await newDemande.save();
+      await logActivity("Created New Demande", req.user.id, {
+          demandeId: createdDemande._id,
+          price: totalTTC,
+          distance,
+          remunerationAmount,
+          identityProofUrl,
+          vehicleRegistrationUrl
+      });
 
-    const devis = new devisModel({
-      partner: req.user.id,
-      mission: createdDemande._id,
-      status: "Confirmée",
-      montant: Number(totalTTC),
-      distance: distance,
-      remunerationAmount:remunerationAmount
-    });
-    await devis.save();
-
-
-
-    // Check if driver attribute is not null and send an email
-
-
-    res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
+      res.status(201).json({ message: 'Demande created successfully', demande: createdDemande });
   } catch (error) {
-    console.error('Error creating demande:', error);
-    res.status(500).json({ message: error.message });
+      console.error('Error creating demande:', error);
+      await logActivity("Error in createDemandeNewVersion", req.user.id, { error: error.message });
+
+      res.status(500).json({ message: error.message });
   }
 };
 
@@ -219,24 +250,29 @@ const deleteDemande = async (req, res) => {
   const demandId = req.params.demandId; // Assuming demandId is provided as a route parameter
 
   try {
-    // Check if the demand exists
-    const existingDemande = await demandeModels.findById(demandId);
+      // Check if the demand exists
+      const existingDemande = await demandeModels.findById(demandId);
 
-    if (!existingDemande) {
-      return res.status(404).json({ message: 'Demande not found' });
-    }
+      if (!existingDemande) {
+          await logActivity("Failed to Delete Demande", req.user.id, { reason: "Demande not found", demandId });
+          return res.status(404).json({ message: 'Demande not found' });
+      }
 
-    // Check if the user making the request is the owner of the demand
-    if (existingDemande.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Unauthorized access' });
-    }
+      // Check if the user making the request is the owner of the demand
+      if (existingDemande.user.toString() !== req.user.id) {
+          await logActivity("Unauthorized Demande Deletion Attempt", req.user.id, { reason: "Unauthorized access", demandId });
+          return res.status(403).json({ message: 'Unauthorized access' });
+      }
 
-    // Delete the demand
-    await existingDemande.remove();
+      // Delete the demand
+      await existingDemande.remove();
 
-    res.status(200).json({ message: 'Demande deleted successfully' });
+      await logActivity("Deleted Demande", req.user.id, { demandId });
+
+      res.status(200).json({ message: 'Demande deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+      await logActivity("Error in deleteDemande", req.user.id, { error: error.message });
+      res.status(500).json({ message: error.message });
   }
 };
 const deleteSocket = async (req, res) => {
@@ -262,7 +298,6 @@ const deleteSocket = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
 
 const EmptySocket = async(req, res)=> {
   try {
@@ -294,8 +329,6 @@ const EmptySocket = async(req, res)=> {
   }
 }
 
-
-// Function to Generate Unique ID from `contactName`
 const generateUniqueId = async (contactName) => {
   if (!contactName) return null;
 
@@ -314,10 +347,6 @@ const generateUniqueId = async (contactName) => {
 
   return uniqueId;
 };
-
-
-
-
 
 const RemoveSocketById = async (req, res) => {
   try {
@@ -389,68 +418,7 @@ const findAllPartnersAndTheirFactures = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-// const findAllDriversAndTheirFactures = async (req, res) => {
-//   try {
-//     // Find all partners
-//     const partners = await userModel.find({ role: 'DRIVER' });
 
-//     // Aggregate to group factures by driver
-//     const result = await DriverFactureModel.aggregate([
-//       {
-//         $match: {
-//           driver: { $in: partners.map((partner) => partner._id) },
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: 'factures', // Collection name for FactureModel
-//           localField: 'factures',
-//           foreignField: '_id',
-//           as: 'factures',
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: '$driver',
-//           factures: { $push: '$factures' },
-//           from: { $first: '$from' },
-//           to: { $first: '$to' },
-//           totalAmmount: { $first: '$totalAmmount' },
-//           createdAt: { $first: '$createdAt' },
-//           updatedAt: { $first: '$updatedAt' },
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: 'users', // Collection name for User model
-//           localField: '_id',
-//           foreignField: '_id',
-//           as: 'driver',
-//         },
-//       },
-//       {
-//         $unwind: '$driver',
-//       },
-//       {
-//         $project: {
-//           _id: 0, // Exclude _id field if you don't need it
-//           driver: 1,
-//           factures: 1,
-//           from: 1,
-//           to: 1,
-//           totalAmmount: 1,
-//           createdAt: 1,
-//           updatedAt: 1,
-//         },
-//       },
-//     ]);
-
-//     return res.status(200).json(result);
-//   } catch (error) {
-//     console.error('Error finding partners and their demands:', error);
-//     return res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// };
 const findAllDriversAndTheirFactures = async (req, res) => {
   try {
     // Find all partners
@@ -573,45 +541,7 @@ const findDemandsstatisticsByPartner = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-// const findDemandsstatisticsAdmin = async (req, res) => {
-//   try {
-//     // Get the current date
-//     const currentDate = new Date();
-//     // Get the first and last day of the current month
-//     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-//     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-//     // Fetch all demands created within the current month
-//     const allDemands = await demandeModels.find({
-//       // createdAt: {
-//       //   $gte: firstDayOfMonth,
-//       //   $lte: lastDayOfMonth
-//       // }
-//     })
-//       .populate('user')
-//       .populate('driver') // Populate the 'user' and 'driver' fields to get their details
-//       .exec();
-
-//     // Filter demands created by users with the role 'partner'
-//     // const partnerDemands = allDemands.filter(demand => demand.user && demand.user.role === 'PARTNER');
-
-//     // Filter demands by status
-//     const inProgressDemands = allDemands.filter(demand => demand.status === 'in progress');
-//     const completedDemands = allDemands.filter(demand => demand.status === 'Terminée');
-
-//     // Get statistics
-//     const statistics = {
-//       total: allDemands.length,
-//       inProgress: inProgressDemands.length,
-//       completed: completedDemands.length,
-//     };
-
-//     res.status(200).json({ demands: allDemands, statistics });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Internal Server Error' });
-//   }
-// };
 const findDemandsstatisticsAdmin = async (req, res) => {
   try {
     // Extract filter parameters from the query string
@@ -671,7 +601,6 @@ const findDemandsstatisticsAdmin = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 
 
@@ -744,8 +673,6 @@ const deleteAllSocketByUser = async (req, res) => {
   }
 };
 
-
-
 const findDevisByPartner = async (req, res)=> {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
 
@@ -769,6 +696,7 @@ const findDevisByPartner = async (req, res)=> {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 }
+
 const findDevisByPartnerId = async (req, res) => {
   const userId = req.params.id; // Assuming user ID is available in req.user.id
   const { fromDate, toDate } = req.body; // Extracting fromDate and toDate from query parameters
@@ -834,43 +762,58 @@ const findDevisById = async (req, res)=> {
   }
 }
 
-const AccepteDevis = async (req, res)=> {
+const AccepteDevis = async (req, res) => {
   const devisId = req.params.id;
 
   try {
-    const devis = await devisModel.findById(devisId);
+      const devis = await devisModel.findById(devisId);
 
-    if (devis) {
-      devis.status = "Accepted";
-      await devis.save();
-      res.status(200).json({ message: 'Devis accepted successfully', devis });
-    } else {
-      res.status(404).json({ message: 'No devis found for the user.' });
-    }
+      if (devis) {
+          devis.status = "Accepted";
+          await devis.save();
+
+          await logActivity("Accepted Devis", req.user.id, { devisId, status: devis.status });
+
+          res.status(200).json({ message: 'Devis accepted successfully', devis });
+      } else {
+          await logActivity("Failed to Accept Devis", req.user.id, { reason: "No devis found", devisId });
+
+          res.status(404).json({ message: 'No devis found for the user.' });
+      }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-}
+      console.error(error);
+      await logActivity("Error in AccepteDevis", req.user.id, { error: error.message, devisId });
 
-const RejeteDevis = async(req, res) => {
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+const RejeteDevis = async (req, res) => {
   const devisId = req.params.id;
 
   try {
-    const devis = await devisModel.findById(devisId);
+      const devis = await devisModel.findById(devisId);
 
-    if (devis) {
-      devis.status = "refusée";
-      await devis.save();
-      res.status(200).json({ message: 'Devis rejected successfully', devis });
-    } else {
-      res.status(404).json({ message: 'No devis found for the user.' });
-    }
+      if (devis) {
+          devis.status = "refusée";
+          await devis.save();
+
+          await logActivity("Rejected Devis", req.user.id, { devisId, status: devis.status });
+
+          res.status(200).json({ message: 'Devis rejected successfully', devis });
+      } else {
+          await logActivity("Failed to Reject Devis", req.user.id, { reason: "No devis found", devisId });
+
+          res.status(404).json({ message: 'No devis found for the user.' });
+      }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error(error);
+      await logActivity("Error in RejeteDevis", req.user.id, { error: error.message, devisId });
+
+      res.status(500).json({ message: 'Internal Server Error' });
   }
-}
+};
+
 const findDemandById = async (req, res) => {
   const demandId = req.params.demandId;
 
@@ -921,90 +864,93 @@ const incrementOffer = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 const AccepteMission = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
   const demandId = req.params.demandId;
 
   try {
-    // Find the demand by ID and user ID
-    const demand = await devisModel.findOne({ _id: demandId});
-    const mission = await demandeModels.findOne({ _id: demand.mission._id })
+      // Find the demand by ID and user ID
+      const demand = await devisModel.findOne({ _id: demandId });
+      const mission = await demandeModels.findOne({ _id: demand?.mission._id });
 
-     // Check if there's already a mission with status "Démarrée"
-     const existingStartedMission = await demandeModels.findOne({ driver: userId, status: 'Démarrée' });
- // Check if the mission is already taken
-// Check if the mission is already taken
-
-if (mission?.driver != null && mission.driver != userId) {
-
-  return res.status(400).json({ message: 'mission déjà prise un autre' });
-}
-     if (existingStartedMission) {
-
-       return res.status(400).json({ message: 'Vous avez déjà une mission en cours.' });
-     }
-
-    if (!demand) {
-      return res.status(404).json({ message: 'Demand not found for the user.' });
-    }
-
-    // Check if the demand has a driver attribute, if not, set it to the user ID
-    if (!mission?.driver) {
-      mission.driver = userId;
-    }
-    const uploadFileToCloudinary = async (file, folderName) => {
-      if (file) {
-
-        const result = await cloudinary.uploader.upload(file?.path, {
-          resource_type: 'auto',
-          folder: folderName,
-          public_id: `${folderName}_${Date.now()}`,
-          overwrite: true,
-        });
-
-        return result.secure_url;
+      // Check if the mission is already taken by another driver
+      if (mission?.driver && mission.driver !== userId) {
+          await logActivity("Failed to Accept Mission", userId, { reason: "Mission already taken", demandId });
+          return res.status(400).json({ message: 'Mission déjà prise par un autre conducteur.' });
       }
-      return null;
-    };
 
-    const imagesUploaded = [];
+      // Check if the driver already has an active mission
+      const existingStartedMission = await demandeModels.findOne({ driver: userId, status: 'Démarrée' });
 
-    await Promise.all(
-      Object.values(req?.files).map(async (e) => {
-        try {
-          const uploadedUrl = await uploadFileToCloudinary(e, `mission :${demandId}`);
-          imagesUploaded.push(uploadedUrl);
-        } catch (error) {
-          console.error("Error uploading file to Cloudinary:", error);
-          throw error; // Propagate the error to the outer catch block
-        }
-      })
-    );
+      if (existingStartedMission) {
+          await logActivity("Failed to Accept Mission", userId, { reason: "User already has an active mission", demandId });
+          return res.status(400).json({ message: 'Vous avez déjà une mission en cours.' });
+      }
 
-    // Increment or decrement the offer by 0.5
-    demand.status = "Démarrée";
-    mission.status="Démarrée"
-    if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url == 'string')) {
+      if (!demand) {
+          await logActivity("Failed to Accept Mission", userId, { reason: "Demand not found", demandId });
+          return res.status(404).json({ message: 'Demande non trouvée.' });
+      }
 
-      mission.demareeMissionImages = imagesUploaded;
-  } else {
-      console.error('Invalid image data format');
-      // Handle the error accordingly
-      res.status(400).json({ message: 'Invalid image data format' });
-      return;
-  }
-    mission.demareeMissionImages= imagesUploaded
-    mission.demareeMissionCmnt = req.body.demareeMissionCmnt;
+      // Assign the driver if not already assigned
+      if (!mission?.driver) {
+          mission.driver = userId;
+      }
 
-    // Save the updated demand
-    const updatedDemand = await demand.save();
-    const updatedMission = await mission.save();
+      // Upload images to Cloudinary
+      const uploadFileToCloudinary = async (file, folderName) => {
+          if (file) {
+              const result = await cloudinary.uploader.upload(file?.path, {
+                  resource_type: 'auto',
+                  folder: folderName,
+                  public_id: `${folderName}_${Date.now()}`,
+                  overwrite: true,
+              });
+              return result.secure_url;
+          }
+          return null;
+      };
 
+      const imagesUploaded = [];
 
-    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+      await Promise.all(
+          Object.values(req?.files || {}).map(async (file) => {
+              try {
+                  const uploadedUrl = await uploadFileToCloudinary(file, `mission:${demandId}`);
+                  imagesUploaded.push(uploadedUrl);
+              } catch (error) {
+                  console.error("Error uploading file to Cloudinary:", error);
+                  throw error;
+              }
+          })
+      );
+
+      // Set mission status to "Démarrée" and save images
+      demand.status = "Démarrée";
+      mission.status = "Démarrée";
+
+      if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url === 'string')) {
+          mission.demareeMissionImages = imagesUploaded;
+      } else {
+          console.error('Invalid image data format');
+          await logActivity("Failed to Accept Mission", userId, { reason: "Invalid image format", demandId });
+          return res.status(400).json({ message: 'Format d\'image invalide' });
+      }
+
+      mission.demareeMissionCmnt = req.body.demareeMissionCmnt;
+
+      // Save the updated demand and mission
+      const updatedDemand = await demand.save();
+      const updatedMission = await mission.save();
+
+      await logActivity("Accepted Mission", userId, { demandId, missionId: mission._id, status: "Démarrée", imagesUploaded });
+
+      res.status(200).json({ message: 'Mission acceptée avec succès.', demand: updatedDemand });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error(error);
+      await logActivity("Error in AccepteMission", userId, { error: error.message, demandId });
+      res.status(500).json({ message: 'Erreur interne du serveur.' });
   }
 };
 
@@ -1026,157 +972,179 @@ const getMissionById = async (req, res) => {
   }
 };
 
-
 const updateFieldsForDevis = async (req, res) => {
   try {
-    // Assuming the user's ID is passed in the request parameters
-    const user = await userModel.findById(req.user.id);
+      // Find the user by ID
+      const user = await userModel.findById(req.user.id);
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Update the fields if they exist in req.body
-    const fieldsToUpdate = ['VAT', 'name', 'email', 'addressPartner', 'phoneNumber'];
-    fieldsToUpdate.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        user[field] = req.body[field];
+      if (!user) {
+          await logActivity("Failed to Update User Fields", req.user.id, { reason: "User not found" });
+          return res.status(404).json({ message: 'User not found' });
       }
-    });
 
-    // Save the updated user
-    await user.save();
+      // Define fields to update
+      const fieldsToUpdate = ['VAT', 'name', 'email', 'addressPartner', 'phoneNumber'];
+      const updatedFields = {};
 
-    // Send back a success response
-    res.json({
-      message: 'User details updated successfully',
-      user: user // Or return the updated fields only if you prefer
-    });
+      fieldsToUpdate.forEach((field) => {
+          if (req.body[field] !== undefined) {
+              user[field] = req.body[field];
+              updatedFields[field] = req.body[field]; // Store updated fields for logging
+          }
+      });
+
+      // Save the updated user
+      await user.save();
+
+      await logActivity("Updated User Fields for Devis", req.user.id, updatedFields);
+
+      res.json({
+          message: 'User details updated successfully',
+          user // Or return only updated fields if preferred
+      });
 
   } catch (error) {
-    // If there's an error, send back an error response
-    res.status(500).json({
-      message: 'Error updating user details',
-      error: error.message
-    });
+      await logActivity("Error in updateFieldsForDevis", req.user.id, { error: error.message });
+
+      res.status(500).json({
+          message: 'Error updating user details',
+          error: error.message
+      });
   }
 };
-
 
 const TermineeMission = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
 
   try {
-    // Find the demand by ID and user ID
-    const demand = await devisModel.findOne({ _id: demandId});
-    const mission = await demandeModels.findOne({ _id: demand.mission._id })
+      // Find the demand by ID and user ID
+      const demand = await devisModel.findOne({ _id: demandId });
+      const mission = await demandeModels.findOne({ _id: demand?.mission._id });
 
-    if (!demand) {
-      return res.status(404).json({ message: 'Demand not found for the user.' });
-    }
-
-    // Check if the demand has a driver attribute, if not, set it to the user ID
-    if (!mission?.driver) {
-      mission.driver = userId;
-
-    }
-    const uploadFileToCloudinary = async (file, folderName) => {
-      if (file) {
-
-        const result = await cloudinary.uploader.upload(file?.path, {
-          resource_type: 'auto',
-          folder: folderName,
-          public_id: `${folderName}_${Date.now()}`,
-          overwrite: true,
-        });
-
-        return result.secure_url;
+      if (!demand) {
+          await logActivity("Failed to Terminate Mission", userId, { reason: "Demand not found", demandId });
+          return res.status(404).json({ message: 'Demande non trouvée.' });
       }
-      return null;
-    };
-    const imagesUploaded = [];
 
-    await Promise.all(
-      Object.values(req?.files).map(async (e) => {
-        try {
-          const uploadedUrl = await uploadFileToCloudinary(e, `mission :${demandId}`);
-          imagesUploaded.push(uploadedUrl);
-        } catch (error) {
-          console.error("Error uploading file to Cloudinary:", error);
-          throw error; // Propagate the error to the outer catch block
-        }
-      })
-    );
+      // Assign the driver if not already assigned
+      if (!mission?.driver) {
+          mission.driver = userId;
+      }
 
+      // Upload images to Cloudinary
+      const uploadFileToCloudinary = async (file, folderName) => {
+          if (file) {
+              const result = await cloudinary.uploader.upload(file?.path, {
+                  resource_type: 'auto',
+                  folder: folderName,
+                  public_id: `${folderName}_${Date.now()}`,
+                  overwrite: true,
+              });
+              return result.secure_url;
+          }
+          return null;
+      };
 
-    // Increment or decrement the offer by 0.5
-    demand.status = "Terminée";
-    mission.status="Terminée"
-    const newFacture = new factureModel({
-     partner:mission?.driver,
-     totalAmmount:demand?.remunerationAmount,
-     mission:mission
+      const imagesUploaded = [];
 
-    });
-    if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url == 'string')) {
+      await Promise.all(
+          Object.values(req?.files || {}).map(async (file) => {
+              try {
+                  const uploadedUrl = await uploadFileToCloudinary(file, `mission:${demandId}`);
+                  imagesUploaded.push(uploadedUrl);
+              } catch (error) {
+                  console.error("Error uploading file to Cloudinary:", error);
+                  throw error;
+              }
+          })
+      );
 
-      mission.termineemissionImages = imagesUploaded;
-  } else {
-      console.error('Invalid image data format');
-      // Handle the error accordingly
-      res.status(400).json({ message: 'Invalid image data format' });
-      return;
-  }
-    mission.termineemissionImages= imagesUploaded
-    mission.termineeMissionCmnt = req.body.termineeMissionCmnt;
-    const createdFacture = await newFacture.save();
+      // Update mission status
+      demand.status = "Terminée";
+      mission.status = "Terminée";
 
-    // Save the new demand
-    // const createdDemande = await newDemande.save();
+      // Create a new invoice for the mission
+      const newFacture = new factureModel({
+          partner: mission?.driver,
+          totalAmmount: demand?.remunerationAmount,
+          mission: mission._id
+      });
 
+      // Ensure images are correctly formatted
+      if (Array.isArray(imagesUploaded) && imagesUploaded.every(url => typeof url === 'string')) {
+          mission.termineemissionImages = imagesUploaded;
+      } else {
+          console.error('Invalid image data format');
+          await logActivity("Failed to Terminate Mission", userId, { reason: "Invalid image format", demandId });
+          return res.status(400).json({ message: 'Format d\'image invalide' });
+      }
 
+      mission.termineeMissionCmnt = req.body.termineeMissionCmnt;
+      const createdFacture = await newFacture.save();
 
-    // Save the updated demand
-    const updatedDemand = await demand.save();
-    const updatedMission = await mission.save();
+      // Save updates
+      const updatedDemand = await demand.save();
+      const updatedMission = await mission.save();
 
-    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+      await logActivity("Terminated Mission", userId, {
+          demandId,
+          missionId: mission._id,
+          status: "Terminée",
+          imagesUploaded,
+          factureId: createdFacture._id
+      });
+
+      res.status(200).json({ message: 'Mission terminée avec succès.', demand: updatedDemand });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error(error);
+      await logActivity("Error in TermineeMission", userId, { error: error.message, demandId });
+
+      res.status(500).json({ message: 'Erreur interne du serveur.' });
   }
 };
+
 const ConfirmeMissionByDriver = async (req, res) => {
   const userId = req.user.id; // Assuming user ID is available in req.user.id
-  const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
+  const demandId = req.params.demandId; // Assuming demandId is passed in request parameters
 
   try {
-    // Find the demand by ID and user ID
-    const demand = await devisModel.findOne({ _id: demandId});
-    const mission = await demandeModels.findOne({ _id: demand.mission._id })
+      // Find the demand and mission
+      const demand = await devisModel.findOne({ _id: demandId });
+      const mission = await demandeModels.findOne({ _id: demand?.mission._id });
 
-    if (!demand) {
-      return res.status(404).json({ message: 'Demand not found for the user.' });
-    }
+      if (!demand) {
+          await logActivity("Failed to Confirm Mission", userId, { reason: "Demand not found", demandId });
+          return res.status(404).json({ message: 'Demande non trouvée.' });
+      }
 
-    // Check if the demand has a driver attribute, if not, set it to the user ID
-    if (!mission?.driver) {
-      mission.driver = userId;
-    } else if (mission.status == "Confirmée driver") {
-      return res.status(400).json({ message: ' mission déjà prise un autre' });
-    }
-    // Increment or decrement the offer by 0.5
-    demand.status = "Confirmée driver";
-    mission.status="Confirmée driver"
+      // Assign the driver if not already assigned
+      if (!mission?.driver) {
+          mission.driver = userId;
+      } else if (mission.status === "Confirmée driver") {
+          await logActivity("Failed to Confirm Mission", userId, { reason: "Mission already confirmed by another driver", demandId });
+          return res.status(400).json({ message: 'Mission déjà prise par un autre conducteur.' });
+      }
 
-    const updatedDemand = await demand.save();
-    const updatedMission = await mission.save();
+      // Update mission status
+      demand.status = "Confirmée driver";
+      mission.status = "Confirmée driver";
 
-    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+      const updatedDemand = await demand.save();
+      const updatedMission = await mission.save();
+
+      await logActivity("Mission Confirmed by Driver", userId, {
+          demandId,
+          missionId: mission._id,
+          status: "Confirmée driver"
+      });
+
+      res.status(200).json({ message: 'Mission confirmée avec succès.', demand: updatedDemand });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error(error);
+      await logActivity("Error in ConfirmeMissionByDriver", userId, { error: error.message, demandId });
+
+      res.status(500).json({ message: 'Erreur interne du serveur.' });
   }
 };
 
@@ -1185,23 +1153,28 @@ const RefuseMission = async (req, res) => {
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
 
   try {
-    // Find the demand by ID and user ID
-    const demand = await demandeModels.findOne({ _id: demandId });
+      // Find the demand by ID
+      const demand = await demandeModels.findOne({ _id: demandId });
 
-    if (!demand) {
-      return res.status(404).json({ message: 'Demand not found for the user.' });
-    }
+      if (!demand) {
+          await logActivity("Failed to Reject Mission", userId, { reason: "Demand not found", demandId });
+          return res.status(404).json({ message: 'Demande non trouvée.' });
+      }
 
-    // Increment or decrement the offer by 0.5
-    demand.status ="rejected" ;
+      // Update demand status to "rejected"
+      demand.status = "rejected";
 
-    // Save the updated demand
-    const updatedDemand = await demand.save();
+      // Save the updated demand
+      const updatedDemand = await demand.save();
 
-    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+      await logActivity("Mission Rejected", userId, { demandId, status: "rejected" });
+
+      res.status(200).json({ message: 'Mission refusée avec succès.', demand: updatedDemand });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error(error);
+      await logActivity("Error in RefuseMission", userId, { error: error.message, demandId });
+
+      res.status(500).json({ message: 'Erreur interne du serveur.' });
   }
 };
 const CompleteMission = async (req, res) => {
@@ -1209,23 +1182,28 @@ const CompleteMission = async (req, res) => {
   const demandId = req.params.demandId; // Assuming you pass the demandId in the request parameters
 
   try {
-    // Find the demand by ID and user ID
-    const demand = await demandeModels.findOne({ _id: demandId });
+      // Find the demand by ID
+      const demand = await demandeModels.findOne({ _id: demandId });
 
-    if (!demand) {
-      return res.status(404).json({ message: 'Demand not found for the user.' });
-    }
+      if (!demand) {
+          await logActivity("Failed to Complete Mission", userId, { reason: "Demand not found", demandId });
+          return res.status(404).json({ message: 'Demande non trouvée.' });
+      }
 
-    // Increment or decrement the offer by 0.5
-    demand.status ="Completed" ;
+      // Update demand status to "Completed"
+      demand.status = "Completed";
 
-    // Save the updated demand
-    const updatedDemand = await demand.save();
+      // Save the updated demand
+      const updatedDemand = await demand.save();
 
-    res.status(200).json({ message: 'Mission updated successfully', demand: updatedDemand });
+      await logActivity("Mission Completed", userId, { demandId, status: "Completed" });
+
+      res.status(200).json({ message: 'Mission complétée avec succès.', demand: updatedDemand });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error(error);
+      await logActivity("Error in CompleteMission", userId, { error: error.message, demandId });
+
+      res.status(500).json({ message: 'Erreur interne du serveur.' });
   }
 };
 const decreaseOffer = async (req, res) => {
@@ -1300,12 +1278,7 @@ const SetUserStatus = async (req, res) => {
 };
 
 
-// @desc    Auth user & get token
-// @route   POST /api/users/login
-// @access  Public
 let responseSent = false;
-
-// let responseSent = false;
 const authUser = async (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body);
 
@@ -1446,16 +1419,6 @@ const updatePassword = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
-// @desc    Register a new user
-// @route   POST /api/users
-// @access  Public
 const registerUser = asyncHandler(async (req, res, next) => {
 
   const { errors, isValid } = validateRegisterInput(req.body)
@@ -1549,89 +1512,100 @@ const AddPartner = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = PartnerValidationInput(req.body);
   const { kbis } = req.files;
 
-
   try {
-    if (!isValid) {
-
-      return res.status(404).json(errors);
-    }
-
-    let responseSent = false;
-
-    // Check if email already exists
-    const existingEmailUser = await User.findOne({ email: req.body.email });
-    if (existingEmailUser) {
-      errors.email = "Email already exists";
-      responseSent = true;
-      return res.status(400).json(errors);
-    }
-
-    // Check if siret number already exists
-    const existingSiretUser = await User.findOne({ siret: req.body.siret });
-    if (existingSiretUser) {
-      errors.siret = 'This SIREN/SIRET already exists';
-      responseSent = true;
-      return res.status(400).json(errors);
-    }
-
-    // Check if phone number already exists
-    const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber });
-    if (existingPhoneNumberUser) {
-      errors.phoneNumber = 'Phone number already exists';
-      responseSent = true;
-      return res.status(400).json(errors);
-    }
-
-    if (!responseSent) {
-      if (kbis) {
-        const result = await cloudinary.uploader.upload(kbis.path, {
-          resource_type: 'auto',
-          folder: 'pdf_uploads',
-          public_id: `kbis_${Date.now()}`,
-          overwrite: true,
-        });
-
-        req.body.kbis = result.secure_url;
+      if (!isValid) {
+          await logActivity("Failed to Add Partner", req.user.id, { reason: "Validation failed", errors });
+          return res.status(404).json(errors);
       }
 
-      const GeneratedPassword = generateRandomPassword();
-      const user = await new User({
-        name: req.body.name,
-        addressPartner: req.body.addressPartner,
-        contactName: req.body.contactName,
-        email: req.body.email,
-        phoneNumber: req.body.phoneNumber,
-        password: bcrypt.hashSync(GeneratedPassword, 10),
-        role: "PARTNER",
-        verified: true,
-        siret: req.body.siret,
-        kbis: req.body.kbis,
-        firstLogin:true
-      });
-      await profileModels.create({
-        user: user._id,
-        // avatar: profile.picture,
-        tel:  req.body.phoneNumber,
-    });
+      let responseSent = false;
 
-      mailer.send({
-        to: ["zbousnina@yahoo.com", user.email],
-        subject: "Welcome to Convoyage! Your Account Details Inside",
-        html: generateEmailTemplatePartner(user.contactName, user.name, user.email, GeneratedPassword),
-      }, (err) => {});
+      // Check if email already exists
+      const existingEmailUser = await User.findOne({ email: req.body.email });
+      if (existingEmailUser) {
+          errors.email = "Email already exists";
+          await logActivity("Failed to Add Partner", req.user.id, { reason: "Email already exists", email: req.body.email });
+          responseSent = true;
+          return res.status(400).json(errors);
+      }
 
-      user.save()
-        .then(savedUser => {
-          res.status(200).json({ success: true, user: savedUser, msg: 'An email has been sent to your registered email address.' });
-        })
-        .catch(err => {
-          console.error(err);
-          res.status(500).json({ success: false, message: "Error" });
-        });
-    }
+      // Check if SIRET number already exists
+      const existingSiretUser = await User.findOne({ siret: req.body.siret });
+      if (existingSiretUser) {
+          errors.siret = "This SIREN/SIRET already exists";
+          await logActivity("Failed to Add Partner", req.user.id, { reason: "SIRET already exists", siret: req.body.siret });
+          responseSent = true;
+          return res.status(400).json(errors);
+      }
+
+      // Check if phone number already exists
+      const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber });
+      if (existingPhoneNumberUser) {
+          errors.phoneNumber = "Phone number already exists";
+          await logActivity("Failed to Add Partner", req.user.id, { reason: "Phone number already exists", phoneNumber: req.body.phoneNumber });
+          responseSent = true;
+          return res.status(400).json(errors);
+      }
+
+      if (!responseSent) {
+          if (kbis) {
+              const result = await cloudinary.uploader.upload(kbis.path, {
+                  resource_type: "auto",
+                  folder: "pdf_uploads",
+                  public_id: `kbis_${Date.now()}`,
+                  overwrite: true,
+              });
+
+              req.body.kbis = result.secure_url;
+          }
+
+          const GeneratedPassword = generateRandomPassword();
+          const user = new User({
+              name: req.body.name,
+              addressPartner: req.body.addressPartner,
+              contactName: req.body.contactName,
+              email: req.body.email,
+              phoneNumber: req.body.phoneNumber,
+              password: bcrypt.hashSync(GeneratedPassword, 10),
+              role: "PARTNER",
+              verified: true,
+              siret: req.body.siret,
+              kbis: req.body.kbis,
+              firstLogin: true,
+          });
+
+          await profileModels.create({
+              user: user._id,
+              tel: req.body.phoneNumber,
+          });
+
+          mailer.send({
+              to: ["zbousnina@yahoo.com", user.email],
+              subject: "Welcome to Convoyage! Your Account Details Inside",
+              html: generateEmailTemplatePartner(user.contactName, user.name, user.email, GeneratedPassword),
+          }, (err) => {});
+
+          user.save()
+              .then(async (savedUser) => {
+                  await logActivity("Partner Added Successfully", req.user.id, {
+                      partnerId: savedUser._id,
+                      email: savedUser.email,
+                      phoneNumber: savedUser.phoneNumber,
+                      siret: savedUser.siret
+                  });
+
+                  res.status(200).json({ success: true, user: savedUser, msg: "An email has been sent to your registered email address." });
+              })
+              .catch(async (err) => {
+                  console.error(err);
+                  await logActivity("Error in AddPartner", req.user.id, { error: err.message });
+                  res.status(500).json({ success: false, message: "Error" });
+              });
+      }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+      console.error(error);
+      await logActivity("Error in AddPartner", req.user.id, { error: error.message });
+      res.status(500).json({ message: error.message });
   }
 });
 const Register = asyncHandler(async (req, res, next) => {
@@ -1745,12 +1719,12 @@ const updateTrancheConfiguration = async (req, res) => {
       // Find the mission request
       let demande = await DemandeModel.findById(id);
       if (!demande) {
+          await logActivity("Failed to Update Tranche Configuration", req.user.id, { reason: "Mission request not found", demandeId: id });
           return res.status(404).json({ message: "Mission request not found" });
       }
 
-      // Update price and factureIncluded fields
+      // Update price
       demande.price = price;
-
 
       // Update tranches if provided
       if (tranches && Array.isArray(tranches)) {
@@ -1774,88 +1748,103 @@ const updateTrancheConfiguration = async (req, res) => {
 
       // Save the updated mission request
       await demande.save();
+
+      await logActivity("Updated Tranche Configuration", req.user.id, {
+          demandeId: id,
+          price,
+          tranches,
+          remunerationAmount: demande.remunerationAmount
+      });
+
       return res.status(200).json({ message: "Tranche configuration updated", demande });
   } catch (error) {
       console.error("Error updating tranche configuration:", error);
+      await logActivity("Error in updateTrancheConfiguration", req.user.id, { error: error.message });
+
       return res.status(500).json({ message: "Server error" });
   }
 };
 const CompletePartnerProfile = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = partnerCompleteProfileValidation(req.body);
   const { kbis } = req.files || {};
-  const userId = req.user.id; // Assuming the authenticated user's ID is available in `req.user` from Passport.
+  const userId = req.user.id; // Authenticated user's ID from Passport
 
   try {
-    if (!isValid) {
+      if (!isValid) {
+          await logActivity("Failed to Complete Partner Profile", userId, { reason: "Validation failed", errors });
+          return res.status(404).json(errors);
+      }
 
-      return res.status(404).json(errors);
-    }
+      const user = await User.findById(userId);
+      if (!user) {
+          await logActivity("Failed to Complete Partner Profile", userId, { reason: "User not found" });
+          return res.status(404).json({ message: "Utilisateur non trouvé." });
+      }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "Utilisateur non trouvé." });
-    }
+      // Check if phone number already exists
+      const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber, _id: { $ne: userId } });
+      if (existingPhoneNumberUser) {
+          errors.phoneNumber = "Ce numéro de téléphone est déjà utilisé.";
+          await logActivity("Failed to Complete Partner Profile", userId, { reason: "Phone number already exists", phoneNumber: req.body.phoneNumber });
+          return res.status(400).json(errors);
+      }
 
+      // Check if SIRET number already exists
+      if (req.body.siret) {
+          const existingSiretUser = await User.findOne({ siret: req.body.siret, _id: { $ne: userId } });
+          if (existingSiretUser) {
+              errors.siret = "Ce numéro SIRET/SIREN est déjà utilisé.";
+              await logActivity("Failed to Complete Partner Profile", userId, { reason: "SIRET already exists", siret: req.body.siret });
+              return res.status(400).json(errors);
+          }
+      }
 
+      // Upload KBIS if provided
+      if (kbis) {
+          const result = await cloudinary.uploader.upload(kbis.path, {
+              resource_type: "auto",
+              folder: "pdf_uploads",
+              public_id: `kbis_${Date.now()}`,
+              overwrite: true,
+          });
+          req.body.kbis = result.secure_url;
+      }
 
-    const existingPhoneNumberUser = await User.findOne({ phoneNumber: req.body.phoneNumber, _id: { $ne: userId } });
-    if (existingPhoneNumberUser) {
-      errors.phoneNumber = "Ce numéro de téléphone est déjà utilisé.";
-      return res.status(400).json(errors);
-    }
-console.log( req.body.siret)
-if(req.body.siret){
+      // Update partner profile
+      user.name = req.body.name || user.name;
+      user.contactName = req.body.contactName || user.contactName;
+      user.addressPartner = req.body.addressPartner || user.addressPartner;
+      user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+      user.siret = req.body.siret || user.siret;
+      user.kbis = req.body.kbis || user.kbis;
+      user.firstLoginByThirdParty = false;
 
-  const existingSiretUser = await User.findOne({ siret: req.body.siret, _id: { $ne: userId } });
-  if (existingSiretUser) {
-    errors.siret = "Ce numéro SIRET/SIREN est déjà utilisé.";
-    return res.status(400).json(errors);
-  }
-}
+      const updatedUser = await user.save();
 
-    // Upload KBIS if provided
-    if (kbis) {
-      const result = await cloudinary.uploader.upload(kbis.path, {
-        resource_type: "auto",
-        folder: "pdf_uploads",
-        public_id: `kbis_${Date.now()}`,
-        overwrite: true,
+      await logActivity("Partner Profile Updated", userId, {
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          siret: user.siret,
+          kbis: user.kbis
       });
-      req.body.kbis = result.secure_url;
-    }
 
-    // Update partner profile
-    user.name = req.body.name || user.name;
-    user.contactName = req.body.contactName || user.contactName;
-    user.addressPartner = req.body.addressPartner || user.addressPartner;
-    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
-    user.siret = req.body.siret || user.siret;
-    user.kbis = req.body.kbis || user.kbis;
-    user.firstLoginByThirdParty= false;
-
-    const updatedUser = await user.save();
-
-    res.status(200).json({
-      success: true,
-      user: updatedUser,
-      msg: "Profil mis à jour avec succès.",
-    });
+      res.status(200).json({
+          success: true,
+          user: updatedUser,
+          msg: "Profil mis à jour avec succès.",
+      });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Une erreur interne est survenue." });
+      console.error(error);
+      await logActivity("Error in CompletePartnerProfile", userId, { error: error.message });
+
+      res.status(500).json({ message: "Une erreur interne est survenue." });
   }
 });
-
-
-
-
-
 
 const updatePartner = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = PartnerValidationInput(req.body);
 
   try {
-
       const partnerId = req.params.id;
       const newEmail = req.body.email;
 
@@ -1863,100 +1852,110 @@ const updatePartner = asyncHandler(async (req, res, next) => {
       const emailExistsInOtherAccount = await User.findOne({ email: newEmail, _id: { $ne: partnerId } });
 
       if (emailExistsInOtherAccount) {
-        res.status(400).json({ success: false, message: "The new email already exists in another account." });
-        return;
+          await logActivity("Failed to Update Partner", req.user.id, { reason: "Email already in use", email: newEmail });
+          return res.status(400).json({ success: false, message: "The new email already exists in another account." });
       }
 
       const existingPartner = await User.findById(partnerId);
 
       if (!existingPartner) {
-        res.status(404).json({ success: false, message: "Partner not found." });
-      } else {
-        // Generate a new password
-        const newGeneratedPassword = generateRandomPassword();
+          await logActivity("Failed to Update Partner", req.user.id, { reason: "Partner not found", partnerId });
+          return res.status(404).json({ success: false, message: "Partner not found." });
+      }
 
-        // Update partner fields
-        existingPartner.name = req.body.name || existingPartner.name;
-        existingPartner.addressPartner = req.body.addressPartner ||existingPartner.addressPartner ;
-        existingPartner.contactName = req.body.contactName || existingPartner.contactName;
-        existingPartner.email = newEmail || existingPartner.email ; // Update with the new email
-        existingPartner.phoneNumber = req.body.phoneNumber || existingPartner.phoneNumber;
-        existingPartner.password = bcrypt.hashSync(newGeneratedPassword, 10);
-        existingPartner.firstLogin = true;
+      // Generate a new password
+      const newGeneratedPassword = generateRandomPassword();
 
-        // Save the updated partner if the new email is unique
-        const updatedPartner = await existingPartner.save();
+      // Update partner fields
+      existingPartner.name = req.body.name || existingPartner.name;
+      existingPartner.addressPartner = req.body.addressPartner || existingPartner.addressPartner;
+      existingPartner.contactName = req.body.contactName || existingPartner.contactName;
+      existingPartner.email = newEmail || existingPartner.email;
+      existingPartner.phoneNumber = req.body.phoneNumber || existingPartner.phoneNumber;
+      existingPartner.password = bcrypt.hashSync(newGeneratedPassword, 10);
+      existingPartner.firstLogin = true;
 
-        // Send an email with the new password
-        mailer.send({
+      // Save the updated partner
+      const updatedPartner = await existingPartner.save();
+
+      // Send an email with the new password
+      mailer.send({
           to: ["zbousnina@yahoo.com", updatedPartner.email],
           subject: "Convoyage: Your Account Information has been Updated",
           html: generateEmailTemplatePartner(updatedPartner.contactName, updatedPartner.name, updatedPartner.email, newGeneratedPassword),
-        }, (err) => {
+      }, (err) => {
           if (err) {
-            console.error(err); // Log the error for debugging
+              console.error(err); // Log the error for debugging
           }
-        });
+      });
 
-        res.status(200).json({ success: true, partner: updatedPartner, msg: 'Partner updated successfully. A new email has been sent with your updated account information.' });
-      }
+      await logActivity("Partner Updated Successfully", req.user.id, {
+          partnerId,
+          email: updatedPartner.email,
+          phoneNumber: updatedPartner.phoneNumber,
+          address: updatedPartner.addressPartner
+      });
+
+      res.status(200).json({
+          success: true,
+          partner: updatedPartner,
+          msg: 'Partner updated successfully. A new email has been sent with your updated account information.'
+      });
 
   } catch (error) {
-    res.status(500).json({ message: error });
+      console.error(error);
+      await logActivity("Error in updatePartner", req.user.id, { error: error.message });
+      res.status(500).json({ message: error.message });
   }
 });
 
 const updateMission = asyncHandler(async (req, res, next) => {
   try {
-    const missionId = req.params.id;
-    const existingMission = await DemandeModel.findById(missionId);
+      const missionId = req.params.id;
+      const existingMission = await DemandeModel.findById(missionId);
 
-    if (!existingMission) {
-      return res.status(404).json({ success: false, message: "Mission not found." });
-    }
-
-    // Update Mission fields with values from the request body
-    Object.keys(req.body).forEach((key) => {
-      if (key !== 'dateDepart') { // exclude 'dateDepart' for special handling
-        // Update the field only if the value is not empty
-        if (req.body[key] !== undefined && req.body[key] !== null && req.body[key] !== '') {
-          existingMission[key] = req.body[key];
-        }
-      } else {
-        // Handle 'dateDepart' separately
-        existingMission.dateDepart = req.body.dateDepart ? new Date(req.body.dateDepart) : existingMission.dateDepart;
+      if (!existingMission) {
+          await logActivity("Failed to Update Mission", req.user.id, { reason: "Mission not found", missionId });
+          return res.status(404).json({ success: false, message: "Mission not found." });
       }
-    });
 
-    // Save the updated Mission
-    const updatedMission = await existingMission.save();
+      // Update Mission fields with values from the request body
+      const updatedFields = {};
+      Object.keys(req.body).forEach((key) => {
+          if (key !== 'dateDepart') { // Exclude 'dateDepart' for special handling
+              if (req.body[key] !== undefined && req.body[key] !== null && req.body[key] !== '') {
+                  existingMission[key] = req.body[key];
+                  updatedFields[key] = req.body[key];
+              }
+          } else {
+              // Handle 'dateDepart' separately
+              existingMission.dateDepart = req.body.dateDepart ? new Date(req.body.dateDepart) : existingMission.dateDepart;
+              updatedFields.dateDepart = existingMission.dateDepart;
+          }
+      });
 
-    res.status(200).json({
-      success: true,
-      mission: updatedMission,
-      msg: 'Mission updated successfully.'
-    });
+      // Save the updated Mission
+      const updatedMission = await existingMission.save();
+
+      await logActivity("Mission Updated Successfully", req.user.id, {
+          missionId,
+          updatedFields
+      });
+
+      res.status(200).json({
+          success: true,
+          mission: updatedMission,
+          msg: 'Mission updated successfully.'
+      });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal Server Error." });
+      console.error(error);
+      await logActivity("Error in updateMission", req.user.id, { error: error.message, missionId: req.params.id });
+
+      res.status(500).json({ message: "Internal Server Error." });
   }
 });
 
-
-
-// module.exports = updatePartner;
-
-
-
-
-
-
-
-
-
-// @desc    Register a new user
-// @route   POST /api/users/resendotp
-// @access  Public
 const resendOTP = async (req, res, next) => {
   const { email } = req.body;
   try {
@@ -2036,9 +2035,6 @@ const resendOTPDeleteAccount = async (req, res, next) => {
   }
 };
 
-// @desc    Verify user email
-// @route   POST /api/users/verifyemail
-// @access  Public
 const verifyEmail = async (req, res) => {
   const { userId, otp } = req.body;
 
@@ -2088,131 +2084,102 @@ const verifyEmail = async (req, res) => {
 };
 
 const DeleteAccount = async (req, res) => {
-  const {  otp } = req.body;
-  const userId = req.user.id
-
+  const { otp } = req.body;
+  const userId = req.user.id;
 
   if (!userId || !otp.trim()) {
-    return sendError(res, 'Invalid request, missing parameters!');
+      await logActivity("Failed to Delete Account", userId, { reason: "Invalid request, missing parameters" });
+      return sendError(res, "Invalid request, missing parameters!");
   }
 
   if (!isValidObjectId(userId)) {
-    return sendError(res, 'Invalid user id!');
+      await logActivity("Failed to Delete Account", userId, { reason: "Invalid user ID" });
+      return sendError(res, "Invalid user id!");
   }
 
   const user = await User.findById(userId);
   if (!user) {
-    return sendError(res, 'Sorry! User not found!');
+      await logActivity("Failed to Delete Account", userId, { reason: "User not found" });
+      return sendError(res, "Sorry! User not found!");
   }
 
   const token = await verificationTokenModels.findOne({ owner: user._id });
   if (!token) {
-    return sendError(res, 'Please resend OTP');
+      await logActivity("Failed to Delete Account", userId, { reason: "OTP token missing" });
+      return sendError(res, "Please resend OTP");
   }
 
   const isMatched = await token.compareToken(otp);
   if (!isMatched) {
-
-    return sendError(res, 'Please provide a valid token!');
+      await logActivity("Failed to Delete Account", userId, { reason: "Invalid OTP" });
+      return sendError(res, "Please provide a valid token!");
   }
 
   await verificationTokenModels.findByIdAndDelete(token._id);
   await user.remove();
 
-  mailer.send({
-        to: ["zbousnina@yahoo.com", user.email],
-        subject: "Account Deleted Successfully",
-        html: plainEmailTemplate("Account Deleted Successfully",
-        "Your account has been deleted successfully!"
-      )
-      }, (err)=>{
+  mailer.send(
+      {
+          to: ["zbousnina@yahoo.com", user.email],
+          subject: "Account Deleted Successfully",
+          html: plainEmailTemplate(
+              "Account Deleted Successfully",
+              "Your account has been deleted successfully!"
+          ),
+      },
+      (err) => {
+          if (err) console.error("Error sending email:", err);
+      }
+  );
 
-      })
+  await logActivity("Account Deleted Successfully", userId, { email: user.email });
 
-  res.status(200).json({success:true, message: "Account deleted successfully" });
+  res.status(200).json({ success: true, message: "Account deleted successfully" });
 };
 const DeleteAccountByAdmin = async (req, res) => {
   const { id } = req.params; // Assuming the user ID is in the URL parameters
 
   if (!id || !isValidObjectId(id)) {
-    return sendError(res, 'Invalid user id!');
+      await logActivity("Failed to Delete Account", req.user.id, { reason: "Invalid user ID", userId: id });
+      return sendError(res, "Invalid user id!");
   }
 
   try {
-    const user = await User.findById(id);
+      const user = await User.findById(id);
 
-    if (!user) {
-      return sendError(res, 'User not found!');
-    }
-
-    // You may want to add additional checks or restrictions here if needed
-
-    await user.remove();
-
-    mailer.send({
-      to: ["zbousnina@yahoo.com", user.email],
-      subject: "Account Deleted by Admin",
-      html: generateDeleteAccountEmailTemplate(user.name, user.email)
-     }, (err) => {
-      if (err) {
-        console.error(err);
+      if (!user) {
+          await logActivity("Failed to Delete Account", req.user.id, { reason: "User not found", userId: id });
+          return sendError(res, "User not found!");
       }
-    });
 
-    res.status(200).json({ success: true, message: "Account deleted successfully" });
+      // You may want to add additional checks or restrictions here if needed
+
+      await user.remove();
+
+      mailer.send(
+          {
+              to: ["zbousnina@yahoo.com", user.email],
+              subject: "Account Deleted by Admin",
+              html: generateDeleteAccountEmailTemplate(user.name, user.email),
+          },
+          (err) => {
+              if (err) {
+                  console.error("Error sending email:", err);
+              }
+          }
+      );
+
+      await logActivity("Account Deleted by Admin", req.user.id, { deletedUserId: id, deletedUserEmail: user.email });
+
+      res.status(200).json({ success: true, message: "Account deleted successfully" });
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Error deleting account');
+      console.error(error);
+      await logActivity("Error in DeleteAccountByAdmin", req.user.id, { error: error.message, userId: id });
+
+      return sendError(res, "Error deleting account");
   }
 };
 
-
-
-
-// @desc    Forgot password
-// @route   POST /api/users/forgotpassword
-// @access  Public
-// const forgotPassword = async (req, res) => {
-
-//   const { email } = req.body;
-
-//   if (!email) {
-//     return sendError(res, 'Please provide a valid email!');
-//   }
-
-//   const user = await User.findOne({ email });
-
-//   if (!user) {
-//     return sendError(res, 'Sorry! User not found!');
-//   }
-
-//   const token = await resetTokenModels.findOne({ owner: user._id });
-//   if (token ) {
-//     return sendError(res, 'You can request a new token after one hour!');
-//   }
-
-//   const resetToken = await createRandomBytes();
-//   // const resetTokenExpire = Date.now() + 3600000;
-
-//   const newToken = new resetTokenModels({
-//     owner: user._id,
-//     token: resetToken
-
-
-//   });
-
-//   await newToken.save();
-
-//   mailer.send({
-//     to: ["zbousnina@yahoo.com",user.email ],
-//     subject: "Verification code",
-//     html: generatePasswordResetTemplate(`https://convo-1.netlify.app/reset-password?token=${resetToken}&id=${user._id}`)
-//   }, (err)=>{
-//
-//   })
-
-//   res.status(200).json({ message: 'Reset password link has been sent to your email!' });
-// };
 const forgotPassword = async (req, res) => {
   try {
 
@@ -2280,11 +2247,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-
-
-// @desc    Reset password
-// @route   POST /api/users/resetpassword
-// @access  Public
 const resetPassword = async (req, res) => {
   const { password } = req.body;
   const user = await User.findById(req.user._id);
@@ -2386,9 +2348,7 @@ const getPartnerById = async (req, res) => {
 };
 
 
-// @desc    Delete user
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
+
 const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
 
@@ -2401,9 +2361,7 @@ const deleteUser = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc    Get user by ID
-// @route   GET /api/users/:id
-// @access  Private/Admin
+
 const getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select('-password')
 
@@ -2433,9 +2391,7 @@ const getAllUserDetailsById = async (req, res) => {
 };
 
 
-// @desc    Get user by Email
-// @route   GET /api/users/:email
-// @access  Private/Admin
+
 
 const getUserByEmail = async (req, res) => {
   const { email } = req.params
@@ -2454,9 +2410,7 @@ const getUserByEmail = async (req, res) => {
   }
 }
 
-// @desc    Update user
-// @route   PUT /api/users/:id
-// @access  Private/Admin
+
 const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
 
@@ -2742,199 +2696,182 @@ const getTotalDemandesCount = async (req, res) => {
   }
 };
 
-// const AddDriver = asyncHandler(async (req, res, next) => {
-//   const { errors, isValid } = DriverValidationInput(req.body)
-//   try {
-//     if (!isValid) {
-//       res.status(404).json(errors);
-//     } else {
-//       User.findOne({ email: req.body.email })
-//         .then(async exist => {
-//           if (exist) {
-//             res.status(404).json({success:false, email: "Email already exist" })
-//           } else {
-//             // req.body.role = "USER"
-//             const GeneratedPassword = generateRandomPassword()
-//             const user = new User({
-//               name: req.body.name,
-//               email: req.body.email,
-//               password: bcrypt.hashSync(GeneratedPassword, 10),
-//               role: "DRIVER",
-//               verified:true
-//             })
-//             mailer.send({
-//               to: ["zbousnina@yahoo.com",user.email ],
-//               subject: "Welcome to Convoyage! Your Account Details Inside",
-//               html: generateEmailTemplateDriver( user.name, user.email, GeneratedPassword)
-//             }, (err)=>{
-//             })
-//             user.save()
-//               .then(user => {
-//                   res.status(200).json({ success: true,user, msg: 'A E-mail has been sent to your registered email address.'} )
-//               })
-//               .catch(err => {
-//                 res.status(500).json({ success:false, message: "error" })
-//               })
-//           }
-//         })
-//     }
-//   } catch (error) {
-//     res.status(500).json({ message: error })
-//   }
-// })
+
 const AddDriver = asyncHandler(async (req, res, next) => {
   const { errors, isValid } = DriverValidationInput(req.body);
 
   const {
-    assurance,
-    CinfrontCard,
-    CinbackCard,
-    permisConduirefrontCard,
-    permisConduirebackCard,
-    proofOfAddress,
-    avatar,
-    kbis
-
-   } = req.files;
+      assurance,
+      CinfrontCard,
+      CinbackCard,
+      permisConduirefrontCard,
+      permisConduirebackCard,
+      proofOfAddress,
+      avatar,
+      kbis
+  } = req.files;
 
   try {
-    if (!isValid) {
-      return res.status(404).json(errors);
-    }
-
-    const existingUser = await User.findOne({ email: req.body.email });
-
-    if (existingUser) {
-      return res.status(404).json({ success: false, email: 'Email already exists' });
-    }
-
-    const generatedPassword = generateRandomPassword();
-    const newUser = new User({
-      name: req.body.name,
-      email: req.body.email,
-      password: bcrypt.hashSync(generatedPassword, 10),
-      role: 'DRIVER',
-      verified: true,
-    });
-
-    const user = await newUser.save();
-    const uploadFileToCloudinary = async (file, folderName) => {
-      if (file) {
-        const result = await cloudinary.uploader.upload(file.path, {
-          resource_type: 'auto',
-          folder: folderName,
-          public_id: `${folderName}_${Date.now()}`,
-          overwrite: true,
-        });
-
-        return result.secure_url;
+      if (!isValid) {
+          await logActivity("Failed to Add Driver", req.user.id, { reason: "Validation failed", errors });
+          return res.status(404).json(errors);
       }
-      return null;
-    };
 
-    const driverDocuments = new DriverDocuments({
-      user: user._id,
-      assurance: await uploadFileToCloudinary(assurance, 'assurance_uploads'),
-      CinfrontCard: await uploadFileToCloudinary(CinfrontCard, 'cin_uploads'),
-      CinbackCard: await uploadFileToCloudinary(CinbackCard, 'cin_uploads'),
-      permisConduirefrontCard: await uploadFileToCloudinary(permisConduirefrontCard, 'permis_uploads'),
-      permisConduirebackCard: await uploadFileToCloudinary(permisConduirebackCard, 'permis_uploads'),
-      proofOfAddress: await uploadFileToCloudinary(proofOfAddress, 'address_uploads'),
-      kbis: await uploadFileToCloudinary(kbis, 'address_uploads'),
-      avatar: await uploadFileToCloudinary(avatar, 'avatar_uploads'),
-    });
+      const existingUser = await User.findOne({ email: req.body.email });
 
-    await driverDocuments.save();
+      if (existingUser) {
+          await logActivity("Failed to Add Driver", req.user.id, { reason: "Email already exists", email: req.body.email });
+          return res.status(404).json({ success: false, email: "Email already exists" });
+      }
 
-    // You can send an email or response here if needed
-    mailer.send({
-      to: ["zbousnina@yahoo.com",user.email ],
-      subject: "Welcome to Convoyage! Your Account Details Inside",
-      html: generateEmailTemplateDriver( user.name, user.email, generatedPassword)
-    }, (err)=>{
-    })
+      const generatedPassword = generateRandomPassword();
+      const newUser = new User({
+          name: req.body.name,
+          email: req.body.email,
+          password: bcrypt.hashSync(generatedPassword, 10),
+          role: "DRIVER",
+          verified: true,
+      });
 
-    return res.status(200).json({
-      success: true,
-      user,
-      msg: 'A E-mail has been sent to your registered email address.',
-    });
+      const user = await newUser.save();
+      const uploadFileToCloudinary = async (file, folderName) => {
+          if (file) {
+              const result = await cloudinary.uploader.upload(file.path, {
+                  resource_type: "auto",
+                  folder: folderName,
+                  public_id: `${folderName}_${Date.now()}`,
+                  overwrite: true,
+              });
+
+              return result.secure_url;
+          }
+          return null;
+      };
+
+      const driverDocuments = new DriverDocuments({
+          user: user._id,
+          assurance: await uploadFileToCloudinary(assurance, "assurance_uploads"),
+          CinfrontCard: await uploadFileToCloudinary(CinfrontCard, "cin_uploads"),
+          CinbackCard: await uploadFileToCloudinary(CinbackCard, "cin_uploads"),
+          permisConduirefrontCard: await uploadFileToCloudinary(permisConduirefrontCard, "permis_uploads"),
+          permisConduirebackCard: await uploadFileToCloudinary(permisConduirebackCard, "permis_uploads"),
+          proofOfAddress: await uploadFileToCloudinary(proofOfAddress, "address_uploads"),
+          kbis: await uploadFileToCloudinary(kbis, "address_uploads"),
+          avatar: await uploadFileToCloudinary(avatar, "avatar_uploads"),
+      });
+
+      await driverDocuments.save();
+
+      // Send an email to the driver
+      mailer.send(
+          {
+              to: ["zbousnina@yahoo.com", user.email],
+              subject: "Welcome to Convoyage! Your Account Details Inside",
+              html: generateEmailTemplateDriver(user.name, user.email, generatedPassword),
+          },
+          (err) => {
+              if (err) {
+                  console.error("Error sending email:", err);
+              }
+          }
+      );
+
+      await logActivity("Driver Added Successfully", req.user.id, {
+          driverId: user._id,
+          email: user.email,
+          name: user.name
+      });
+
+      return res.status(200).json({
+          success: true,
+          user,
+          msg: "An email has been sent to your registered email address.",
+      });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+      console.error(error);
+      await logActivity("Error in AddDriver", req.user.id, { error: error.message });
+
+      return res.status(500).json({ message: error.message });
   }
 });
 const AddDriverDoc_DriverLicence = asyncHandler(async (req, res, next) => {
-
   const {
-    assurance,
-    CinfrontCard,
-    CinbackCard,
-    permisConduirefrontCard,
-    permisConduirebackCard,
-    proofOfAddress,
-    avatar,
-    kbis
+      assurance,
+      CinfrontCard,
+      CinbackCard,
+      permisConduirefrontCard,
+      permisConduirebackCard,
+      proofOfAddress,
+      avatar,
+      kbis
   } = req.files;
+
   try {
-    const uploadFileToCloudinary = async (file, folderName) => {
-      if (file) {
-        const result = await cloudinary.uploader.upload(file.path, {
-          resource_type: 'auto',
-          folder: folderName,
-          public_id: `${folderName}_${Date.now()}`,
-          overwrite: true,
-        });
+      const uploadFileToCloudinary = async (file, folderName) => {
+          if (file) {
+              const result = await cloudinary.uploader.upload(file.path, {
+                  resource_type: "auto",
+                  folder: folderName,
+                  public_id: `${folderName}_${Date.now()}`,
+                  overwrite: true,
+              });
 
-        return result.secure_url;
+              return result.secure_url;
+          }
+          return null;
+      };
+
+      // Find the existing document for the logged-in user
+      let driverDocuments = await DriverDocuments.findOne({ user: req.user.id });
+      if (!driverDocuments) {
+          // If no document found, create a new one
+          driverDocuments = new DriverDocuments({ user: req.user.id });
       }
-      return null;
-    };
-    // Find the existing document for the logged-in user
-    let driverDocuments = await DriverDocuments.findOne({ user: req.user.id });
-    if (!driverDocuments) {
-      // If no document found, create a new one
-      driverDocuments = new DriverDocuments({ user: req.user.id });
-    }
-    // Update or add new values
-     // Update or add new values based on files in req.files
-     if (permisConduirefrontCard) {
-      driverDocuments.permisConduirefrontCard = await uploadFileToCloudinary(permisConduirefrontCard, 'permis_uploads');
-    }
-    if (permisConduirebackCard) {
-      driverDocuments.permisConduirebackCard = await uploadFileToCloudinary(permisConduirebackCard, 'permis_uploads');
-    }
 
-    if ( assurance) {
-      driverDocuments.assurance = await uploadFileToCloudinary(assurance, 'assurance_uploads');
+      // Store updated fields
+      const updatedFields = {};
 
-    }
-
-    if(CinfrontCard ) {
-      driverDocuments.CinfrontCard = await uploadFileToCloudinary(CinfrontCard, 'cin_uploads');
-
-    }
-
-    if(CinbackCard ) {
-      driverDocuments.CinbackCard = await uploadFileToCloudinary(CinbackCard, 'cin_uploads');
-
-
-    }
-
-    if (proofOfAddress) {
-      driverDocuments.proofOfAddress = await uploadFileToCloudinary(proofOfAddress, 'address_uploads');
-    }
-
+      // Update or add new values based on files in req.files
+      if (permisConduirefrontCard) {
+          driverDocuments.permisConduirefrontCard = await uploadFileToCloudinary(permisConduirefrontCard, "permis_uploads");
+          updatedFields.permisConduirefrontCard = driverDocuments.permisConduirefrontCard;
+      }
+      if (permisConduirebackCard) {
+          driverDocuments.permisConduirebackCard = await uploadFileToCloudinary(permisConduirebackCard, "permis_uploads");
+          updatedFields.permisConduirebackCard = driverDocuments.permisConduirebackCard;
+      }
+      if (assurance) {
+          driverDocuments.assurance = await uploadFileToCloudinary(assurance, "assurance_uploads");
+          updatedFields.assurance = driverDocuments.assurance;
+      }
+      if (CinfrontCard) {
+          driverDocuments.CinfrontCard = await uploadFileToCloudinary(CinfrontCard, "cin_uploads");
+          updatedFields.CinfrontCard = driverDocuments.CinfrontCard;
+      }
+      if (CinbackCard) {
+          driverDocuments.CinbackCard = await uploadFileToCloudinary(CinbackCard, "cin_uploads");
+          updatedFields.CinbackCard = driverDocuments.CinbackCard;
+      }
+      if (proofOfAddress) {
+          driverDocuments.proofOfAddress = await uploadFileToCloudinary(proofOfAddress, "address_uploads");
+          updatedFields.proofOfAddress = driverDocuments.proofOfAddress;
+      }
       if (kbis) {
-        driverDocuments.kbis = await uploadFileToCloudinary(kbis, 'address_uploads');
+          driverDocuments.kbis = await uploadFileToCloudinary(kbis, "address_uploads");
+          updatedFields.kbis = driverDocuments.kbis;
       }
 
+      // Save the document
+      await driverDocuments.save();
 
-    // Save the document
-    await driverDocuments.save();
+      await logActivity("Driver Documents Updated", req.user.id, { updatedFields });
 
-    return res.status(200).json({ success: true, msg: 'Driver doc updated' });
+      return res.status(200).json({ success: true, msg: "Driver documents updated successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+      console.error(error);
+      await logActivity("Error in AddDriverDoc_DriverLicence", req.user.id, { error: error.message });
+
+      return res.status(500).json({ message: error.message });
   }
 });
 
@@ -2951,10 +2888,7 @@ const finDocByDriver = async(req, res)=> {
 
 
 const updateDriver = asyncHandler(async (req, res, next) => {
-
-
   try {
-
       const driverId = req.params.id;
       const newEmail = req.body.email;
 
@@ -2962,110 +2896,61 @@ const updateDriver = asyncHandler(async (req, res, next) => {
       const emailExistsInOtherAccount = await User.findOne({ email: newEmail, _id: { $ne: driverId } });
 
       if (emailExistsInOtherAccount) {
-        res.status(400).json({ success: false, message: "The new email already exists in another account." });
-        return;
+          await logActivity("Failed to Update Driver", req.user.id, { reason: "Email already exists", email: newEmail });
+          return res.status(400).json({ success: false, message: "The new email already exists in another account." });
       }
 
       const existingDriver = await User.findById(driverId);
 
       if (!existingDriver) {
-        res.status(404).json({ success: false, message: "Driver not found." });
-      } else {
-        // Generate a new password
-        const newGeneratedPassword = generateRandomPassword();
-
-        // Update Driver fields
-        existingDriver.name = req.body.name || existingDriver.name;
-
-        existingDriver.email = newEmail || existingDriver.email ; // Update with the new email
-
-        existingDriver.password = bcrypt.hashSync(newGeneratedPassword, 10);
-
-        // Save the updated Driver if the new email is unique
-
-        const updatedDriver = await existingDriver.save();
-
-
-        // Send an email with the new password
-        mailer.send({
-          to: ["zbousnina@yahoo.com", updatedDriver.email],
-          subject: "Convoyage: Your Account Information has been Updated",
-           html: generateEmailTemplateDriver( updatedDriver.name, updatedDriver.email, newGeneratedPassword)
-          }, (err) => {
-          if (err) {
-            console.error(err); // Log the error for debugging
-          }
-        });
-
-        res.status(200).json({ success: true, Driver: updatedDriver, msg: 'Driver updated successfully. A new email has been sent with your updated account information.' });
+          await logActivity("Failed to Update Driver", req.user.id, { reason: "Driver not found", driverId });
+          return res.status(404).json({ success: false, message: "Driver not found." });
       }
 
+      // Generate a new password
+      const newGeneratedPassword = generateRandomPassword();
+
+      // Update Driver fields
+      existingDriver.name = req.body.name || existingDriver.name;
+      existingDriver.email = newEmail || existingDriver.email; // Update with the new email
+      existingDriver.password = bcrypt.hashSync(newGeneratedPassword, 10);
+
+      // Save the updated Driver if the new email is unique
+      const updatedDriver = await existingDriver.save();
+
+      // Send an email with the new password
+      mailer.send(
+          {
+              to: ["zbousnina@yahoo.com", updatedDriver.email],
+              subject: "Convoyage: Your Account Information has been Updated",
+              html: generateEmailTemplateDriver(updatedDriver.name, updatedDriver.email, newGeneratedPassword),
+          },
+          (err) => {
+              if (err) {
+                  console.error("Error sending email:", err);
+              }
+          }
+      );
+
+      await logActivity("Driver Updated Successfully", req.user.id, {
+          driverId,
+          email: updatedDriver.email,
+          name: updatedDriver.name
+      });
+
+      res.status(200).json({
+          success: true,
+          Driver: updatedDriver,
+          msg: "Driver updated successfully. A new email has been sent with your updated account information.",
+      });
   } catch (error) {
-    res.status(500).json({ message: error });
+      console.error(error);
+      await logActivity("Error in updateDriver", req.user.id, { error: error.message });
+
+      res.status(500).json({ message: error.message });
   }
 });
 
-// const findMissionsByUser = async (req, res) => {
-//   const { id } = req.user;
-//   try {
-//     // Find demands without a driver, with the current driver's id, and in progress
-//     const missions = await DemandeModel.find({
-//       $or: [
-//         { driver: null },           // demands without a driver
-//         { driver: id },             // demands with the current driver's id
-//       ],
-//       status: 'in progress'        // demands in progress
-//     })
-//     .sort({ date: 1 }); // Sort by date in ascending order (FIFO)
-
-//     res.status(200).json(missions);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
-// const findMissionsByUser = async (req, res) => {
-//   const { id } = req.user;
-//   const { limit = 10, skip = 0 } = req.query;
-
-//   try {
-//     // Count the number of missions that match the criteria
-//     const missionCount = await devisModel.countDocuments({
-//       $or: [
-//         { 'mission.driver': null },
-//         { 'mission.driver': id },
-//       ],
-//       $or: [
-//         { status: 'Confirmée' },
-//         { status: 'En retard' },
-//         { status: 'Démarrée' },
-//       ],
-//     });
-
-//     // Find demands without a driver, with the current driver's id, and in progress
-//     const missions = await devisModel
-//       .find({
-//         $or: [
-//           { 'mission.driver': null },
-//           { 'mission.driver': id },
-//         ],
-//         $or: [
-//           { status: 'Confirmée' },
-//           { status: 'En retard' },
-//         { status: 'Démarrée' },
-
-//         ],
-//       })
-//       .populate('mission')
-//       .populate('partner')
-//       .sort({ 'mission.dateDepart': -1 }) // Sort by the datedepart property in descending order
-//       .limit(parseInt(limit))
-//       .skip(parseInt(skip));
-
-//     res.status(200).json({ missions, count: missionCount });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 const findMissionsByUser = async (req, res) => {
   const { id } = req.user;
   const { limit = 10, skip = 0 } = req.query;
@@ -3464,12 +3349,29 @@ const findMissionById = async (req, res) => {
   }
 };
 
+const findUserActivity = async (req, res) => {
+  try {
+      const userId = req.user.id; // Get the logged-in user ID
 
+      // Fetch all activity logs for the user
+      const activities = await ActivityLog.find({ user: userId }).sort({ createdAt: -1 });
+
+      if (!activities.length) {
+          return res.status(404).json({ success: false, message: "No activity found for this user." });
+      }
+
+      res.status(200).json({ success: true, activities });
+  } catch (error) {
+      console.error("Error fetching user activity:", error);
+      res.status(500).json({ success: false, message: "Error fetching user activity." });
+  }
+};
 
 
 
 
 module.exports = {
+  findUserActivity,
   updateTrancheConfiguration,
   authUser,
   refreshAuthToken,
