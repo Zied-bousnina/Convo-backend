@@ -218,6 +218,7 @@ const createDemandeNewVersion = async (req, res) => {
       // Save the new demand
       const createdDemande = await newDemande.save();
 
+
       const devis = new devisModel({
           partner: req.user.id,
           mission: createdDemande._id,

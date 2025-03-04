@@ -31,6 +31,7 @@ var mailer = require('./utils/mailer');
 const { generateEmailTemplatePartnerApproval, generateEmailTemplateMissionDelayed } = require('./utils/mail.js');
 const chatModel = require('./models/chat.model.js');
 const { updateAllUsersUniqueId } = require('./controllers/users.controller.js');
+const { datacatalog } = require('googleapis/build/src/apis/datacatalog/index.js');
 let server = app.listen(PORT, async (req, res) => {
   try {
     await connectDB();
@@ -413,6 +414,7 @@ socket.on("new mission", async (mission) => {
       const data = mission;
 
       // const doc = { ...data, newMissionPartner: true };
+      console.log(data?.demande?._id)
       const missio = await DemandeModel.findById(data?.demande?._id)
           .populate("categorie")
           .populate("mission")
@@ -452,13 +454,13 @@ socket.on("new mission", async (mission) => {
           return;
       }
 
-
+console.log("message received",missio?._doc )
       user.Newsocket.push({ ...doc });
       await user.save();
       socket.broadcast.emit("message received", missio?._doc);
 
       // Broadcast to the partner
-      const partnerUser = await userModel.findById(data.partner);
+      const partnerUser = await userModel.find(data.partner);
       if (partnerUser) {
 
           partnerUser.Newsocket.push({ ...doc });
@@ -466,6 +468,8 @@ socket.on("new mission", async (mission) => {
           socket.in(data.partner).emit("message received", missio);
       }
       socket.broadcast.emit("Admin notification", {...doc});
+console.log("Admin notification", {...doc})
+
   }
   catch (error) {
     console.error(`Error in sending message : ${error}`);
